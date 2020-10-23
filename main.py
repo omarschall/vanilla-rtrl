@@ -50,7 +50,7 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'algorithm': 'REIN', 'name': 'rein'}
+    params = {'algorithm': 'RFLO', 'name': 'combined'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
@@ -64,7 +64,7 @@ file_name = '{}_{}'.format(name, params['algorithm'])
 analysis_job_name = '{}_{}'.format(name, params['algorithm'])
 compare_job_name = 'comp_' + analysis_job_name
 figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][0]
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
