@@ -45,8 +45,7 @@ class Learning_Algorithm:
                 common to all child classes of Learning_Algorithm, 'W_FB' and
                 'L2_reg'."""
 
-        allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg',
-                          'maintain_sparsity'}.union(allowed_kwargs_)
+        allowed_kwargs = {'W_FB', 'L2_reg'}.union(allowed_kwargs_)
 
         for k in kwargs:
             if k not in allowed_kwargs:
@@ -121,30 +120,10 @@ class Learning_Algorithm:
         for i_L2, W in zip(self.rnn.L2_indices, L2_params):
             grads[i_L2] += self.L2_reg * W
         #Calculate L2 loss for monitoring purposes
-        self.L2_loss = 0.5 * sum([norm(p)**2 for p in L2_params])
-        return grads
-    
-    def L1_regularization(self, grads):
-        """Adds L1 regularization to the gradient.
-
-        Args:
-            grads (list): List of numpy arrays representing gradients before L1
-                regularization is applied.
-        Returns:
-            A new list of grads with L1 regularization applied."""
-
-        #Get parameters affected by L1 regularization
-        #(identical as those affected by L2)
-        L1_params = [self.rnn.params[i] for i in self.rnn.L2_indices]
-        #Add to each grad the sign of the corresponding parameter weighted
-        #by L1 reg strength
-        for i_L1, W in zip(self.rnn.L2_indices, L1_params):
-            grads[i_L1] += self.L1_reg * np.sign(W)
-        #Calculate L2 loss for monitoring purposes
-        self.L1_loss = sum([norm(p) for p in L1_params])
+        self.L2_loss = 0.5*sum([norm(p) for p in L2_params])
         return grads
 
-    def apply_sparsity_to_grads(self, grads):
+    def maintain_sparsity(self, grads):
         """"If called, modifies gradient to make 0 any parameters that are
         already 0 (only for L2 params).
         
@@ -188,14 +167,8 @@ class Learning_Algorithm:
                                                [self.n_h, 1])
         grads_list = rec_grads_list + outer_grads_list
 
-        if self.L1_reg is not None:
-            grads_list = self.L1_regularization(grads_list)
-
         if self.L2_reg is not None:
             grads_list = self.L2_regularization(grads_list)
-
-        if self.maintain_sparsity:
-            grads_list = self.apply_sparsity_to_grads(grads_list)
 
         return grads_list
 
@@ -1289,73 +1262,16 @@ class KeRNL(Learning_Algorithm):
         self.Gamma = np.zeros_like(self.Gamma)
         self.B = np.zeros_like(self.B)
 
-class REINFORCE(Learning_Algorithm):
-    def __init__(self, rnn, sigma = 0, **kwargs):
-        """Inits an instance of REINFORCE by specifying the optimizer used to train
-        the A and alpha values and a noise standard deviation for the
-        perturbations.
-        Args:
-            optimizer (optimizers.Optimizer): An instance of the Optimizer class
-            sigma_noise (float): Standard deviation for the values, sampled
-                i.i.d. from a zero-mean Gaussian, used to perturb the network
-                state to noisy_rnn and thus estimate target predictions for
-                A and alpha.
-        Keyword args:
-            decay (numpy float): value of decay for the eligibility trace.
-                Must be a value between 0 and 1, default is 0, indicating no decay
-            loss_decay (numpy float): time constant of the filtered average of the activations"""
 
-        self.name = 'REINFORCE'
-        allowed_kwargs_ = {'decay', 'loss_decay'}
-        super().__init__(rnn, allowed_kwargs_, **kwargs)
-        #Initialize learning variables
-        if self.decay is None:
-            self.decay = 0
-        if self.loss_decay is None:
-            self.loss_decay = 0.01
-        self.e_trace = 0
-        self.loss_avg = 0
-        self.loss_prev = 0
-        self.loss = 0
-        self.sigma = sigma
-        
-    def update_learning_vars(self):
-        """Updates the eligibility traces used for learning"""
-        #presynaptic variables/parameters
-        
-        self.a_hat = np.concatenate([self.rnn.a_prev, self.rnn.x, np.array([1])])
-        #postsynaptic variables/parameters
-        self.D = self.rnn.activation.f_prime(self.rnn.h) * self.rnn.noise
-        
-        #matrix of pre/post activations
-        self.e_immediate = np.outer(self.D, self.a_hat)/self.sigma**2
-        self.e_trace = (1-self.decay) * self.e_trace + self.e_immediate
-        self.loss_prev = self.loss
-        self.loss = self.rnn.loss_
-        self.loss_avg = (1 - self.loss_decay) * self.loss_avg + self.loss_decay * self.loss_prev
 
-    def get_rec_grads(self):
-        """Combine the eligibility trace and the reward to get an estimate
-        of the gradient"""
-        return (self.loss - self.loss_avg) * self.e_trace
-    
-class List_of_Gradients(Learning_Algorithm):
-    """Simply prescribe a series of updates to the network"""
-    
-    def __init__(self, rnn, grads_list_list, allowed_kwargs_=set(), **kwargs):
-        """Initializes an instance of learning algorithm by specifying the
-        network to be trained, custom allowable kwargs, and kwargs.
 
-        Args:
-            rnn (network.RNN): An instance of RNN to be trained by the network.
-            allowed_kwargs_ (set): Set of allowed kwargs in addition to those
-                common to all child classes of Learning_Algorithm, 'W_FB' and
-                'L2_reg'."""
 
-        allowed_kwargs = {}.union(allowed_kwargs_)
-        
-        self.rnn = rnn
-        self.grads_list_list = grads_list
+
+
+
+
+
+
 
 
 

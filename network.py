@@ -186,11 +186,10 @@ class RNN:
                       self.alpha*self.activation.f(self.h)) + self.noise
         else: #Otherwise calculate would-be next state from provided input a.
             h = self.W_rec.dot(a) + self.W_in.dot(x) + self.b_rec
-            ret = (1 - self.alpha)*a + self.alpha * self.activation.f(h)
             if sigma > 0:
                 noise = np.random.normal(0, sigma, self.n_h)
-                ret += noise
-            return ret
+                h += noise
+            return (1 - self.alpha)*a + self.alpha * self.activation.f(h)
 
     def z_out(self):
         """Update outputs using current state of the network."""
@@ -235,31 +234,5 @@ class RNN:
             self.a_J = np.copy(a_J)
         else: #Otherwise return
             return a_J
-
-    def get_network_speed(self, a=None):
-        """Calculates and returns the (squared) 'speed' of the network given
-        its current state and parameters. Option to specify a state value."""
-
-        if a is None:
-            a = self.a
-        delta_a = self.activation.f(self.W_rec.dot(a) + self.b_rec) - a
-
-        return (self.alpha**2 / 2) * np.square(delta_a).sum()
-
-    def get_network_speed_gradient(self, a=None):
-        """Calculates and returns the gradient of the (squared) network speed
-        with respect to the state of the network."""
-
-        if a is None:
-            a = self.a
-
-        h = self.W_rec.dot(a) + self.b_rec
-        phi = self.activation.f(h)
-        D = self.activation.f_prime(h)
-        delta_a = phi - a
-        delta_w = (D * self.W_rec.T).T - np.eye(self.n_h)
-        ret = delta_a.dot(delta_w)
-
-        return (self.alpha**2) * ret
 
 

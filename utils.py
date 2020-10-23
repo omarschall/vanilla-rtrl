@@ -14,10 +14,6 @@ from scipy.signal import decimate
 from functools import reduce
 from pdb import set_trace
 from scipy.ndimage.filters import uniform_filter1d
-from scipy.spatial import distance
-import os, pickle, copy
-from copy import deepcopy
-from sklearn.manifold import MDS
 
 ### --- Mathematical tools --- ###
 
@@ -142,12 +138,12 @@ def plot_eigenvalues(*matrices, fig=None, return_fig=False):
     if fig is None:
         fig = plt.figure()
     theta = np.arange(0, 2*np.pi, 0.01)
-    plt.plot(np.cos(theta), np.sin(theta), 'k', linestyle='--', linewidth=1.5)
+    plt.plot(np.cos(theta), np.sin(theta), 'k', linestyle='--', linewidth=0.3)
     plt.axis('equal')
 
     for M in matrices:
         eigs, _ = np.linalg.eig(M)
-        plt.plot(np.real(eigs), np.imag(eigs), '.', markersize=10)
+        plt.plot(np.real(eigs), np.imag(eigs), '.')
 
     if return_fig:
         return fig
@@ -249,75 +245,7 @@ def plot_array_of_downsampled_signals(signals, ticks=None, return_fig=False,
 
     if return_fig:
         return fig
-    
-def plot_signal_xcorr(s1, s2, return_fig=False):
-    
-    assert s1.shape == s2.shape
-    
-    n_pts = s1.shape[0]
-    lags = np.arange(1 - n_pts, n_pts)
-    s1 = (s1 - s1.mean()) / np.std(s1)
-    s2 = (s2 - s2.mean()) / np.std(s2)
-    
-    xcorr = np.correlate(s1, s2, 'full') / max(len(s1), len(s2))
-    
-    fig = plt.figure()
-    plt.plot(lags, xcorr)
-    plt.axvline(x=0, color='k', linestyle='--')
-    
-    if return_fig:
-        return fig
-    
-def plot_MDS_from_distance_matrix(distances, return_fig=False):
-    
-    mds = MDS(n_components=2, dissimilarity='precomputed')
-    proj = mds.fit_transform(distances)
-    
-    fig = plt.figure()
-    col = 'C0'
-    plt.plot(proj[:1000,0], proj[:1000,1], color=col)
-    plt.plot(proj[0,0], proj[0,1], 'x', color=col)
-    plt.plot(proj[1000,0], proj[1000,1], '.', color=col)
-    
-    
-    col = 'C1'
-    plt.plot(proj[1000:,0], proj[1000:,1], color=col)
-    plt.plot(proj[1000,0], proj[1000,1], 'x', color=col)
-    plt.plot(proj[-1,0], proj[-1,1], '.', color=col)
-    
-    if return_fig:
-        return fig
-    
-def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
-    
-    
-    fig = plt.figure()
-    U = np.linalg.qr(np.random.normal(0, 1, (1152, 1152)))[0][:2]
-    
-    for i_list, checkpoints_list in enumerate(checkpoint_lists):
-        rec_params = []
-        for checkpoint in checkpoints_list:
-            rnn = checkpoint['rnn']
-            params = np.concatenate([rnn.W_rec.flatten(),
-                                     rnn.W_in.flatten(),
-                                     rnn.b_rec])
-            rec_params.append(params)
-        rec_params = np.array(rec_params)
-        
-        
-        
-        proj = rec_params.dot(U.T)
-    
-    
-        col = 'C{}'.format(i_list)
-        plt.plot(proj[:,0], proj[:,1], color=col)
-        plt.plot([proj[0,0]], [proj[0,1]], 'x', color=col)
-        plt.plot([proj[-1,0]], [proj[-1,1]], '.', color=col)
-    
-    if return_fig:
-        return fig
-    
-    
+
 ### --- Programming tools --- ###
 
 def config_generator(**kwargs):
@@ -342,153 +270,3 @@ def rgetattr(obj, attr):
         The attribute of obj referred to."""
 
     return reduce(getattr, [obj] + attr.split('.'))
-
-### --- Data processing tools --- ###
-    
-def unpack_analysis_results(data_path):
-    """For a path to results, unpacks the data into a dict of checkpoints
-    and sorted corresponding indices."""
-    
-    done = False
-    checkpoints = {}
-    i = 0
-    i_missing = 0
-    while not done:
-
-        file_path = os.path.join(data_path, 'result_{}'.format(i))
-    
-        try:
-            with open(file_path, 'rb') as f:
-                result = pickle.load(f)
-            checkpoints.update(result)
-        except FileNotFoundError:
-            i_missing += 1
-        
-        i += 1
-        if i_missing > 5:
-            done = True
-    indices = sorted([int(k.split('_')[-1]) for k in
-                      checkpoints.keys() if 'checkpoint' in k])
-    
-    return indices, checkpoints
-    
-def align_checkpoints(checkpoint, reference_checkpoint):
-    """Finds the best possible alignment between fixed point clusters (as
-    found by DBSCAN) between an reference checkpoint and the second. Only
-    the second is changed.
-    
-    First, we define a few key integers, based on n_centroids_ref and
-    n_centroids, the numbers of centroids in each checkpoint, respectively.
-    
-    n_shared_max (int): This is the maximum number of shared 
-    
-    We then take an 'outer product' of distances between each pair of
-    centroids. Then we take the n_shared_max smallest distance pairs and
-    provisionally align these centroids."""
-    
-    ref_nodes = reference_checkpoint['nodes']
-    nodes = checkpoint['nodes']
-    
-    shape_1 = copy.copy(nodes.shape)
-    
-    n_nodes = nodes.shape[0]
-    n_ref_nodes = ref_nodes.shape[0]
-    n_shared_max = min(n_nodes, n_ref_nodes)
-    
-    # 'cluster means'
-    # 'cluster_eigs'
-    # 'cluster_KEs'
-    
-    I_x = []
-    I_y = []
-    D = distance.cdist(ref_nodes, nodes)
-    corr_node_distances = []
-    while len(I_x) < n_nodes:
-        
-        #set_trace()
-        
-        d = np.argmin(D)
-        d_min = np.min(D)
-        if d_min == np.inf:
-            break
-        else:
-            corr_node_distances.append(d_min)
-            
-        x, y = (d // n_nodes), (d % n_nodes)
-        
-        I_x.append(x)
-        I_y.append(y)
-        
-        D[x,:] = np.inf
-        D[:,y] = np.inf
-        
-    I_ = [I_y[i_x] for i_x in np.argsort(I_x)]
-    I_f = sorted(I_x)
-    I_b = sorted(I_)
-    extra_indices = list(range(n_nodes))
-    [extra_indices.remove(i) for i in I_]
-    I = I_ + extra_indices
-        
-    keys = ['adjmat_input_{}'.format(i) for i in range(6)] + ['nodes']
-    
-    for key in keys:
-        
-        if 'adjmat' in key:
-            checkpoint[key] = checkpoint[key][I][:,I]
-            checkpoint['backshared_' + key] = checkpoint[key][I_b][:,I_b]
-            reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:,I_f]
-            
-        if key == 'nodes':
-            checkpoint[key] = checkpoint[key][I]
-            
-    checkpoint['corr_node_distances'] = [corr_node_distances[i_x] for i_x in np.argsort(I_x)]
-    # if checkpoint['nodes'].shape != shape_1:
-    #     print('hey now', checkpoint['i_t'])
-    #     set_trace()
-    
-def linearly_interpolate_checkpoints(sim, start_checkpoint, end_checkpoint,
-                                     density):
-    """Create an otherwise empty simulation object containing checkpoints
-    with parameters that linearly interpolate between a start and end point."""
-    
-    sim.checkpoints = {}
-    
-    total_time = end_checkpoint['i_t']
-    timeline = np.arange(0, total_time + density, density)
-    
-    rnn_start = start_checkpoint['rnn']
-    rnn_end = end_checkpoint['rnn']
-    
-    slope = 1 / total_time
-    W_in_diff = rnn_end.W_in - rnn_start.W_in
-    W_rec_diff = rnn_end.W_rec - rnn_start.W_rec
-    W_out_diff = rnn_end.W_out - rnn_start.W_out
-    b_rec_diff = rnn_end.b_rec - rnn_start.b_rec
-    b_out_diff = rnn_end.b_out - rnn_start.b_out
-    
-    for i_t in timeline:
-        
-        checkpoint = {'i_t': i_t}
-    
-        scale = i_t * slope
-    
-        W_in = rnn_start.W_in + scale * W_in_diff
-        W_rec = rnn_start.W_rec + scale * W_rec_diff
-        W_out = rnn_start.W_out + scale * W_out_diff
-        b_rec = rnn_start.b_rec + scale * b_rec_diff
-        b_out = rnn_start.b_out + scale * b_out_diff
-        
-        rnn = deepcopy(rnn_start)
-        rnn.W_in = W_in
-        rnn.W_rec = W_rec
-        rnn.W_out = W_out
-        rnn.b_rec = b_rec
-        rnn.b_out = b_out
-        checkpoint['rnn'] = rnn
-    
-        sim.checkpoints[i_t] = checkpoint
-    
-    return sim
-    
-    
-            

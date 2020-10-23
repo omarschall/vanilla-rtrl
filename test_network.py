@@ -93,18 +93,5 @@ class Test_Network(unittest.TestCase):
         J = np.diag([0.6*self.rnn.activation.f_prime(1) + 0.4]*self.rnn.n_h)
         self.assertTrue(np.isclose(J, self.rnn.a_J).all())
 
-    def test_get_network_speed(self):
-
-        self.rnn.reset_network(a=np.ones(self.rnn.n_h))
-        correct_answer = 0.36 * np.square(np.tanh(2) - 1) * 8
-        assert_allclose(self.rnn.get_network_speed(), correct_answer)
-
-    def test_get_network_speed_gradient(self):
-
-        self.rnn.reset_network(a=np.ones(self.rnn.n_h))
-        x = tanh_derivative(2) * (np.tanh(2) - 1)
-        correct_answer = np.ones(8) * 1.2 * x
-        assert_allclose(self.rnn.get_network_speed_gradient(), correct_answer)
-
 if __name__=='__main__':
     unittest.main()

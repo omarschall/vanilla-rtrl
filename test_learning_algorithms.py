@@ -765,7 +765,6 @@ class Test_KeRNL(unittest.TestCase):
 
     def test_kernl_reduce_rflo(self):
         """Verifies that KeRNL reduces to RFLO in special case.
-
         If beta is initialized to the identity while the gammas are all
         initialized to the network inverse time constant alpha, and the KeRNL
         optimizer has 0 learning rate (i.e. beta and gamma do not change), then
@@ -823,6 +822,7 @@ class Test_KeRNL(unittest.TestCase):
         #Assert networks' parameters changed appreciably, despite a large
         #tolerance for closeness.
         self.assertFalse(np.isclose(self.W_rec, self.rnn_2.W_rec).all())
+
 
 if __name__ == '__main__':
     unittest.main()

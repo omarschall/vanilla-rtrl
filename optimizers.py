@@ -9,7 +9,7 @@ class Optimizer:
     def __init__(self, allowed_kwargs_, **kwargs):
 
         allowed_kwargs = {'lr_decay_rate', 'min_lr',
-                          'clip_norm', 'normalize'}.union(allowed_kwargs_)
+                          'clip_norm'}.union(allowed_kwargs_)
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -39,14 +39,6 @@ class Optimizer:
             return clipped_grads
         else:
             return grads
-        
-    def normalize_gradient(self, grads):
-        
-        grad_norm = np.sqrt(sum([np.square(grad).sum() for grad in grads]))
-        normalized_grads = []
-        for grad in grads:
-            normalized_grads.append(grad / grad_norm)
-        return normalized_grads
 
     def lr_decay(self):
         """Multiplicatively decays the learning rate by a factor of
@@ -59,8 +51,11 @@ class Optimizer:
             return self.lr_
 
 class Adam(Optimizer):
+    """Note: code based on implementation from
+    https://gist.github.com/Harhro94/3b809c5ae778485a9ea9d253c4bfc90a, which
+    now appears to be a dead link.
     
-    """Adam optimizer.
+    Adam optimizer.
     Default parameters follow those provided in the original paper.
     # Arguments
         lr: float >= 0. Learning rate.
@@ -69,8 +64,8 @@ class Adam(Optimizer):
         epsilon: float >= 0. Fuzz factor.
         decay: float >= 0. Learning rate decay over each update.
     # References
-        - [Adam - A Method for Stochastic Optimization](http://arxiv.org/abs/1412.6980v8)
-    """
+        - [Adam - A Method for Stochastic Optimization]
+        (http://arxiv.org/abs/1412.6980v8)"""
 
     def __init__(self, lr=0.001, beta_1=0.9, beta_2=0.999,
                  epsilon=1e-8, decay=0., **kwargs):
@@ -96,11 +91,6 @@ class Adam(Optimizer):
         if hasattr(self, 'clipnorm') and self.clipnorm > 0:
             norm = np.sqrt(sum([np.sum(np.square(g)) for g in grads]))
             grads = [self.clip_norm(g, norm) for g in grads]
-            
-        '''
-        if hasattr(self, 'clipvalue') and self.clipvalue > 0:
-            grads = [K.clip(g, -self.clipvalue, self.clipvalue) for g in grads]
-        '''
         
         lr = self.lr
         if self.initial_decay > 0:
@@ -157,11 +147,8 @@ class Stochastic_Gradient_Descent(Optimizer):
             self.lr = self.lr_decay()
 
         if self.clip_norm is not None:
-            grads = self.clip_gradient(grads)
-            
-        if self.normalize:
-            grads = self.normalize_gradient(grads)
-            
+            self.clip_gradient(grads)
+
         updated_params = []
         for param, grad in zip(params, grads):
             updated_params.append(param - self.lr * grad)
@@ -194,10 +181,7 @@ class SGD_Momentum(Optimizer):
             self.lr = self.lr_decay()
 
         if self.clip_norm is not None:
-            grads = self.clip_gradient(grads)
-            
-        if self.normalize:
-            grads = self.normalize_gradient(grads)
+            self.clip_gradient(grads)
 
         if self.vel is None:
             self.vel = [np.zeros_like(g) for g in params]

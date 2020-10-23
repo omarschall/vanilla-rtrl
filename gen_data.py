@@ -8,7 +8,6 @@ Created on Mon Sep 10 16:30:03 2018
 
 import numpy as np
 import pickle
-from pdb import set_trace
 
 class Task:
     """Parent class for all tasks. A Task is a class whose instances generate
@@ -59,23 +58,6 @@ class Task:
                 and labels, respectively."""
 
         pass
-
-class Context_Dependent_Task(Task):
-    
-    def __init__(self, tasks, p_switch=0.5):
-        
-        self.tasks = tasks
-        self.n_tasks = len(tasks)
-        n_in = max([task.n_in for task in tasks]) + self.n_tasks
-        n_out = max([task.n_out for task in tasks])
-        
-        super().__init__(n_in, n_out)
-        
-    def gen_dataset(self, N):
-        
-        print('hmm')
-        
-        
 
 class Add_Task(Task):
     """Class for the 'Add Task', an input-label mapping with i.i.d. Bernoulli
@@ -210,8 +192,12 @@ class Sequential_MNIST(Task):
         self.pixels_per_time_step = pixels_per_time_step
         self.inputs_per_image = 784 // self.pixels_per_time_step
 
-        with open('library/mnist.pkl', 'rb') as f:
-            mnist = pickle.load(f)
+        try:
+            with open('library/mnist.pkl', 'rb') as f:
+                mnist = pickle.load(f)
+        except FileNotFoundError:
+            raise FileNotFoundError('Must download mnist pickle file and' +
+                                    'store in ./library/, see class docs')
 
         self.mnist_images = np.concatenate([mnist['training_images'],
                                             mnist['test_images']], axis=0)
@@ -320,175 +306,33 @@ class Sensorimotor_Mapping(Task):
         return X, Y
 
 class Flip_Flop_Task(Task):
-    """Class for the N-bit flip-flop task.
+    """Generates data for the N-bit flip-flop task from Sussillo and Barak,
+    2013."""
 
-    For n independent dimensions, an input stream of 0, -1 and 1 is provided,
-    and the output is persistently either -1 or 1, flipping to the other only
-    if the corresponding input is the opposite. Most inputs are 0, as
-    specified by the "p_flip" parameter."""
+    def __init__(self, n_bit, p_flip, tau_task=1):
 
-    def __init__(self, n_bit, p_flip, tau_task=1, p_context_flip=None,
-                 input_magnitudes=None):
-        """Initiates an instance of the n-bit flip flop task by specifying the
-        probability of a nonzero input and timescale of the task.
+        super().__init__(n_bit, n_bit)
 
-        Args:
-            n_bit (int): The number of independent task dimensions.
-            p_flip (float): The probability of an input being nonzero.
-            tau_task (int): The factor by which we temporally "stretch" the task
-                (similar to Add Task)."""
-
-        self.n_bit = n_bit
-
-        n_in = np.maximum(n_bit, 2)
-        n_out = n_in
-        
-        if p_context_flip is not None:
-            n_in += 1
-
-        super().__init__(n_in, n_out)
-
-        
         self.p_flip = p_flip
         self.tau_task = tau_task
-        self.p_context_flip = p_context_flip
-        self.input_magnitudes = input_magnitudes
 
     def gen_dataset(self, N):
-        """Generates a dataset for the flip-flop task."""
 
         N = N // self.tau_task
-
+        
         if N == 0:
             return np.array([]), np.array([])
 
         probability = [self.p_flip / 2, 1 - self.p_flip, self.p_flip / 2]
         choices = [-1, 0, 1]
-        X = np.random.choice(choices, size=(N, self.n_bit), p=probability)
-        X = np.tile(X, self.tau_task).reshape((self.tau_task*N, self.n_bit))
+        X = np.random.choice(choices, size=(N, self.n_in), p=probability)
+        X = np.tile(X, self.tau_task).reshape((self.tau_task*N, self.n_in))
         Y = X.copy()
         for k in range(int(np.ceil(np.log2(N)))):
             Y[2 ** k:] = np.sign(Y[2 ** k:] + Y[:-2 ** k] / 2)
-            
-        if self.input_magnitudes is not None:
-            mags = np.random.choice(self.input_magnitudes, size=X.shape)
-            X = X * mags
-            
-        if self.n_bit == 1:
-            X = np.tile(X, 2)
-            Y = np.tile(Y, 2)
-            
-        if self.p_context_flip is not None:
-            x_context = []
-            init_context = np.random.choice([-1, 1])
-            while len(x_context) < N:
-                n_same_context = np.random.geometric(self.p_context_flip)
-                x_context += ([init_context] * n_same_context)
-                
-                init_context *= -1
-            x_context = np.array(x_context[:N]).reshape(-1, 1)
-            
-            X = np.concatenate([X, x_context], axis=1)
-            
-            X[np.where(x_context == -1), :-1] *= -1
-            
         return X, Y
 
-class Sine_Wave(Task):
-    """Class for the sine wave task.
 
-    There are two input dimensions, one of which specifies whether the sine wave
-    is "on" (1) or "off" (0). The second dimension specifies the period of
-    the sine wave (in time steps) to be produced by the network."""
-
-    def __init__(self, p_transition, periods, never_off=False, **kwargs):
-        """Initializes an instance of sine wave task by specifying transition
-        probability (between on and off states) and periods to sample from.
-
-        Args:
-            p_transition (float): The probability of switching between on and off
-                modes.
-            periods (list): The sine wave periods to sample from, by default
-                uniformly.
-            never_off (bool): If true, the is no "off" period, and the network
-                simply switches from period to period.
-        Keyword args:
-            p_periods (list): Must be same length as periods, specifying probability
-                for each sine wave period.
-            amplitude (float): Amplitude of all sine waves, by default 0.1 if
-                not specified.
-            method (string): Must be either "random" or "regular", the former for
-                transitions randomly sampled according to p_transition and the
-                latter for deterministic transitions every 1 / p_transition
-                time steps."""
-
-        allowed_kwargs = {'p_periods', 'amplitude', 'method'}
-        for k in kwargs:
-            if k not in allowed_kwargs:
-                raise TypeError('Unexpected keyword argument '
-                                'passed to Sine_Wave.__init__: ' + str(k))
-
-        super().__init__(2, 2)
-
-        self.p_transition = p_transition
-        self.method = 'random'
-        self.amplitude = 0.1
-        self.periods = periods
-        self.p_periods = np.ones_like(periods) / len(periods)
-        self.never_off = never_off
-        self.__dict__.update(kwargs)
-
-    def gen_dataset(self, N):
-        """Generates a dataset for the sine wave task."""
-
-        X = np.zeros((N, 2))
-        Y = np.zeros((N, 2))
-
-        self.switch_cond = False
-
-        active = False
-        t = 0
-        X[0, 0] = 1
-        for i in range(1, N):
-
-            if self.method == 'regular':
-                if i % int(1 / self.p_transition) == 0:
-                    self.switch_cond = True
-            elif self.method == 'random':
-                if np.random.rand() < self.p_transition:
-                    self.switch_cond = True
-
-            if self.switch_cond:
-
-                t = 0
-
-                if active and not self.never_off:
-                    X[i, 0] = 1
-                    X[i, 1] = 0
-                    Y[i, :] = 0
-
-                if not active or self.never_off:
-                    X[i, 0] = np.random.choice(self.periods, p=self.p_periods)
-                    X[i, 1] = 1
-                    Y[i, 0] = self.amplitude * np.cos(2 * np.pi / X[i, 0] * t)
-                    Y[i, 1] = self.amplitude * np.sin(2 * np.pi / X[i, 0] * t)
-
-                active = not active
-
-            else:
-
-                t += 1
-                X[i, :] = X[i - 1, :]
-                theta = 2 * np.pi / X[i, 0] * t
-                on_off = (active or self.never_off)
-                Y[i, 0] = self.amplitude * np.cos(theta) * on_off
-                Y[i, 1] = self.amplitude * np.sin(theta) * on_off
-
-            self.switch_cond = False
-
-        X[:, 0] = -np.log(X[:, 0])
-
-        return X, Y
 
 
 

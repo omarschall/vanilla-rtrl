@@ -20,6 +20,5 @@ Other modules:
 **network.py**: Contains RNN class, which defines a leaky vanilla RNN. (In principle, there could be a general RNN class with subclasses for specific RNN architectures, with the Learning_Algorithm subclasses written to be as architecture-agnostic as possible. However, we currently have hardcoded in leaky vanilla RNNs.)  
 **optimizers.py**: Contains Optimizer class, which provides functions that take gradients from the Learning_Algorithm instance and uses them to update the RNN parameters. Only specific subclass is Stochastic_Gradient_Descent, but one could define other optimizers such as Adam or RMSProp.  
 **simulation.py**: Contains Simulation class, which takes in all other types of objects and simulates an RNN either in 'train' or 'test' mode.  
-**submit_jobs.py**: Contains functions for quickly running grid parameter searches on the NYU high-performance computing machines. Likely to not be useful for anyone other than me.   
 **test_{}.py**: Contains unit tests for some of the modules, most crucially learning_algorithms.py, network.py, getn_data.py, and utils.py.  
 **utils.py**: Random useful functions.  
