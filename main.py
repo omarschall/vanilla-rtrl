@@ -539,6 +539,21 @@ if MODE == 'PLOT':
     # find diff solutions? which stages of learning matter most if you switch
     # algs?
     # compute hessian exactly to assess local minima
+    
+    # assess robustness to slightly different task configs
+    # study REINFORCE or simlar things even as it fails
+    # what are computational limitations of different bio plausible learning algorithms
+    # if stochastic gradients not  learning, what do metrics or kinetic energy
+    # or whatever reveal about their shortcomings
+    # can topological space show what makes one algorithm better or worse than
+    # another?
+    # at asymptoptic performance, do gradient directions matter for preserving
+    # topology or is it just about their norms being small?
+    # can otherwise identical topologies be compared w.r.t. robustness to perturbations?
+    # perturbations both to weight confirugartions and also input magnitudes.
+    # lesioning neurons?
+    # shallow minima, find basins of attraction that are robust. Are topologoical
+    # strucutres signifiers of robustness?
 
     #figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
     #ssa_2.fig.savefig(os.path.join(figs_path, 'fig16.pdf'), dpi=300, format='pdf')
