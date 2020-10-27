@@ -5,3 +5,4 @@ __pycache__/*
 job_scripts/
 venv
 notebooks/good_ones/*
+saved_runs

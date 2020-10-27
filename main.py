@@ -50,21 +50,21 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'algorithm': 'RFLO', 'name': 'combined'}
+    params = {'algorithm': 'REIN', 'name': 'fail'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
 np.random.seed(1)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
-N_train = 100000
+N_train = 20000
 N_test = 5000
-checkpoint_interval = None
+checkpoint_interval = 100
 name = params['name']
 file_name = '{}_{}'.format(name, params['algorithm'])
 analysis_job_name = '{}_{}'.format(name, params['algorithm'])
 compare_job_name = 'comp_' + analysis_job_name
 figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][0]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
@@ -94,7 +94,7 @@ if MODE == 'TRAIN': #Do this locally
               output=identity,
               loss=mean_squared_error)
     
-    optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=10)
+    optimizer = SGD_Momentum(lr=0.0005, mu=0.6, clip_norm=10)
     #optimizer = Stochastic_Gradient_Descent(lr=0.001)
     if params['algorithm'] == 'E-BPTT':
         learn_alg = Efficient_BPTT(rnn, 5, L2_reg=0.0001, L1_reg=0.0001)
@@ -109,7 +109,7 @@ if MODE == 'TRAIN': #Do this locally
         learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
     
     comp_algs = []
-    monitors = ['learn_alg.rec_grads-norm']
+    monitors = []
     
     sim = Simulation(rnn)
     sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -128,8 +128,8 @@ if MODE == 'TRAIN': #Do this locally
     #                                             end_checkpoint=sim.checkpoints[99000],
     #                                             density=100)
         
-    # with open(os.path.join('saved_runs', file_name), 'wb') as f:
-    #     pickle.dump(sim, f)
+    with open(os.path.join('saved_runs', file_name), 'wb') as f:
+        pickle.dump(sim, f)
         
     # with open(os.path.join('saved_runs', 'interp_RFLO'), 'wb') as f:
     #     pickle.dump(sim_, f)
@@ -539,6 +539,21 @@ if MODE == 'PLOT':
     # find diff solutions? which stages of learning matter most if you switch
     # algs?
     # compute hessian exactly to assess local minima
+    
+        # assess robustness to slightly different task configs
+    # study REINFORCE or simlar things even as it fails
+    # what are computational limitations of different bio plausible learning algorithms
+    # if stochastic gradients not  learning, what do metrics or kinetic energy
+    # or whatever reveal about their shortcomings
+    # can topological space show what makes one algorithm better or worse than
+    # another?
+    # at asymptoptic performance, do gradient directions matter for preserving
+    # topology or is it just about their norms being small?
+    # can otherwise identical topologies be compared w.r.t. robustness to perturbations?
+    # perturbations both to weight confirugartions and also input magnitudes.
+    # lesioning neurons?
+    # shallow minima, find basins of attraction that are robust. Are topologoical
+    # strucutres signifiers of robustness?
 
     #figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
     #ssa_2.fig.savefig(os.path.join(figs_path, 'fig16.pdf'), dpi=300, format='pdf')
