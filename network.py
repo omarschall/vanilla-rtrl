@@ -261,5 +261,18 @@ class RNN:
         ret = delta_a.dot(delta_w)
 
         return (self.alpha**2) * ret
+    
+    def get_network_speed_gradient_wrt_weights(self, a=None):
+        """Calculates and returns the gradient of the (squared) network speed
+        with respect to the network parameters."""
+        
+        if a is None:
+            a = self.a
+        h = self.W_rec.dot(a) + self.b_rec
+        phi = self.activation.f(h)
+        D = self.activation.f_prime(h)
+        delta_a = phi - a
+        
+        return (self.alpha**2) * (np.outer(D, a).T * delta_a).T
 
 
