@@ -490,5 +490,19 @@ def linearly_interpolate_checkpoints(sim, start_checkpoint, end_checkpoint,
     
     return sim
     
+def put_topolgoies_in_tex_script(indices, figs_path):
+    
+    with open(os.path.join(figs_path, 'tex_tex.txt'), 'w') as f:
+        for i_index in range(0, len(indices), 4):
+            i_checkpoints = [indices[i_index],
+                              indices[i_index + 1],
+                              indices[i_index + 2],
+                              indices[i_index + 3]]
+            f.write('\\begin{figure}[h]\n' +
+                    '\\center\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[0]) + 
+                    '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[1]) + 
+                    '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[2]) + 
+                    '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}\n'.format(i_checkpoints[3]) + 
+                    '\\end{figure}\n')
     
             

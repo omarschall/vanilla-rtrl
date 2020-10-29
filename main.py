@@ -39,9 +39,9 @@ if os.environ['HOME'] == '/home/oem214':
     except KeyError:
         i_job = 0
     #macro_configs = config_generator(i_start=list(range(0, 200000, 1000)))
-    macro_configs = config_generator(algorithm=['RFLO'],
-                                     name=['combined'],
-                                     i_start=list(range(0, 10000, 100)))
+    macro_configs = config_generator(algorithm=['RTRL'],
+                                     name=['fail'],
+                                     i_start=list(range(0, 100000, 1000)))
     #macro_configs = config_generator(algorithm=['RFLO'])
     micro_configs = tuple(product(macro_configs, list(range(n_seeds))))
 
@@ -50,13 +50,13 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'algorithm': 'REIN', 'name': 'fail'}
+    params = {'algorithm': 'RTRL', 'name': 'fail'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
 np.random.seed(1)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
-N_train = 20000
+N_train = 100000
 N_test = 5000
 checkpoint_interval = 100
 name = params['name']
@@ -64,7 +64,7 @@ file_name = '{}_{}'.format(name, params['algorithm'])
 analysis_job_name = '{}_{}'.format(name, params['algorithm'])
 compare_job_name = 'comp_' + analysis_job_name
 figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][0]
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][2]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
@@ -86,7 +86,7 @@ if MODE == 'TRAIN': #Do this locally
     b_out = np.zeros(n_out)
     
     alpha = 1
-    sigma = 0.5
+    sigma = 0
     
     rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
               activation=tanh,
@@ -94,19 +94,20 @@ if MODE == 'TRAIN': #Do this locally
               output=identity,
               loss=mean_squared_error)
     
-    optimizer = SGD_Momentum(lr=0.0005, mu=0.6, clip_norm=10)
+    optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=10)
     #optimizer = Stochastic_Gradient_Descent(lr=0.001)
     if params['algorithm'] == 'E-BPTT':
         learn_alg = Efficient_BPTT(rnn, 5, L2_reg=0.0001, L1_reg=0.0001)
     elif params['algorithm'] == 'RFLO':
         learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
     elif params['algorithm'] == 'RTRL':
-        learn_alg = RTRL(rnn, M_decay=0.3, L2_reg=0.0001, L1_reg=0.0001)
+        learn_alg = RTRL(rnn, M_decay=1, L2_reg=0.0001, L1_reg=0.0001)
     elif params['algorithm'] == 'REIN':
         learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.001, L1_reg=0.001,
                               decay=0.1)
     elif params['algorithm'] == 'KF-RTRL':
         learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
+    
     
     comp_algs = []
     monitors = []
@@ -223,7 +224,7 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     with open(os.path.join('saved_runs', file_name), 'rb') as f:
         sim = pickle.load(f)
     
-    for i_checkpoint in range(params['i_start'], params['i_start'] + 100, 10):
+    for i_checkpoint in range(params['i_start'], params['i_start'] + 1000, 100):
 
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
@@ -383,7 +384,7 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
 if MODE == 'PLOT':
     
     local_results = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    figs_path = '/Users/omarschall/weekly-reports/report_09-30-2020/figs'
+    figs_path = '/Users/omarschall/weekly-reports/report_10-27-2020/figs'
     data_path = os.path.join(local_results, compare_job_name, 'result_0')
     
     signals = {}
@@ -476,7 +477,7 @@ if MODE == 'PLOT':
     data = task.gen_data(100, 10000)
     # sparse_inputs_task = Flip_Flop_Task(task.n_bit, 0.001)
     
-    i_checkpoint = 9980
+    i_checkpoint = 99900
     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
     transform = Vanilla_PCA(checkpoint, data)
     ssa_2 = State_Space_Analysis(checkpoint, data, transform=transform)
@@ -526,7 +527,13 @@ if MODE == 'PLOT':
     #                 '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[2]) + 
     #                 '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}\n'.format(i_checkpoints[3]) + 
     #                 '\\end{figure}\n')
+     
+    # for i_checkpoint in indices:
+    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
+    #     fig = plot_input_dependent_topology(checkpoint, i_input=None, return_fig=True)
+    #     fig.savefig(os.path.join(figs_path, 'Fig_{}.pdf'.format(i_checkpoint)), dpi=300, format='pdf')
         
+    #put_topolgoies_in_tex_script(indices, figs_path)
 
     # meeting notes
     # kep track of node diff penalty as separate metric

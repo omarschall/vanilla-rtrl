@@ -273,6 +273,9 @@ class RNN:
         D = self.activation.f_prime(h)
         delta_a = phi - a
         
-        return (self.alpha**2) * (np.outer(D, a).T * delta_a).T
+        x = np.zeros_like(self.x)
+        a_hat = np.concatenate([a, x, np.array([1])])
+        
+        return (self.alpha**2) * (np.outer(D, a_hat).T * delta_a).T
 
 
