@@ -216,7 +216,7 @@ class Private_LR_SGD(Optimizer):
     Attributes:
         lr (float): learning rate."""
 
-    def __init__(self, init_lr=None, **kwargs):
+    def __init__(self, rnn, init_lr=None, **kwargs):
 
         allowed_kwargs_ = set()
         super().__init__(allowed_kwargs_, **kwargs)
@@ -224,7 +224,7 @@ class Private_LR_SGD(Optimizer):
         if init_lr is not None:
             self.lr = lr
         else:
-            self.lr = None
+            self.lr = 0.1 * rnn
 
     def get_updated_params(self, params, grads):
         """Returns a list of updated parameter values (NOT the change in value).
@@ -234,15 +234,6 @@ class Private_LR_SGD(Optimizer):
             grads (list): List of corresponding gradients as numpy arrays.
         Returns:
             updated_params (list): List of newly updated parameters."""
-
-        if self.lr_decay_rate is not None:
-            self.lr = self.lr_decay()
-
-        if self.clip_norm is not None:
-            grads = self.clip_gradient(grads)
-            
-        if self.normalize:
-            grads = self.normalize_gradient(grads)
             
         updated_params = []
         for param, grad in zip(params, grads):
