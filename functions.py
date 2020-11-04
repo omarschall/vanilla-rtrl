@@ -19,11 +19,12 @@ class Function:
             the first argument, must also act on 1-d numpy arrays of arbitrary
             dimension."""
 
-    def __init__(self, f, f_prime):
+    def __init__(self, f, f_prime,f_pp=None):
         """Inits an instance of Function by specifying f and f_prime."""
 
         self.f = f
         self.f_prime = f_prime
+        self.f_pp = f_pp
 
 ### --- Define sigmoid --- ###
 
@@ -35,8 +36,12 @@ def sigmoid_derivative(z):
 
     return sigmoid_(z) * (1 - sigmoid_(z))
 
+def sigmoid_second_deri(z):
+
+    return sigmoid_derivative(z)*(1-2*sigmoid_(z))
+
 sigmoid = Function(sigmoid_,
-                   sigmoid_derivative)
+                   sigmoid_derivative,sigmoid_second_deri)
 
 ### --- Define sigmoid cross entropy --- ###
 
@@ -80,8 +85,12 @@ def tanh_derivative(z):
 
     return 1 - np.tanh(z) ** 2
 
+def tanh_second_derivative(z):
+
+    return -2* np.tanh(z) * tanh_derivative(z)
+
 tanh = Function(tanh_,
-                tanh_derivative)
+                tanh_derivative,tanh_second_derivative)
 
 ### --- Define softmax --- ###
 
