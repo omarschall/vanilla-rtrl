@@ -480,29 +480,47 @@ class Simulation:
     def resume_sim_at_checkpoint(self, data, i_checkpoint, N=None,
                                  checkpoint_interval=None,
                                  overwrite_checkpoints=False,
+                                 new_learn_alg=None,
+                                 new_optimizer=None,
+                                 new_rnn=None,
+                                 auto_resample=True,
                                  **kwargs):
 
         checkpoint = self.checkpoints[i_checkpoint]
         
-        rnn = deepcopy(checkpoint['rnn'])
-        learn_alg = deepcopy(checkpoint['learn_alg'])
-        optimizer = deepcopy(checkpoint['optimizer'])
+        if new_rnn is None:
+            rnn = deepcopy(checkpoint['rnn'])
+        else:
+            rnn = new_rnn
+        if new_learn_alg is None:
+            learn_alg = deepcopy(checkpoint['learn_alg'])
+        else:
+            learn_alg = new_learn_alg
+        if new_optimizer is None:
+            optimizer = deepcopy(checkpoint['optimizer'])
+        else:
+            optimizer = new_optimizer
 
-        if N is None:
+        if auto_resample:
+            
             i_checkpoints = sorted(self.checkpoints.keys())
             j = i_checkpoints.index(i_checkpoint) + 1
             N = i_checkpoints[j] - i_checkpoints[j-1]
-            
-        if checkpoint_interval is None:
             checkpoint_interval = N // 10
-        
-        self.rnn = rnn
-        self.run(data, learn_alg=learn_alg, optimizer=optimizer,
-                 checkpoint_interval=checkpoint_interval,
-                 i_start=i_checkpoint + 1,
-                 i_end=i_checkpoint + N,
-                 overwrite_checkpoints=overwrite_checkpoints,
-                 **kwargs)
+            
+            self.rnn = rnn
+            self.run(data, learn_alg=learn_alg, optimizer=optimizer,
+                     checkpoint_interval=checkpoint_interval,
+                     i_start=i_checkpoint + 1,
+                     i_end=i_checkpoint + N,
+                     overwrite_checkpoints=overwrite_checkpoints,
+                     **kwargs)
+        else:
+            self.rnn = rnn
+            self.run(data, learn_alg=learn_alg, optimizer=optimizer,
+                     checkpoint_interval=None,
+                     overwrite_checkpoints=overwrite_checkpoints,
+                     **kwargs)
 
 
 

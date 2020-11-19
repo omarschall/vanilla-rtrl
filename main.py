@@ -39,9 +39,9 @@ if os.environ['HOME'] == '/home/oem214':
     except KeyError:
         i_job = 0
     #macro_configs = config_generator(i_start=list(range(0, 200000, 1000)))
-    macro_configs = config_generator(algorithm=['RTRL'],
-                                     name=['fail'],
-                                     i_start=list(range(0, 100000, 1000)))
+    macro_configs = config_generator(algorithm=['REIN'],
+                                     name=['dense1'],
+                                     i_start=list(range(0, 20000, 40)))
     #macro_configs = config_generator(algorithm=['RFLO'])
     micro_configs = tuple(product(macro_configs, list(range(n_seeds))))
 
@@ -50,21 +50,23 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'algorithm': 'RTRL', 'name': 'fail'}
+    params = {'algorithm': 'RFLO', 'name': 'dense3'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
-np.random.seed(1)
+np.random.seed(3)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
-N_train = 100000
+#task = Add_Task(t_1=3, t_2=5, deterministic=True)
+N_train = 20000
 N_test = 5000
-checkpoint_interval = 100
+checkpoint_interval = None
+sigma = 0.2
 name = params['name']
 file_name = '{}_{}'.format(name, params['algorithm'])
 analysis_job_name = '{}_{}'.format(name, params['algorithm'])
 compare_job_name = 'comp_' + analysis_job_name
-figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][2]
+figs_path = '/Users/omarschall/career-stuff/conferences/cosyne_2020/figs'
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
@@ -86,7 +88,7 @@ if MODE == 'TRAIN': #Do this locally
     b_out = np.zeros(n_out)
     
     alpha = 1
-    sigma = 0
+    sigma = 0.2
     
     rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
               activation=tanh,
@@ -94,8 +96,8 @@ if MODE == 'TRAIN': #Do this locally
               output=identity,
               loss=mean_squared_error)
     
-    optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=10)
-    #optimizer = Stochastic_Gradient_Descent(lr=0.001)
+    optimizer = SGD_Momentum(lr=-0.01, mu=0.6, clip_norm=None)
+    #optimizer = Stochastic_Gradient_Descent(lr=0.005)
     if params['algorithm'] == 'E-BPTT':
         learn_alg = Efficient_BPTT(rnn, 5, L2_reg=0.0001, L1_reg=0.0001)
     elif params['algorithm'] == 'RFLO':
@@ -103,13 +105,21 @@ if MODE == 'TRAIN': #Do this locally
     elif params['algorithm'] == 'RTRL':
         learn_alg = RTRL(rnn, M_decay=1, L2_reg=0.0001, L1_reg=0.0001)
     elif params['algorithm'] == 'REIN':
-        learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.001, L1_reg=0.001,
-                              decay=0.1)
+        learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.0001, L1_reg=0.0001,
+                              decay=0.01, loss_decay=0.01)
     elif params['algorithm'] == 'KF-RTRL':
         learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
+    elif params['algorithm'] == 'UORO':
+        learn_alg = UORO(rnn, L2_reg=0.0001, L1_reg=0.0001)
+    elif params['algorithm'] == 'DNI':
+        sg_optimizer = Stochastic_Gradient_Descent(lr=0.01)
+        learn_alg = DNI(rnn, sg_optimizer, L2_reg=0.0001, L1_reg=0.0001)
+    elif params['algorithm'] == 'Only_Output_Weights':
+        learn_alg = Only_Output_Weights(rnn)
     
-    
+    #comp_algs = [RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg = 0.0001)]
     comp_algs = []
+    #monitors = ['alignment_matrix']
     monitors = []
     
     sim = Simulation(rnn)
@@ -122,6 +132,34 @@ if MODE == 'TRAIN': #Do this locally
             report_loss=True,
             checkpoint_interval=checkpoint_interval)
     
+    # with open(os.path.join('saved_runs', file_name), 'wb') as f:
+    #     pickle.dump(sim, f)
+    
+    # N_train = 50000
+    # N_test = 5000
+    # data = task.gen_data(N_train, N_test)
+    # #sigma_ = np.sqrt(24 * 3) * sigma
+    # learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.001, L1_reg=0.001, decay=0.1)
+    # #learn_alg = Random_Noise_Gradients(rnn, sigma=0.007)
+    # #optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=None)
+    # optimizer = Stochastic_Gradient_Descent(lr=0.005)
+    
+    # comp_algs = [RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg = 0.0001)]
+    # monitors = ['alignment_matrix']
+    
+    # noisy_sim = Simulation(rnn)
+    # noisy_sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
+    #               sigma=sigma,
+    #               comp_algs=comp_algs,
+    #               monitors=monitors,
+    #               verbose=True,
+    #               report_accuracy=False,
+    #               report_loss=True,
+    #               checkpoint_interval=checkpoint_interval)
+    
+    # with open(os.path.join('saved_runs', '{}_{}'.format(name, 'REIN')), 'wb') as f:
+    #     pickle.dump(noisy_sim, f)
+    
     # if True:
     #     sim_ = Simulation(rnn)
     #     sim_ = linearly_interpolate_checkpoints(sim_,
@@ -129,8 +167,7 @@ if MODE == 'TRAIN': #Do this locally
     #                                             end_checkpoint=sim.checkpoints[99000],
     #                                             density=100)
         
-    with open(os.path.join('saved_runs', file_name), 'wb') as f:
-        pickle.dump(sim, f)
+
         
     # with open(os.path.join('saved_runs', 'interp_RFLO'), 'wb') as f:
     #     pickle.dump(sim_, f)
@@ -146,7 +183,8 @@ if MODE == 'CHECK':
         sim = pickle.load(f)
         
     data = task.gen_data(100, 10000)
-    checkpoint = sim.checkpoints[N_train - 1]
+    i_checkpoint = max(sim.checkpoints.keys())
+    checkpoint = sim.checkpoints[i_checkpoint]
     
     #analyze context 0
     t1 = time.time()
@@ -160,6 +198,7 @@ if MODE == 'CHECK':
     inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
               np.array([0, 0, 1]), np.array([-1, 0, 0]),
               np.array([0, -1, 0]), np.array([0, 0, -1])]
+    #inputs = [np.array([1, 0]), np.array([0, 1])]
     t3 = time.time()
     print('Time for autonomous graph: {}'.format(t3 - t2))
     get_input_dependent_graph_structure(checkpoint, inputs=inputs, contexts=None)
@@ -167,14 +206,14 @@ if MODE == 'CHECK':
     print('Time for input graphs: {}'.format(t4 - t3))
     
     #PLOT INPUT
-    i_input = 1
+    i_input = 0
     transform = partial(np.dot, b=checkpoint['V'])
     ssa = State_Space_Analysis(checkpoint, data, transform=transform)
     ssa = plot_checkpoint_results(checkpoint, data, ssa=ssa,
                                   plot_cluster_means=False,
                                   eig_norm_color=False,
                                   plot_test_points=True,
-                                  plot_fixed_points=False,
+                                  plot_fixed_points=True,
                                   plot_graph_structure=True,
                                   n_test_samples=None,
                                   graph_key='adjmat_input_{}'.format(i_input))
@@ -213,7 +252,7 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     
     result = {}
     
-    data = task.gen_data(100, 10000)
+    data = task.gen_data(100, 30000)
     #big_data = task.gen_data(100, 500000)
     
     #Progress logging
@@ -224,7 +263,7 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     with open(os.path.join('saved_runs', file_name), 'rb') as f:
         sim = pickle.load(f)
     
-    for i_checkpoint in range(params['i_start'], params['i_start'] + 1000, 100):
+    for i_checkpoint in range(params['i_start'], params['i_start'] + 40, 10):
 
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
@@ -236,7 +275,7 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
         analyze_checkpoint(checkpoint, data, verbose=False,
                            sigma_pert=0.5, N=500, parallelize=False,
                            N_iters=6000, same_LR_criterion=5000,
-                           context=contexts[0])
+                           context=contexts[0], sigma=sigma)
         
         get_graph_structure(checkpoint, parallelize=False, epsilon=0.01, background_input=0)
         get_input_dependent_graph_structure(checkpoint, inputs=inputs, contexts=None)
@@ -275,7 +314,7 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
     
     n_off_diagonals = 1
     
-    big_data = task.gen_data(100, 20000)
+    #big_data = task.gen_data(100, 20000)
     data = task.gen_data(100, 10000)
     scratch_path = '/scratch/oem214/vanilla-rtrl/'
     if os.environ['HOME'] == '/home/oem214':
@@ -289,24 +328,25 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
     #Unpack data
     indices, checkpoints = unpack_analysis_results(data_path)
     
+    print(indices)
     #set_trace()
     
     #Initialize dissimilarity matrices
     n_checkpoints = len(checkpoints)
-    # wasserstein_distances = np.zeros(n_checkpoints)
-    # VAE_distances = np.zeros(n_checkpoints)
+    wasserstein_distances = np.zeros((n_checkpoints, n_checkpoints))
+    #VAE_distances = np.zeros((n_checkpoints, n_checkpoints))
     PC1_distances = np.zeros((n_checkpoints, n_checkpoints))
-    # PC2_distances = np.zeros(n_checkpoints)
-    # SVCCA_distances = np.zeros(n_checkpoints)
-    # graph_distances = np.zeros(n_checkpoints)
-    # input_graph_distances = np.zeros(n_checkpoints)
+    PC2_distances = np.zeros((n_checkpoints, n_checkpoints))
+    SVCCA_distances = np.zeros((n_checkpoints, n_checkpoints))
+    #graph_distances = np.zeros((n_checkpoints, n_checkpoints))
+    #input_graph_distances = np.zeros(n_checkpoints)
     aligned_graph_distances = np.zeros((n_checkpoints, n_checkpoints))
     node_diff_distances = np.zeros((n_checkpoints, n_checkpoints))
-    # rec_weight_distances = np.zeros(n_checkpoints)
+    rec_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
     # output_weight_distances = np.zeros(n_checkpoints)
     # participation_coefficients = np.zeros(n_checkpoints)
     
-    for i in range(len(indices)):
+    for i in range(len(indices) - 1):
         
         #print(i)
         
@@ -316,7 +356,7 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
         elif i % 10 == 0:
             print(i)
         
-        for j in range(i + 1, len(indices)):
+        for j in range(i + 1, i + 2):
         
             # try:
             i_index = indices[i]
@@ -337,19 +377,19 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
                 #print('checkpoint 2 keys:/n', checkpoint_2.keys())
                 #print('checkpoint 1 keys:/n', checkpoint_1.keys())
             
-            #wasserstein_distances[i] = wasserstein_distance(checkpoint_1,
-            #                                                      checkpoint_2)
+            wasserstein_distances[i, j] = wasserstein_distance(checkpoint_1,
+                                                                 checkpoint_2)
             
             # VAE_distances[i, i+j] = VAE_distance(checkpoint_1, checkpoint_2,
             #                                       big_data=big_data)
             
             PC1_distances[i, j] = PC_distance_1(checkpoint_1,
                                                   checkpoint_2)
-            #PC2_distances[i] = PC_distance_2(checkpoint_1,
-            #                                      checkpoint_2)
-            # SVCCA_distances[i, i+j] = SVCCA_distance(checkpoint_1,
-            #                                           checkpoint_2,
-            #                                           data=data, R=2)
+            PC2_distances[i, j] = PC_distance_2(checkpoint_1,
+                                                  checkpoint_2)
+            SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
+                                                       checkpoint_2,
+                                                       data=data, R=3)
             # graph_distances[i, i+j] = graph_distance(checkpoint_1,
             #                                           checkpoint_2)
             # input_graph_distances[i, i+j] = input_dependent_graph_distance(checkpoint_1,
@@ -358,22 +398,22 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
                                                                 checkpoint_2,
                                                                 node_diff_penalty=0)
             node_diff_distances[i, j] = node_diff_distance(checkpoint_1, checkpoint_2)
-            #rec_weight_distances[i] = rec_weight_distance(checkpoint_1,
-            #                                                    checkpoint_2)
+            rec_weight_distances[i, j] = rec_weight_distance(checkpoint_1,
+                                                          checkpoint_2)
             #output_weight_distances[i] = output_weight_distance(checkpoint_1,
             #                                                    checkpoint_2)
             #participation_coefficients[i] = checkpoint_1['participation_coef']
         
-    #result['wasserstein_distances'] = wasserstein_distances
-    #result['VAE_distances'] = VAE_distances
+    result['wasserstein_distances'] = wasserstein_distances + wasserstein_distances.T
+    #result['VAE_distances'] = VAE_distances + VAE_distances.T
     result['PC1_distances'] = PC1_distances + PC1_distances.T
-    #result['PC2_distances'] = PC2_distances
-    #result['SVCCA_distances'] = SVCCA_distances
+    result['PC2_distances'] = PC2_distances + PC2_distances.T
+    result['SVCCA_distances'] = SVCCA_distances + SVCCA_distances.T
     #result['graph_distances'] = graph_distances
     #result['input_graph_distances'] = input_graph_distances
     result['aligned_graph_distances'] = aligned_graph_distances + aligned_graph_distances.T
     result['node_diff_distances'] = node_diff_distances + node_diff_distances.T
-    #result['rec_weight_distances'] = rec_weight_distances
+    result['rec_weight_distances'] = rec_weight_distances + rec_weight_distances.T
     #result['output_weight_distances'] = output_weight_distances
     #result['participation_coefficients'] = participation_coefficients
 
@@ -384,75 +424,10 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
 if MODE == 'PLOT':
     
     local_results = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    figs_path = '/Users/omarschall/weekly-reports/report_10-27-2020/figs'
-    data_path = os.path.join(local_results, compare_job_name, 'result_0')
-    
-    signals = {}
-    try:
-        with open(data_path, 'rb') as f:
-            result = pickle.load(f)
-    
-        fig1 = plt.figure(figsize=(10,10))
-        leg = []
-        
-        #norm_ = result['rec_weight_distances'][:-1]
-        #norm_max = np.amax(norm_)
-        #norm_min = np.amin(norm_)
-        #norm_ = np.exp((norm_ - norm_min) / (norm_max - norm_min))
-    
-        for i_key, key in enumerate(result.keys()):
-            
-            if 'distances' in key or 'participation' in key:
-                
-                #x = np.array(result[key][:-1])
-                
-                
-                # if key == 'participation_coefficients':
-                    
-                #     x = np.array(result[key])[:-4]
-                    
-                # else:
-                x = np.diag(result[key][:-1,1:])
-                
-
-                
-                x_max = np.amax(x)
-                x_min = np.amin(x)
-                x = (x - x_min) / (x_max - x_min)
-                signals[key] = x.copy()
-                
-                if False: #normalize by grad norm if you want
-                    x = x /  norm_
-                plt.plot(x - 1.2 * i_key)
-                leg.append(key.split('_')[0])
-                
-                #print(key, x_min, x_max)
-                
-        plt.legend(leg)
-        plt.yticks([])
-    except FileNotFoundError:
-        pass
-    
-    #fig1.savefig(os.path.join(figs_path, 'fig22.pdf'), dpi=300, format='pdf')
+    figs_path = '/Users/omarschall/weekly-reports/report_10-29-2020/figs'
+    comp_data_path = os.path.join(local_results, compare_job_name, 'result_0')
     data_path = os.path.join(local_results, analysis_job_name)
     indices, checkpoints = unpack_analysis_results(data_path)
-    #checkpoints = {k:result[k] for k in result.keys() if 'checkpoint' in k}
-    
-    ### come up with graph metric that uses the alignment
-    # do output gradient norms spike after topological changes
-    # cross correlograms of different statistics
-    # correct by magnitude of error signal
-    # come up with statistical summary tests that actually test hypothesises
-    # might need more interesting task if we can only test rudimentary hypohessis with it
-    # do different algorithms have diff
-    # just before a phase transition, i have an expectated gradient direction and variance
-    # how often do you actually get to this state transition? is it mean or flunctuations
-    # maybe phase transitions are actually smooth, geometry isn't acutally affected that much
-    # for a gradient of the same size, do we get bigger fluctuations in network dynamics than i would expec
-    # during a phse transition?
-    # how do we make this conversation scale-invariant, both in terms of gradient norm
-    # and norm of network dynamics geomoetrical changes
-    
     node_distances = []
     losses = []
     #grad_norms = []
@@ -470,37 +445,96 @@ if MODE == 'PLOT':
         rec_params.append(params)
         #grad_norms.append(norm(checkpoint['learn_alg'].rec_grads))
     losses = np.array(losses)
+    rec_params = np.array(rec_params)
+    norms = np.square(rec_params[1:] - rec_params[:-1]).sum(1)
     node_distances = np.array(node_distances)
+    
+    #collect all signals
+    signals = {'losses': losses, 'node_distances': node_distances, 'norms': norms}
+    try:
+        with open(comp_data_path, 'rb') as f:
+            result = pickle.load(f)
+    
+        for i_key, key in enumerate(result.keys()):
+            
+            if 'distances' in key or 'participation' in key:
+                
+                x = np.diag(result[key][:-1,1:])
+                signals[key] = x.copy()
+
+    except FileNotFoundError:
+        pass
+    
+    #Plot all signals
+    
+    fig1 = plt.figure(figsize=(10,10))
+    leg = []
+    for i_key, key in enumerate(signals):
+        
+        x = signals[key].copy()
+        
+        x_max = np.amax(x)
+        x_min = np.amin(x)
+        x = (x - x_min) / (x_max - x_min)
+        
+        plt.plot(x - 1.2 * i_key)
+        leg.append(key)
+                
+    plt.legend(leg)
+    plt.yticks([])
+        
+    #fig1.savefig(os.path.join(figs_path, 'fig22.pdf'), dpi=300, format='pdf')
+
+    #checkpoints = {k:result[k] for k in result.keys() if 'checkpoint' in k}
+    
+    ### come up with graph metric that uses the alignment
+    # do output gradient norms spike after topological changes
+    # cross correlograms of different statistics
+    # correct by magnitude of error signal
+    # come up with statistical summary tests that actually test hypothesises
+    # might need more interesting task if we can only test rudimentary hypohessis with it
+    # do different algorithms have diff
+    # just before a phase transition, i have an expectated gradient direction and variance
+    # how often do you actually get to this state transition? is it mean or flunctuations
+    # maybe phase transitions are actually smooth, geometry isn't acutally affected that much
+    # for a gradient of the same size, do we get bigger fluctuations in network dynamics than i would expec
+    # during a phse transition?
+    # how do we make this conversation scale-invariant, both in terms of gradient norm
+    # and norm of network dynamics geomoetrical changes
+    
+
     #grad_norms = np.array(grad_norms)
     
     
     data = task.gen_data(100, 10000)
     # sparse_inputs_task = Flip_Flop_Task(task.n_bit, 0.001)
     
-    i_checkpoint = 99900
+    i_checkpoint = 19990
     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
     transform = Vanilla_PCA(checkpoint, data)
     ssa_2 = State_Space_Analysis(checkpoint, data, transform=transform)
     ssa_2 = plot_checkpoint_results(checkpoint, data, ssa=ssa_2,
-                                    plot_cluster_means=True,
+                                    plot_cluster_means=False,
                                     eig_norm_color=False,
-                                    plot_test_points=True,
+                                    plot_test_points=False,
                                     plot_fixed_points=False,
                                     plot_graph_structure=True,
                                     n_test_samples=None,
-                                    graph_key='adjmat_input_3')
+                                    graph_key='adjacency_matrix')
     
         
-    # fig2 = plot_output_from_checkpoint(checkpoint, data, n_PCs=3)
+    fig2 = plot_output_from_checkpoint(checkpoint, data, n_PCs=3)
 
-    plot_input_dependent_topology(checkpoint, i_input=None)
+    # for i_checkpoint in range(4900, 5000, 10):
+    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
+    #     plot_input_dependent_topology(checkpoint, i_input=None)
 
     # indices = list(range(10000, 50000, 1000)) + [80000, 200000, 500000, 999000]
     # indices = list(range(0, 10000, 10))
     
-    # for i_checkpoint in range(9000, 9100, 10):
+    # for i_checkpoint in range(8000, 8100, 10):
     #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     ref_checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint - 100)]
+    #     ref_checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint - 10)]
     #     #plot_input_dependent_topology(checkpoint, i_input=None)
     #     fig, ax = plt.subplots(2, 2)
     #     ax[0, 0].imshow(ref_checkpoint['adjmat_input_0'])
@@ -561,36 +595,79 @@ if MODE == 'PLOT':
     # lesioning neurons?
     # shallow minima, find basins of attraction that are robust. Are topologoical
     # strucutres signifiers of robustness?
+    
+    #make sure effective learning rates are comparable between algorithms
+    #on aveage, what is the alignment with the "proper" gradient to get a measurement
+    # of actual learning rate
+    #with high dimsnioanl space and stochasicity, can ahve effectively much lower learning rate
+    #potential argument about classes of learning algorithms best for learning tasks with
+    # slow/fixed point structure andor memeory
+    #look at offsets for aligning rflo and KE gradients, get snapshots of these values
+    # and do proper correlation
+    
+    # need more mixing of algorithms, maybe stop at checkpoints along way,
+    # try stupider algorithm
+    # perturbation vs. error-based
+    # pitch both as potential models for biolgical learning
+    # stability problems in messing up good solution vs. notbeing able to find
+    # solution to begin with
+    # find checkpoint where RFLO alrady stabilizes, run REINFORCE for rest
+    # of run
+
+
+    #could just be variance of gradients kicking you out of small basins of
+    #attraction in parameter space
+    
+    #different biological approximations suitable for different tasks
+    #1-1 comparison of with and without noise within RFLO, both input noise
+    #and intrinsic noise
+    #knobs for signal to noise of inputs and of intrinsic noise
+    #flip flop task with delays could be a mix of the two tasks
+    
+    #pitch: different learning algorithms have differetn capabilities of learning
+    #"dynamical" systems or "memory"-based tasks
+    # robustness of representation with 
+    #REINFORCE doesn't learn memory stuff
+    #noise in forward pass
 
     #figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
     #ssa_2.fig.savefig(os.path.join(figs_path, 'fig16.pdf'), dpi=300, format='pdf')
 
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
-
-    rnn = sim.checkpoints[N_train - 1]['rnn']
-    test_sim = Simulation(rnn)
-    test_sim.run(data,
-                  mode='test',
-                  monitors=['rnn.loss_', 'rnn.y_hat', 'rnn.a'],
-                  verbose=False)
-
-    plt.figure()
-    plt.plot(data['test']['X'][:, 0] + 2.5, (str(0.6)), linestyle='--')
-    plt.plot(data['test']['Y'][:, 0] + 2.5, 'C0')
-    plt.plot(test_sim.mons['rnn.y_hat'][:, 0] + 2.5, 'C3')
-    plt.plot(data['test']['X'][:, 1], (str(0.6)), linestyle='--')
-    plt.plot(data['test']['Y'][:, 1], 'C0')
-    plt.plot(test_sim.mons['rnn.y_hat'][:, 1], 'C3')
-    plt.plot(data['test']['X'][:, 2] - 2.5, (str(0.6)), linestyle='--')
-    plt.plot(data['test']['Y'][:, 2] - 2.5, 'C0')
-    plt.plot(test_sim.mons['rnn.y_hat'][:, 2] - 2.5, 'C3')
-    plt.xlim([0, 100])
-    plt.yticks([])
-    plt.xlabel('time steps')
     
-    plt.figure()
-    for key in monitors:
-        plt.plot(sim.mons[key])
+    
+    i_checkpoint = max(sim.checkpoints.keys())
+    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], data, n_PCs=rnn.n_out)
+    i_checkpoint = max(noisy_sim.checkpoints.keys())
+    plot_output_from_checkpoint(noisy_sim.checkpoints[N_train - 1], data, n_PCs=rnn.n_out)
+    
+    # rnn = sim.checkpoints[N_train - 1]['rnn']
+    # test_sim = Simulation(rnn)
+    # test_sim.run(data,
+    #               mode='test',
+    #               monitors=['rnn.loss_', 'rnn.y_hat', 'rnn.a'],
+    #               verbose=False)
+
+    # plt.figure()
+    # plt.plot(data['test']['X'][:, 0] + 2.5, (str(0.6)), linestyle='--')
+    # plt.plot(data['test']['Y'][:, 0] + 2.5, 'C0')
+    # plt.plot(test_sim.mons['rnn.y_hat'][:, 0] + 2.5, 'C3')
+    # plt.plot(data['test']['X'][:, 1], (str(0.6)), linestyle='--')
+    # plt.plot(data['test']['Y'][:, 1], 'C0')
+    # plt.plot(test_sim.mons['rnn.y_hat'][:, 1], 'C3')
+    # try:
+    #     plt.plot(data['test']['X'][:, 2] - 2.5, (str(0.6)), linestyle='--')
+    #     plt.plot(data['test']['Y'][:, 2] - 2.5, 'C0')
+    #     plt.plot(test_sim.mons['rnn.y_hat'][:, 2] - 2.5, 'C3')
+    # except IndexError:
+    #     pass
+    # plt.xlim([0, 100])
+    # plt.yticks([])
+    # plt.xlabel('time steps')
+    
+    # plt.figure()
+    # for key in monitors:
+    #     plt.plot(sim.mons[key])
     
 
 if os.environ['HOME'] == '/home/oem214':

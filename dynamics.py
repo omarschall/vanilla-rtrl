@@ -32,7 +32,7 @@ import torch
 
 ### --- WRAPPER METHODS --- ###
 
-def get_test_sim_data(checkpoint, test_data):
+def get_test_sim_data(checkpoint, test_data, sigma=0):
     """Get hidden states from a test run for a given checkpoint"""
 
     rnn = deepcopy(checkpoint['rnn'])
@@ -40,7 +40,8 @@ def get_test_sim_data(checkpoint, test_data):
     test_sim.run(test_data, mode='test',
                  monitors=['rnn.a'],
                  verbose=False,
-                 a_initial=rnn.a.copy())
+                 a_initial=rnn.a.copy(),
+                 sigma=sigma)
 
     return test_sim.mons['rnn.a']
 
@@ -59,6 +60,7 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
                        same_LR_criterion=5000, N=200,
                        n_PCs=3, context=None,
                        reference_checkpoint=None,
+                       sigma=0,
                        **kwargs):
 
     print('Analyzing checkpoint {}...'.format(checkpoint['i_t']))
@@ -68,9 +70,10 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
     test_sim.run(data,
                   mode='test',
                   monitors=['rnn.loss_', 'rnn.y_hat', 'rnn.a'],
-                  verbose=False)
+                  verbose=False,
+                  sigma=sigma)
 
-    transform = Vanilla_PCA(checkpoint, data, n_PCs=n_PCs)
+    transform = Vanilla_PCA(checkpoint, data, n_PCs=n_PCs, sigma=sigma)
     V = transform(np.eye(rnn.n_h))
 
     fixed_points, initial_states = find_KE_minima(checkpoint, data, N=N,
@@ -124,10 +127,10 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
 
 ### --- ANALYSIS METHODS --- ###
 
-def Vanilla_PCA(checkpoint, test_data, n_PCs=3):
+def Vanilla_PCA(checkpoint, test_data, n_PCs=3, sigma=0):
     """Return first n_PCs PC axes of the test """
 
-    test_a = get_test_sim_data(checkpoint, test_data)
+    test_a = get_test_sim_data(checkpoint, test_data, sigma=sigma)
     U, S, V = np.linalg.svd(test_a)
 
     checkpoint['participation_coef'] = np.square(S.sum()) / np.square(S).sum()
@@ -286,7 +289,7 @@ def find_KE_minimum(rnn, LR=1e-2, N_iters=1000000,
 
 def run_autonomous_sim(a_initial, rnn, N, monitors=[],
                        return_final_state=False, input_pulse=None,
-                       background_input=0):
+                       background_input=0, sigma=0):
     """Creates and runs a test simulation with no inputs and a specified
     initial state of the network."""
 
@@ -303,7 +306,8 @@ def run_autonomous_sim(a_initial, rnn, N, monitors=[],
     sim = Simulation(rnn)
     sim.run(data, mode='test', monitors=monitors,
             a_initial=rnn.a,
-            verbose=False)
+            verbose=False,
+            sigma=sigma)
 
     if return_final_state:
         return sim.rnn.a.copy()
@@ -312,7 +316,8 @@ def run_autonomous_sim(a_initial, rnn, N, monitors=[],
 
 def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
                         parallelize=True, key='adjacency_matrix',
-                        input_pulse=None, background_input=0, nodes=None):
+                        input_pulse=None, background_input=0, nodes=None,
+                        sigma=0):
     """For each fixed point cluster, runs an autonomous simulation with
     initial condition in small small neighborhood of a point and evaluates
     where it ends up."""
@@ -334,7 +339,8 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
             func_ = partial(run_autonomous_sim, rnn=rnn, N=time_steps,
                             monitors=[], return_final_state=True,
                             input_pulse=input_pulse,
-                            background_input=background_input)
+                            background_input=background_input,
+                            sigma=sigma)
             #set_trace()
             with mp.Pool(mp.cpu_count()) as pool:
                 final_states = pool.map(func_, a_init)
@@ -358,7 +364,8 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
             func_ = partial(run_autonomous_sim, rnn=rnn, N=time_steps,
                             monitors=[], return_final_state=True,
                             input_pulse=input_pulse,
-                            background_input=background_input)
+                            background_input=background_input,
+                            sigma=sigma)
             #set_trace()
             final_states = []
             for a_init_ in a_init:
@@ -380,7 +387,8 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
 def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
                                         parallelize=False,
                                         nodes_matrix=None,
-                                        node_thresh=0.05):
+                                        node_thresh=0.05,
+                                        sigma=0):
     """After running get_graph_structure, this can be used to find input-
     dependent transition probabilities between stable nodes.
     
@@ -407,7 +415,8 @@ def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
                                                    parallelize=parallelize,
                                                    key=key,
                                                    input_pulse=x,
-                                                   nodes=nodes)
+                                                   nodes=nodes,
+                                                   sigma=sigma)
         else:
             key = 'adjmat_input_{}_context_{}'.format(i_x // len(inputs),
                                                       i_x % len(inputs))
@@ -417,7 +426,8 @@ def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
                                                    key=key,
                                                    input_pulse=x[0],
                                                    background_input=x[1],
-                                                   nodes=nodes)
+                                                   nodes=nodes,
+                                                   sigma=sigma)
 
 
 def SVCCA_distance(checkpoint_1, checkpoint_2, data, R=3):

@@ -172,24 +172,25 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
 
     return ssa
 
-def plot_output_from_checkpoint(checkpoint, data, n_PCs=3):
+def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, sigma=0):
     
     rnn = checkpoint['rnn']
     test_sim = Simulation(rnn)
     test_sim.run(data,
                   mode='test',
                   monitors=['rnn.loss_', 'rnn.y_hat'],
-                  verbose=False)
+                  verbose=False,
+                  sigma=sigma)
 
-    fig = plt.figure()
-    plt.plot(data['test']['X'][:, 0] + 3.5, (str(0.6)), linestyle='--')
+    fig = plt.figure(figsize=(3, 2))
+    plt.plot(data['test']['X'][:, 0] + 3.5, (str(0.6)))#, linestyle='--')
     plt.plot(data['test']['Y'][:, 0] + 3.5, 'C0')
     plt.plot(test_sim.mons['rnn.y_hat'][:, 0] + 3.5, 'C3')
-    plt.plot(data['test']['X'][:, 1], (str(0.6)), linestyle='--')
+    plt.plot(data['test']['X'][:, 1], (str(0.6)))#, linestyle='--')
     plt.plot(data['test']['Y'][:, 1], 'C0')
     plt.plot(test_sim.mons['rnn.y_hat'][:, 1], 'C3')
     if n_PCs == 3:
-        plt.plot(data['test']['X'][:, 2] - 3.5, (str(0.6)), linestyle='--')
+        plt.plot(data['test']['X'][:, 2] - 3.5, (str(0.6)))#, linestyle='--')
         plt.plot(data['test']['Y'][:, 2] - 3.5, 'C0')
         plt.plot(test_sim.mons['rnn.y_hat'][:, 2] - 3.5, 'C3')
     plt.xlim([0, 500])
@@ -199,7 +200,7 @@ def plot_output_from_checkpoint(checkpoint, data, n_PCs=3):
     return fig
 
 def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
-                                  i_input=None, plotting_noise=0.03,
+                                  i_input=None, plotting_noise=0.05,
                                   return_fig=False):
     
     n_nodes = checkpoint['nodes'].shape[0]
@@ -218,7 +219,7 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
     #plot little circles
     theta = np.arange(0, 2 * np.pi, 0.01)
     for node in circle_nodes:
-        plt.plot(node[0] + 0.15 * np.cos(theta), node[1] + 0.15 * np.sin(theta),
+        plt.plot(node[0] + 0.18 * np.cos(theta), node[1] + 0.18 * np.sin(theta),
                  color=('0.6'))
 
     
@@ -259,17 +260,22 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
             end = circle_nodes[j] + np.random.normal(0, plotting_noise, 2)
             
             plt.plot([start[0], end[0]],
-                     [start[1], end[1]],
-                     color='C{}'.format(i_color), alpha=weight,
-                     linestyle=linestyle)
+                      [start[1], end[1]],
+                      color='C{}'.format(i_color), alpha=weight,
+                      linestyle=linestyle)
             
             plt.plot([start[0]],
-                     [start[1]], 'x',
-                     color='C{}'.format(i_color), alpha=weight)
+                      [start[1]], 'x',
+                      color='C{}'.format(i_color), alpha=weight)
             
             plt.plot([end[0]],
-                     [end[1]], '.',
-                     color='C{}'.format(i_color), alpha=weight)
+                      [end[1]], '.',
+                      color='C{}'.format(i_color), alpha=weight)
+            
+            # plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1],
+            #           color='C{}'.format(i_color), alpha=weight,
+            #           head_width=0.025, head_length=0.05,
+            #           linestyle=linestyle)
         
     plt.xlim([-1.4, 1.4])
     plt.ylim([-1.4, 1.4])
