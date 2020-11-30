@@ -17,6 +17,7 @@ except ModuleNotFoundError:
 from optimizers import *
 from analysis_funcs import *
 from learning_algorithms import *
+from meta_algorithm import *
 from functions import *
 from itertools import product
 import os
@@ -83,11 +84,10 @@ rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
           loss=mean_squared_error)
 
 
-optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=10)
+optimizer = Private_LR_SGD(rnn)
+meta_optimizer = Stochastic_Gradient_Descent(lr=0.001)
 learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-
-#TODO list
-#
+meta_learn_alg = Meta_Learning_Algorithm(rnn)
 
 comp_algs = []
 monitors = []

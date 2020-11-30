@@ -122,7 +122,8 @@ class Simulation:
                           'update_interval', 'comp_algs', 'verbose',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
-                          'overwrite_checkpoints', 'i_start', 'i_end'}
+                          'overwrite_checkpoints', 'i_start', 'i_end'
+                          'outer_loop', 'meta_learn_alg', 'meta_optimizer'}
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -147,6 +148,7 @@ class Simulation:
         self.i_start = 0
         self.i_end = self.total_time_steps
         self.sigma = 0
+        self.outer_loop = False
 
         #Overwrite defaults with any provided keyword args
         self.__dict__.update(kwargs)
@@ -178,7 +180,11 @@ class Simulation:
 
             if self.mode == 'train':
                 self.train_step()
-
+                
+            ### --- Update optimizer params if 'outer_loop' is true --- ###
+            if self.outer_loop:
+                self.meta_train_step()
+            
             ### --- Clean up --- ###
 
             self.end_time_step(data)
@@ -296,6 +302,27 @@ class Simulation:
             rnn.params = self.optimizer.get_updated_params(rnn.params,
                                                            self.grads_list)
             rnn.W_rec, rnn.W_in, rnn.b_rec, rnn.W_out, rnn.b_out = rnn.params
+            
+    def meta_train_step(self):
+        """Uses self.learn_alg to calculate gradients and self.optimizer to
+        apply them to self.rnn. Also calculates gradients from comparison
+        algorithms."""
+
+        ### --- Calculate gradients --- ###
+
+        #Pointer for convenience
+        opt = self.optimizer
+
+        #Update learn_alg variables and get gradients
+        self.meta_learn_alg.update_learning_vars()
+        self.meta_grads_list = self.meta_learn_alg()
+
+        #Only update on schedule (default update_interval=1)
+        if self.i_t%self.update_interval == 0:
+            #Get updated parameters
+            opt.params = self.meta_optimizer.get_updated_params(opt.params,
+                                                                self.meta_grads_list)
+            self.optimizer.lr = opt.params
 
     def end_time_step(self, data):
         """Cleans up after each time step in the time loop."""

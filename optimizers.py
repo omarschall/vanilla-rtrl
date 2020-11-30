@@ -214,17 +214,24 @@ class Private_LR_SGD(Optimizer):
     """Implements basic stochastic gradient descent optimizer.
 
     Attributes:
-        lr (float): learning rate."""
+        lr (float): list of array shaped learning rates."""
 
-    def __init__(self, rnn, init_lr=None, **kwargs):
+    def __init__(self, rnn, init_lr=0.1, **kwargs):
 
         allowed_kwargs_ = set()
         super().__init__(allowed_kwargs_, **kwargs)
 
-        if init_lr is not None:
+        if type(init_lr) is list:
+            lr_shapes = [lr_.shape for lr_ in lr]
+            assert lr_shapes == rnn.shapes
             self.lr = lr
+        elif type(init_lr) in [int, float]:
+            self.lr = [init_lr * np.ones(s) for s in rnn.shapes]
         else:
-            self.lr = 0.1 * rnn
+            raise ValueError('init_lr must be list of arrays matching RNN' +
+                             'dimension or numeric')
+            
+        self.params = self.lr
 
     def get_updated_params(self, params, grads):
         """Returns a list of updated parameter values (NOT the change in value).
@@ -236,8 +243,8 @@ class Private_LR_SGD(Optimizer):
             updated_params (list): List of newly updated parameters."""
             
         updated_params = []
-        for param, grad in zip(params, grads):
-            updated_params.append(param - self.lr * grad)
+        for param, grad, lr_ in zip(params, grads, self.lr):
+            updated_params.append(param - lr_ * grad)
 
         return updated_params
     
