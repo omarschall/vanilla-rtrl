@@ -50,34 +50,29 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'algorithm': 'RFLO', 'name': 'dense3'}
+    params = {'name': 'seq_reg'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
-np.random.seed(3)
+np.random.seed(0)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
-#task = Add_Task(t_1=3, t_2=5, deterministic=True)
-N_train = 20000
+N_train = 5000
 N_test = 5000
 checkpoint_interval = None
-sigma = 0.2
 name = params['name']
-file_name = '{}_{}'.format(name, params['algorithm'])
-analysis_job_name = '{}_{}'.format(name, params['algorithm'])
-compare_job_name = 'comp_' + analysis_job_name
-figs_path = '/Users/omarschall/career-stuff/conferences/cosyne_2020/figs'
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
+file_name = '{}'.format(name)
+analysis_job_name = '{}'.format(name)
+wcompare_job_name = 'comp_' + analysis_job_name
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][1]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
 """ -----------------------------------------"""
 
 if MODE == 'TRAIN': #Do this locally
-
-    data = task.gen_data(N_train, N_test)
     
     n_in = task.n_in
-    n_hidden = 32
+    n_hidden = 512
     n_out = task.n_out
     W_in  = np.random.normal(0, np.sqrt(1/(n_in)), (n_hidden, n_in))
     #W_rec = np.linalg.qr(np.random.normal(0, 1, (n_hidden, n_hidden)))[0]
@@ -88,7 +83,7 @@ if MODE == 'TRAIN': #Do this locally
     b_out = np.zeros(n_out)
     
     alpha = 1
-    sigma = 0.2
+    sigma = 0
     
     rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
               activation=tanh,
@@ -96,31 +91,20 @@ if MODE == 'TRAIN': #Do this locally
               output=identity,
               loss=mean_squared_error)
     
-    optimizer = SGD_Momentum(lr=-0.01, mu=0.6, clip_norm=None)
-    #optimizer = Stochastic_Gradient_Descent(lr=0.005)
-    if params['algorithm'] == 'E-BPTT':
-        learn_alg = Efficient_BPTT(rnn, 5, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'RFLO':
-        learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'RTRL':
-        learn_alg = RTRL(rnn, M_decay=1, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'REIN':
-        learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.0001, L1_reg=0.0001,
-                              decay=0.01, loss_decay=0.01)
-    elif params['algorithm'] == 'KF-RTRL':
-        learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'UORO':
-        learn_alg = UORO(rnn, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'DNI':
-        sg_optimizer = Stochastic_Gradient_Descent(lr=0.01)
-        learn_alg = DNI(rnn, sg_optimizer, L2_reg=0.0001, L1_reg=0.0001)
-    elif params['algorithm'] == 'Only_Output_Weights':
-        learn_alg = Only_Output_Weights(rnn)
+    #optimizer = SGD_Momentum(lr=0.01, mu=0.6, clip_norm=None)
+    learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
     
-    #comp_algs = [RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg = 0.0001)]
     comp_algs = []
-    #monitors = ['alignment_matrix']
-    monitors = []
+    monitors = ['rnn.a', 'rnn.x']
+    
+
+    ### --- SIMULATION 1 --- ####    
+
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,0,0])
+    data = task.gen_data(N_train, N_test)
+    proj_data = task.gen_data(0, 800)
+    
+    optimizer = Stochastic_Gradient_Descent(lr=0.01, clip_norm=None)
     
     sim = Simulation(rnn)
     sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -132,45 +116,82 @@ if MODE == 'TRAIN': #Do this locally
             report_loss=True,
             checkpoint_interval=checkpoint_interval)
     
-    # with open(os.path.join('saved_runs', file_name), 'wb') as f:
-    #     pickle.dump(sim, f)
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
+    test_data = task.gen_data(N_train, N_test)
     
-    # N_train = 50000
-    # N_test = 5000
-    # data = task.gen_data(N_train, N_test)
-    # #sigma_ = np.sqrt(24 * 3) * sigma
-    # learn_alg = REINFORCE(rnn, sigma=sigma, L2_reg=0.001, L1_reg=0.001, decay=0.1)
-    # #learn_alg = Random_Noise_Gradients(rnn, sigma=0.007)
-    # #optimizer = SGD_Momentum(lr=0.001, mu=0.6, clip_norm=None)
-    # optimizer = Stochastic_Gradient_Descent(lr=0.005)
+    i_checkpoint = max(sim.checkpoints.keys())
+    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
     
-    # comp_algs = [RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg = 0.0001)]
-    # monitors = ['alignment_matrix']
-    
-    # noisy_sim = Simulation(rnn)
-    # noisy_sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
-    #               sigma=sigma,
-    #               comp_algs=comp_algs,
-    #               monitors=monitors,
-    #               verbose=True,
-    #               report_accuracy=False,
-    #               report_loss=True,
-    #               checkpoint_interval=checkpoint_interval)
-    
-    # with open(os.path.join('saved_runs', '{}_{}'.format(name, 'REIN')), 'wb') as f:
-    #     pickle.dump(noisy_sim, f)
-    
-    # if True:
-    #     sim_ = Simulation(rnn)
-    #     sim_ = linearly_interpolate_checkpoints(sim_,
-    #                                             start_checkpoint=sim.checkpoints[0],
-    #                                             end_checkpoint=sim.checkpoints[99000],
-    #                                             density=100)
-        
+    test_sim = Simulation(rnn)
+    test_sim.run(proj_data, mode='test', monitors=monitors, verbose=False)
 
-        
-    # with open(os.path.join('saved_runs', 'interp_RFLO'), 'wb') as f:
-    #     pickle.dump(sim_, f)
+    P_z, P_wz, P_h, P_y = get_Duncker_projections(test_sim.mons['rnn.a'],
+                                                  test_sim.mons['rnn.x'],
+                                                  rnn)
+    
+    #P_z, P_wz, P_h, P_y = np.eye(rnn.n_h + rnn.n_in + 1), np.eye(rnn.n_h), np.eye(rnn.n_h + 1), np.eye(rnn.n_out)
+    
+    ### --- SIMULATION 2 --- ####    
+    
+    #Create data
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[0,1,0])
+    data = task.gen_data(N_train, N_test)
+    
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
+    test_data = task.gen_data(N_train, N_test)
+    proj_data = task.gen_data(0, 800)
+    
+    optimizer = SGD_With_Projections(lr=0.01, rec_proj_mats=[P_wz, P_z],
+                                     out_proj_mats=[P_y, P_h])
+    
+    sim = Simulation(rnn)
+    sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
+            sigma=sigma,
+            comp_algs=comp_algs,
+            monitors=monitors,
+            verbose=True,
+            report_accuracy=False,
+            report_loss=True,
+            checkpoint_interval=checkpoint_interval)
+    
+    i_checkpoint = max(sim.checkpoints.keys())
+    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
+    
+    test_sim_2 = Simulation(rnn)
+    test_sim_2.run(proj_data, mode='test', monitors=monitors, verbose=False)
+
+    P_z, P_wz, P_h, P_y = get_Duncker_projections(test_sim_2.mons['rnn.a'],
+                                                  test_sim_2.mons['rnn.x'],
+                                                  rnn)
+    
+    ### --- SIMULATION 3 --- ####    
+    
+    #Create data
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[0,0,1])
+    data = task.gen_data(N_train, N_test)
+    
+    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,1])
+    test_data = task.gen_data(N_train, N_test)
+    
+    optimizer = SGD_With_Projections(lr=0.01, rec_proj_mats=[P_wz, P_z],
+                                     out_proj_mats=[P_y, P_h])
+    
+    sim = Simulation(rnn)
+    sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
+            sigma=sigma,
+            comp_algs=comp_algs,
+            monitors=monitors,
+            verbose=True,
+            report_accuracy=False,
+            report_loss=True,
+            checkpoint_interval=checkpoint_interval)
+    
+    i_checkpoint = max(sim.checkpoints.keys())
+    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
+    
+    with open(os.path.join('saved_runs', file_name), 'wb') as f:
+        pickle.dump(sim, f)
+
 
 """ -----------------------"""
 """ --- QUICK ANALYSIS --- """
@@ -206,7 +227,7 @@ if MODE == 'CHECK':
     print('Time for input graphs: {}'.format(t4 - t3))
     
     #PLOT INPUT
-    i_input = 0
+    i_input = 2
     transform = partial(np.dot, b=checkpoint['V'])
     ssa = State_Space_Analysis(checkpoint, data, transform=transform)
     ssa = plot_checkpoint_results(checkpoint, data, ssa=ssa,
@@ -216,6 +237,7 @@ if MODE == 'CHECK':
                                   plot_fixed_points=True,
                                   plot_graph_structure=True,
                                   n_test_samples=None,
+                                  plot_uncategorized_points=True,
                                   graph_key='adjmat_input_{}'.format(i_input))
     ssa_2 = State_Space_Analysis(checkpoint, data, transform=transform)
     ssa_2 = plot_checkpoint_results(checkpoint, data, ssa=ssa_2,
@@ -482,28 +504,7 @@ if MODE == 'PLOT':
                 
     plt.legend(leg)
     plt.yticks([])
-        
-    #fig1.savefig(os.path.join(figs_path, 'fig22.pdf'), dpi=300, format='pdf')
-
-    #checkpoints = {k:result[k] for k in result.keys() if 'checkpoint' in k}
     
-    ### come up with graph metric that uses the alignment
-    # do output gradient norms spike after topological changes
-    # cross correlograms of different statistics
-    # correct by magnitude of error signal
-    # come up with statistical summary tests that actually test hypothesises
-    # might need more interesting task if we can only test rudimentary hypohessis with it
-    # do different algorithms have diff
-    # just before a phase transition, i have an expectated gradient direction and variance
-    # how often do you actually get to this state transition? is it mean or flunctuations
-    # maybe phase transitions are actually smooth, geometry isn't acutally affected that much
-    # for a gradient of the same size, do we get bigger fluctuations in network dynamics than i would expec
-    # during a phse transition?
-    # how do we make this conversation scale-invariant, both in terms of gradient norm
-    # and norm of network dynamics geomoetrical changes
-    
-
-    #grad_norms = np.array(grad_norms)
     
     
     data = task.gen_data(100, 10000)
@@ -525,121 +526,18 @@ if MODE == 'PLOT':
         
     fig2 = plot_output_from_checkpoint(checkpoint, data, n_PCs=3)
 
-    # for i_checkpoint in range(4900, 5000, 10):
-    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     plot_input_dependent_topology(checkpoint, i_input=None)
 
-    # indices = list(range(10000, 50000, 1000)) + [80000, 200000, 500000, 999000]
-    # indices = list(range(0, 10000, 10))
-    
-    # for i_checkpoint in range(8000, 8100, 10):
-    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     ref_checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint - 10)]
-    #     #plot_input_dependent_topology(checkpoint, i_input=None)
-    #     fig, ax = plt.subplots(2, 2)
-    #     ax[0, 0].imshow(ref_checkpoint['adjmat_input_0'])
-    #     ax[0, 1].imshow(checkpoint['adjmat_input_0'])
-    #     ax[1, 0].imshow(ref_checkpoint['forwardshared_adjmat_input_0'])
-    #     ax[1, 1].imshow(checkpoint['backshared_adjmat_input_0'])
-
-    # for i_checkpoint in indices:
-    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     fig = plot_input_dependent_topology(checkpoint, i_input=None, return_fig=True)
-    #     fig.savefig(os.path.join(figs_path, 'Fig_{}.pdf'.format(i_checkpoint)), dpi=300, format='pdf')
-        
-        
-    
-    # with open(os.path.join(figs_path, 'tex_tex.txt'), 'w') as f:
-    #     for i_index in range(0, len(indices), 4):
-    #         i_checkpoints = [indices[i_index],
-    #                           indices[i_index + 1],
-    #                           indices[i_index + 2],
-    #                           indices[i_index + 3]]
-    #         f.write('\\begin{figure}[h]\n' +
-    #                 '\\center\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[0]) + 
-    #                 '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[1]) + 
-    #                 '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[2]) + 
-    #                 '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}\n'.format(i_checkpoints[3]) + 
-    #                 '\\end{figure}\n')
-     
-    # for i_checkpoint in indices:
-    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     fig = plot_input_dependent_topology(checkpoint, i_input=None, return_fig=True)
-    #     fig.savefig(os.path.join(figs_path, 'Fig_{}.pdf'.format(i_checkpoint)), dpi=300, format='pdf')
-        
-    #put_topolgoies_in_tex_script(indices, figs_path)
-
-    # meeting notes
-    # kep track of node diff penalty as separate metric
-    # do cross corr properly
-    # comparison of learning rates
-    # vary magnitude of inputs
-        
-    # only really one solution to flip flop task
-    # problem with two different solutions? will different learning algs
-    # find diff solutions? which stages of learning matter most if you switch
-    # algs?
-    # compute hessian exactly to assess local minima
-    
-        # assess robustness to slightly different task configs
-    # study REINFORCE or simlar things even as it fails
-    # what are computational limitations of different bio plausible learning algorithms
-    # if stochastic gradients not  learning, what do metrics or kinetic energy
-    # or whatever reveal about their shortcomings
-    # can topological space show what makes one algorithm better or worse than
-    # another?
-    # at asymptoptic performance, do gradient directions matter for preserving
-    # topology or is it just about their norms being small?
-    # can otherwise identical topologies be compared w.r.t. robustness to perturbations?
-    # perturbations both to weight confirugartions and also input magnitudes.
-    # lesioning neurons?
-    # shallow minima, find basins of attraction that are robust. Are topologoical
-    # strucutres signifiers of robustness?
-    
-    #make sure effective learning rates are comparable between algorithms
-    #on aveage, what is the alignment with the "proper" gradient to get a measurement
-    # of actual learning rate
-    #with high dimsnioanl space and stochasicity, can ahve effectively much lower learning rate
-    #potential argument about classes of learning algorithms best for learning tasks with
-    # slow/fixed point structure andor memeory
-    #look at offsets for aligning rflo and KE gradients, get snapshots of these values
-    # and do proper correlation
-    
-    # need more mixing of algorithms, maybe stop at checkpoints along way,
-    # try stupider algorithm
-    # perturbation vs. error-based
-    # pitch both as potential models for biolgical learning
-    # stability problems in messing up good solution vs. notbeing able to find
-    # solution to begin with
-    # find checkpoint where RFLO alrady stabilizes, run REINFORCE for rest
-    # of run
-
-
-    #could just be variance of gradients kicking you out of small basins of
-    #attraction in parameter space
-    
-    #different biological approximations suitable for different tasks
-    #1-1 comparison of with and without noise within RFLO, both input noise
-    #and intrinsic noise
-    #knobs for signal to noise of inputs and of intrinsic noise
-    #flip flop task with delays could be a mix of the two tasks
-    
-    #pitch: different learning algorithms have differetn capabilities of learning
-    #"dynamical" systems or "memory"-based tasks
-    # robustness of representation with 
-    #REINFORCE doesn't learn memory stuff
-    #noise in forward pass
-
-    #figs_path = '/Users/omarschall/weekly-reports/report_08-19-2020/figs'
-    #ssa_2.fig.savefig(os.path.join(figs_path, 'fig16.pdf'), dpi=300, format='pdf')
 
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
     
+    pass
+    # task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
+    # data = task.gen_data(N_train, N_test)
     
-    i_checkpoint = max(sim.checkpoints.keys())
-    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], data, n_PCs=rnn.n_out)
-    i_checkpoint = max(noisy_sim.checkpoints.keys())
-    plot_output_from_checkpoint(noisy_sim.checkpoints[N_train - 1], data, n_PCs=rnn.n_out)
+    # i_checkpoint = max(sim.checkpoints.keys())
+    # plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], data, n_PCs=rnn.n_out)
+    #i_checkpoint = max(noisy_sim.checkpoints.keys())
+    #plot_output_from_checkpoint(sim.checkpoints[N_train - 1], data, n_PCs=rnn.n_out)
     
     # rnn = sim.checkpoints[N_train - 1]['rnn']
     # test_sim = Simulation(rnn)

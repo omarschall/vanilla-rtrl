@@ -172,7 +172,8 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
 
     return ssa
 
-def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, sigma=0):
+def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, sigma=0,
+                                plot_title=None):
     
     rnn = checkpoint['rnn']
     test_sim = Simulation(rnn)
@@ -196,6 +197,8 @@ def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, sigma=0):
     plt.xlim([0, 500])
     plt.yticks([])
     plt.xlabel('time steps')
+    if plot_title is not None:
+        plt.title(plot_title)
     
     return fig
 

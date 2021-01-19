@@ -18,6 +18,7 @@ from scipy.spatial import distance
 import os, pickle, copy
 from copy import deepcopy
 from sklearn.manifold import MDS
+from itertools import product
 
 ### --- Mathematical tools --- ###
 
@@ -504,5 +505,38 @@ def put_topolgoies_in_tex_script(indices, figs_path):
                     '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}'.format(i_checkpoints[2]) + 
                     '\\includegraphics[width=2.8cm]{{figs/Fig_{}.pdf}}\n'.format(i_checkpoints[3]) + 
                     '\\end{figure}\n')
-    
             
+def concatenate_datasets(data_1, data_2):
+    """Takes in two data dicts of form in gen_data and concatenates the data
+    sequentially in time."""
+    
+    data = {'train': {}, 'test': {}}
+    
+    for dataset, io in product(['train', 'test'], ['X', 'Y']):
+        data[dataset][io] = np.concatenate([data_1[dataset][io],
+                                            data_2[dataset][io]], axis=0)
+        
+    return data
+            
+def get_Duncker_projections(A, X, rnn, inv_constant=0.001):
+    """Get the continual learning projections from Duncker et al. given the
+    data that should be included and the current parameters of the rnn."""
+    
+    m = rnn.n_h + rnn.n_in + 1
+    Z = np.concatenate([A, X, np.ones((A.shape[0], 1))], axis=1).T
+    W = np.concatenate([rnn.W_rec,
+                        rnn.W_in,
+                        rnn.b_rec.reshape((-1, 1))], axis=1)
+    WZ = W.dot(Z)
+    
+    P_z = np.linalg.inv(Z.dot(Z.T)/inv_constant + np.eye(m))
+    P_wz = np.linalg.inv(WZ.dot(WZ.T)/inv_constant + np.eye(rnn.n_h))
+    
+    H = np.concatenate([A, np.ones((A.shape[0], 1))], axis=1).T
+    W_o = np.concatenate([rnn.W_out, rnn.b_out.reshape((-1, 1))], axis=1)
+    WH = W_o.dot(H)
+    
+    P_h = np.linalg.inv(H.dot(H.T)/inv_constant + np.eye(rnn.n_h + 1))
+    P_y = np.linalg.inv(WH.dot(WH.T)/inv_constant + np.eye(rnn.n_out))
+    
+    return P_z, P_wz, P_h, P_y
