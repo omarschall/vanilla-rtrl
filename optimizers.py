@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from utils import split_weight_matrix
 
 class Optimizer:
     """Parent class for gradient-based optimizers."""
@@ -9,7 +10,8 @@ class Optimizer:
     def __init__(self, allowed_kwargs_, **kwargs):
 
         allowed_kwargs = {'lr_decay_rate', 'min_lr',
-                          'clip_norm', 'normalize'}.union(allowed_kwargs_)
+                          'clip_norm', 'normalize',
+                          'rec_proj_mats', 'out_proj_mats'}.union(allowed_kwargs_)
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -57,6 +59,31 @@ class Optimizer:
             return np.max([self.lr_, self.min_lr])
         except AttributeError:
             return self.lr_
+        
+    def calculate_final_updates(self, param_changes):
+        
+        n_h = grads[0].shape[0]
+        n_in = grads[1].shape[1]
+            
+        #Concatenate gradients in relevant directions
+        W_grad = np.concatenate([grads[0], grads[1],
+                                 grads[2].reshape(-1,1)], axis=1)
+        W_out_grad = np.concatenate([grads[3], grads[4].reshape(-1,1)], axis=1)
+        
+        #Project along projection matrices
+        W_grad_proj = self.rec_proj_mats[0].dot(W_grad)
+        W_grad_proj = W_grad_proj.dot(self.rec_proj_mats[1])
+        W_out_grad_proj = self.out_proj_mats[0].dot(W_out_grad)
+        W_out_grad_proj = W_out_grad_proj.dot(self.out_proj_mats[1])
+        
+        delta_W = split_weight_matrix(W_grad_proj, [n_h, n_in, 1])
+        delta_W += split_weight_matrix(W_out_grad_proj, [n_h, 1])
+        
+        updated_params = []
+        for param, param_change in zip(params, param_changes):
+            updated_params.append(param + param_change)
+
+        return updated_params
 
 class Adam(Optimizer):
     
@@ -207,6 +234,61 @@ class SGD_Momentum(Optimizer):
         updated_params = []
         for param, v in zip(params, self.vel):
             updated_params.append(param + v)
+
+        return updated_params
+    
+class SGD_With_Projections(Optimizer):
+    """Implements SGD with specified matrix operations for updates. Only works
+    for Vanilla RNNs."""
+    
+    def __init__(self, lr=0.001, rec_proj_mats=[], out_proj_mats=[], **kwargs):
+
+        allowed_kwargs_ = set()
+        super().__init__(allowed_kwargs_, **kwargs)
+
+        self.lr_ = np.copy(lr)
+        self.lr = lr
+        self.rec_proj_mats = rec_proj_mats
+        self.out_proj_mats = out_proj_mats
+
+    def get_updated_params(self, params, grads):
+        """Returns a list of updated parameter values (NOT the change in value).
+
+        Args:
+            params (list): List of trainable parameters as numpy arrays
+            grads (list): List of corresponding gradients as numpy arrays.
+        Returns:
+            updated_params (list): List of newly updated parameters."""
+
+        if self.lr_decay_rate is not None:
+            self.lr = self.lr_decay()
+
+        if self.clip_norm is not None:
+            grads = self.clip_gradient(grads)
+            
+        if self.normalize:
+            grads = self.normalize_gradient(grads)
+            
+        n_h = grads[0].shape[0]
+        n_in = grads[1].shape[1]
+            
+        #Concatenate gradients in relevant directions
+        W_grad = np.concatenate([grads[0], grads[1],
+                                 grads[2].reshape(-1,1)], axis=1)
+        W_out_grad = np.concatenate([grads[3], grads[4].reshape(-1,1)], axis=1)
+        
+        #Project along projection matrices
+        W_grad_proj = self.rec_proj_mats[0].dot(W_grad)
+        W_grad_proj = W_grad_proj.dot(self.rec_proj_mats[1])
+        W_out_grad_proj = self.out_proj_mats[0].dot(W_out_grad)
+        W_out_grad_proj = W_out_grad_proj.dot(self.out_proj_mats[1])
+        
+        delta_W = split_weight_matrix(W_grad_proj, [n_h, n_in, 1])
+        delta_W += split_weight_matrix(W_out_grad_proj, [n_h, 1])
+        
+        updated_params = []
+        for param, delta_w in zip(params, delta_W):
+            updated_params.append(param - self.lr * delta_w)
 
         return updated_params
     
