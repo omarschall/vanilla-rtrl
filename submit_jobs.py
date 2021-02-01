@@ -19,7 +19,7 @@ def clear_results(job_file, data_path='/Users/omarschall/cluster_results/vanilla
     subprocess.run(['rm', data_dir+'/*_*'])
 
 def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='prince.hpc.nyu.edu'):
+               username='oem214', domain='greene.hpc.nyu.edu'):
 
     job_name = job_file.split('/')[-1].split('.')[0]
     data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
@@ -30,7 +30,7 @@ def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
     subprocess.run(['rsync', '-aav', source_path, data_dir])
 
 def submit_job(job_file, n_array, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='prince.hpc.nyu.edu'):
+               username='oem214', domain='greene.hpc.nyu.edu'):
 
     job_name = job_file.split('/')[-1]#
     data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
@@ -94,6 +94,11 @@ def write_job_file(job_name, py_file_name='main.py',
     job_file = os.path.join(sbatch_path, job_name + '.s')
     log_name = os.path.join('log', job_name)
 
+    command = ('pwd > {}.log; '.format(log_name)
+              + 'date >> {}.log; '.format(log_name)
+              + 'which python >> {}.log; '.format(log_name)
+              + 'python {}\n'.format(py_file_name))
+
     with open(job_file, 'w') as f:
         f.write(
             '#! /bin/bash\n'
@@ -110,13 +115,16 @@ def write_job_file(job_name, py_file_name='main.py',
             + 'SAVEPATH={}library/{}\n'.format(scratch_path, job_name)
             + 'export SAVEPATH\n'
             #+ 'module load python3/intel/3.6.3\n'
-            + 'cd /home/oem214/py3.6.3\n'
-            + 'source py3.6.3/bin/activate\n'
             + 'cd {}\n'.format(scratch_path)
-            + 'pwd > {}.log\n'.format(log_name)
-            + 'date >> {}.log\n'.format(log_name)
-            + 'which python >> {}.log\n'.format(log_name)
-            + 'python {}\n'.format(py_file_name)
+            + 'singularity exec --nv '
+            + '--overlay /scratch/oem214/vanilla-rtrl/pytorch1.7.0-cuda11.0.ext3:ro '
+            + '/scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif '
+            + 'bash -c "source /ext3/env.sh; {}"'.format(command)
+            # + 'pwd > {}.log\n'.format(log_name)
+            # + 'date >> {}.log\n'.format(log_name)
+            # + 'which python >> {}.log\n'.format(log_name)
+            #+ 'cd /home/oem214/py3.6.3\n'
+            #+ 'source py3.6.3/bin/activate\n'=
             )
 
     return job_file

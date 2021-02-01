@@ -517,6 +517,21 @@ def concatenate_datasets(data_1, data_2):
                                             data_2[dataset][io]], axis=0)
         
     return data
+
+def concatenate_simulation_checkpoints(simulations):
+    
+    dicts = [s.checkpoints for s in simulations]
+    
+    ret = dicts.pop(0)
+    
+    for d in dicts:
+        i_t_shift = max(ret.keys()) + 1
+        del ret[i_t_shift - 1]
+        for key in d.keys():
+            ret[key + i_t_shift] = d[key]
+            
+    return ret
+    
             
 def get_Duncker_projections(A, X, rnn, inv_constant=0.001):
     """Get the continual learning projections from Duncker et al. given the

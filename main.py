@@ -39,9 +39,8 @@ if os.environ['HOME'] == '/home/oem214':
     except KeyError:
         i_job = 0
     #macro_configs = config_generator(i_start=list(range(0, 200000, 1000)))
-    macro_configs = config_generator(algorithm=['REIN'],
-                                     name=['dense1'],
-                                     i_start=list(range(0, 20000, 40)))
+    macro_configs = config_generator(name=['seq_reg'],
+                                     i_start=list(range(0, 40000, 1000)))
     #macro_configs = config_generator(algorithm=['RFLO'])
     micro_configs = tuple(product(macro_configs, list(range(n_seeds))))
 
@@ -58,12 +57,13 @@ np.random.seed(0)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
 N_train = 5000
 N_test = 5000
-checkpoint_interval = None
+checkpoint_interval = 100
+sigma = 0.01
 name = params['name']
 file_name = '{}'.format(name)
 analysis_job_name = '{}'.format(name)
-wcompare_job_name = 'comp_' + analysis_job_name
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][1]
+compare_job_name = 'comp_' + analysis_job_name
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
@@ -283,14 +283,16 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     
     #Retrieve data
     with open(os.path.join('saved_runs', file_name), 'rb') as f:
-        sim = pickle.load(f)
+        #sim = pickle.load(f)
+        checkpoints = pickle.load(f)
     
-    for i_checkpoint in range(params['i_start'], params['i_start'] + 40, 10):
+    for i_checkpoint in range(params['i_start'], params['i_start'] + 1000, 100):
 
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
         
-        checkpoint = sim.checkpoints[i_checkpoint]
+        #checkpoint = sim.checkpoints[i_checkpoint]
+        checkpoint = checkpoints[i_checkpoint]
         #checkpoint_flip = deepcopy(checkpoint)
         
         #analyze context 0
@@ -510,17 +512,17 @@ if MODE == 'PLOT':
     data = task.gen_data(100, 10000)
     # sparse_inputs_task = Flip_Flop_Task(task.n_bit, 0.001)
     
-    i_checkpoint = 19990
+    i_checkpoint = 7000
     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
     transform = Vanilla_PCA(checkpoint, data)
     ssa_2 = State_Space_Analysis(checkpoint, data, transform=transform)
     ssa_2 = plot_checkpoint_results(checkpoint, data, ssa=ssa_2,
                                     plot_cluster_means=False,
                                     eig_norm_color=False,
-                                    plot_test_points=False,
+                                    plot_test_points=True,
                                     plot_fixed_points=False,
                                     plot_graph_structure=True,
-                                    n_test_samples=None,
+                                    n_test_samples=2,
                                     graph_key='adjacency_matrix')
     
         

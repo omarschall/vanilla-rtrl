@@ -45,10 +45,13 @@ Created on Mon Mar 23 15:42:06 2020
     #     ax[1, 0].imshow(ref_checkpoint['forwardshared_adjmat_input_0'])
     #     ax[1, 1].imshow(checkpoint['backshared_adjmat_input_0'])
 
-    # for i_checkpoint in indices:
-    #     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
-    #     fig = plot_input_dependent_topology(checkpoint, i_input=None, return_fig=True)
-    #     fig.savefig(os.path.join(figs_path, 'Fig_{}.pdf'.format(i_checkpoint)), dpi=300, format='pdf')
+    indices = list(range(0, 40000, 100))
+    figs_path = '/Users/omarschall/weekly-reports/report_01-15-2021/figs/im_stack'
+    for i_checkpoint in indices:
+        checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
+        fig = plot_input_dependent_topology(checkpoint, i_input=None, return_fig=True)
+        fig.savefig(os.path.join(figs_path, 'Fig_{}.jpg'.format(i_checkpoint)), dpi=100, format='jpg')
+        plt.close()
         
         
     
