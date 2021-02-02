@@ -283,6 +283,7 @@ class Simulation:
         self.learn_alg.update_learning_vars()
         self.grads_list = self.learn_alg()
 
+
         ### --- Calculate gradients for comparison algorithms --- ###
 
         if len(self.comp_algs) > 0:

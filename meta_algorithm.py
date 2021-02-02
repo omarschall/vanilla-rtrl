@@ -36,7 +36,7 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         q (numpy array): The immediate loss derivative of the network state
             dL/da, calculated by propagate_feedback_to_hidden.
         q_prev (numpy array): The q value from the previous time step."""
-    def __init__(self, rnn, A, B, **kwargs):
+    def __init__(self, rnn, inner_algo, **kwargs):
         """Inits an Meta instance by setting the initial dadw matrix to zero."""
 
         self.name = 'Meta' #Algorithm name
@@ -47,29 +47,14 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         self.alpha = np.random.normal(0, 1, (self.m,self.m))
         self.beta = np.random.normal(0, 1, (self.n_h,self.n_h))
 
-        self.A = A
-        self.B = B
-
-    def approximate_Hessian(self):
-        """Use Kronecker product to approximate the Hessian"""
-
-        alpha1, beta1 = approximate_H_first_term()
-        alpha2, beta2 = approximate_H_second_term()
-
-        p0 = np.sqrt(norm(beta1)/norm(alpha1))
-        p1 = np.sqrt(norm(beta2)/norm(alpha2))
-        self.nu = self.sample_nu()
-
-        F = self.nu[0]*self.p0*alpha1 + self.nu[1]*self.p1*alpha2
-        G = (self.nu[0]*(1/self.p0)*beta1 +
-             self.nu[1]*(1/self.p1)*beta2)
-        return F,G
+        self.inner_algo = inner_algo
+    
 
     def approximate_H_first_term(self):
-        """Calculate the second term in the Hessian"""
+        """Calculate the first term in the Hessian"""
 
-        alpha1 =  np.outer(self.A, self.A)
-        WB = np.dot(self.rnn.W_out,B)
+        alpha1 =  np.outer(self.inner_algo.A, self.inner_algo.A)
+        WB = np.dot(self.rnn.W_out,self.inner_algo.B)
         beta1 = np.dot(WB,WB.T)
         return alpha1, beta1
 
@@ -85,20 +70,32 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         return alpha2,beta2
 
-    def approximate_meta_gradient(self,):
+    def approximate_meta_gradient(self,lam):
         
-        F,G = approximate_Hessian()
-        F_alpha = np.dot(F,alpha)
-        G_beta = np.dot(G,beta)
+        # get Hessian components
+        F1, G1 = approximate_H_first_term()
+        F2, G2 = approximate_H_second_term()
 
-        B_diag = np.diag(self.q.dot(self.B))
-        A_diag = np.diag(self.A)
+        F1_alpha = np.dot(F1,self.alpha)
+        G1_beta = np.dot(G1,self.beta)
+        F2_alpha = np.dot(F2,self.alpha)
+        G2_beta = np.dot(G2,self.beta)
+
+        B_diag = np.diag(self.q.dot(self.inner_algo.B))
+        A_diag = np.diag(self.inner_algo.A)
 
         self.nu = self.sample_nu()
 
         p0 = np.sqrt(norm(self.alpha)/norm(self.beta))
-        p1 = np.sqrt(norm(F_alpha)/norm(G_beta))
-        p2 = np.sqrt(norm(A_diag)/norm(B_diag))
+        p1 = np.sqrt(norm(G1_beta)/norm(F1_alpha))
+        p2 = np.sqrt(norm(G2)/norm(F2))
+        p3 = np.sqrt(norm(A_diag)/norm(B_diag))
         
-        self.alpha = self.nu[0] * p0 * self.alpha + self.nu[1] * p1 * F_alpha + self.nu[2] * p2 * A_diag
-        self.beta = self.nu[0] * (1/p0) * self.beta + self.nu[1] * (1/p1) * G_beta + self.nu[2] * (1/p2) * B_diag
+        self.alpha = self.nu[0] * p0 * self.alpha \
+                    + v_i*(self.nu[1] * p1 * F1_alpha \
+                    + self.nu[2] * p2 * F2_alpha)\
+                    + self.nu[3] * p3 * A_diag
+        self.beta = self.nu[0] * (1/p0) * self.beta \
+                    + np.dot(v_i,lam) *(self.nu[1] * (1/p1) * G1_beta  \
+                    + self.nu[2] * (1/p2) * G2_beta) \
+                    + self.nu[3] * (1/p3) * B_diag
