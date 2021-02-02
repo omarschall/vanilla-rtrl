@@ -13,7 +13,6 @@ from functions import *
 from copy import deepcopy
 from learning_algorithms import *
 
-
 class Meta_Learning_Algorithm(Stochastic_Algorithm):
     """Parent class for all learning algorithms.
 
@@ -99,3 +98,39 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
                     + np.dot(v_i,lam) *(self.nu[1] * (1/p1) * G1_beta  \
                     + self.nu[2] * (1/p2) * G2_beta) \
                     + self.nu[3] * (1/p3) * B_diag
+        
+    def update_learning_vars(self):
+        
+        """Get the new values of alpha and beta"""
+        pass
+    
+    def get_rec_grads(self):
+        
+        """Get the LR gradients in an array of shape [n_h, m]"""
+        
+        pass
+    
+    def __call__(self):
+        
+        """Return gradients for LR in a list of arrays"""
+        
+        #let's hard code in the "outer grads" as 0 for now
+        self.outer_grads = np.zeros((self.rnn.n_h, self.rnn.n_h + 1))
+        self.rec_grads = self.get_rec_grads()
+        rec_grads_list = split_weight_matrix(self.rec_grads,
+                                             [self.n_h, self.n_in, 1])
+        outer_grads_list = split_weight_matrix(self.outer_grads,
+                                               [self.n_h, 1])
+        grads_list = rec_grads_list + outer_grads_list
+
+        if self.L1_reg is not None:
+            grads_list = self.L1_regularization(grads_list)
+
+        if self.L2_reg is not None:
+            grads_list = self.L2_regularization(grads_list)
+
+        if self.maintain_sparsity:
+            grads_list = self.apply_sparsity_to_grads(grads_list)
+
+        return grads_list
+        
