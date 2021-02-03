@@ -35,7 +35,7 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         q (numpy array): The immediate loss derivative of the network state
             dL/da, calculated by propagate_feedback_to_hidden.
         q_prev (numpy array): The q value from the previous time step."""
-    def __init__(self, rnn, inner_algo, **kwargs):
+    def __init__(self, rnn, inner_algo, lam, **kwargs):
         """Inits an Meta instance by setting the initial dadw matrix to zero."""
 
         self.name = 'Meta' #Algorithm name
@@ -47,6 +47,12 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         self.beta = np.random.normal(0, 1, (self.n_h,self.n_h))
 
         self.inner_algo = inner_algo
+
+        # Calculate dldw (as q in inner loop)
+        self.dldw = self.rnn.error.dot(self.rnn.W_out) * self.rnn.activation.f(self.rnn.h).dot(self.rnn.a_prev)
+        
+        #Initialize private learning rate
+        self.lam = np.random.normal(0, 1,(self.n_h,self.m))
     
 
     def approximate_H_first_term(self):
@@ -69,7 +75,9 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         return alpha2,beta2
 
-    def approximate_meta_gradient(self,lam):
+    def update_learning_vars(self):
+        
+        """Get the new values of alpha and beta"""
         
         # get Hessian components
         F1, G1 = approximate_H_first_term()
@@ -80,7 +88,8 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         F2_alpha = np.dot(F2,self.alpha)
         G2_beta = np.dot(G2,self.beta)
 
-        B_diag = np.diag(self.q.dot(self.inner_algo.B))
+        # third term
+        qB_diag = np.diag(self.q.dot(self.inner_algo.B))
         A_diag = np.diag(self.inner_algo.A)
 
         self.nu = self.sample_nu()
@@ -88,27 +97,24 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         p0 = np.sqrt(norm(self.alpha)/norm(self.beta))
         p1 = np.sqrt(norm(G1_beta)/norm(F1_alpha))
         p2 = np.sqrt(norm(G2)/norm(F2))
-        p3 = np.sqrt(norm(A_diag)/norm(B_diag))
+        p3 = np.sqrt(norm(A_diag)/norm(qB_diag))
         
         self.alpha = self.nu[0] * p0 * self.alpha \
-                    + v_i*(self.nu[1] * p1 * F1_alpha \
+                    + self.nu*(self.nu[1] * p1 * F1_alpha \
                     + self.nu[2] * p2 * F2_alpha)\
                     + self.nu[3] * p3 * A_diag
+                    
         self.beta = self.nu[0] * (1/p0) * self.beta \
-                    + np.dot(v_i,lam) *(self.nu[1] * (1/p1) * G1_beta  \
+                    + np.dot(self.nu,self.lam) *(self.nu[1] * (1/p1) * G1_beta  \
                     + self.nu[2] * (1/p2) * G2_beta) \
-                    + self.nu[3] * (1/p3) * B_diag
+                    + self.nu[3] * (1/p3) * qB_diag
         
-    def update_learning_vars(self):
-        
-        """Get the new values of alpha and beta"""
-        pass
     
     def get_rec_grads(self):
         
         """Get the LR gradients in an array of shape [n_h, m]"""
         
-        pass
+        return np.matmul(self.beta.T,self.dldw.dot(self.alpha))
     
     def __call__(self):
         
