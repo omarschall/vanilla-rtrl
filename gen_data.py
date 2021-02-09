@@ -9,6 +9,7 @@ Created on Mon Sep 10 16:30:03 2018
 import numpy as np
 import pickle
 from pdb import set_trace
+from utils import concatenate_datasets
 
 class Task:
     """Parent class for all tasks. A Task is a class whose instances generate
@@ -490,7 +491,92 @@ class Sine_Wave(Task):
 
         return X, Y
 
+class Multi_Task:
+    """A class for online training in a multi-task setup. The class is initiated
+    with a list of subclasses and a boolean indicating whether context inputs
+    should be provided."""
+    
+    def __init__(self, tasks, context_input=False):
+        """Initiate a multi-task object by specifying task *instances* to
+        sample from.
+        
+        Args:
+            tasks (list): A list whose entries are instances of Task
+            context_input (bool): A boolean indicating whether to provide
+                as an additional set of input dimensions an indication of
+                which task is to be performed."""
+        
+        self.tasks = {i: tasks[i] for i in range(len(tasks))}
+        self.context_input = context_input
+        self.n_tasks = len(self.tasks)
+        
+        self.max_n_in = max([t.n_in for t in self.tasks.values()])
+        self.max_n_out = max([t.n_out for t in self.tasks.values()])
+        
+        # if task_sample_method not in ['seq', 'random_choice']:
+        #     raise ValueError('Invalid task_sample_method')
+        # if task_duration_method not in ['uniform'. 'poisson']:
+        #     raise ValueError('Invalid task_duration_method')
+            
+        # self.task_sample_method = task_sample_method
+        # self.task_duration_method = task_duration_method
+        
+    def gen_train_dataset(self, N_train):
+        """Generate a training dataset, which consists of a sampling of
+        tasks."""
+        
+        if type(N_train)==int:
+            Ns = [{'task_id': i,
+                   'N': N_train // self.n_tasks} for i in range(self.n_tasks)]
+        elif type(N_train)==list:
+            Ns = N_train
+        
+        #Initialize total_data and task_marker with the first task.
+        X, Y = self.tasks[Ns[0]['task_id']].gen_dataset(Ns[0]['N'])
+        total_data = {'X': X, 'Y': Y}
+        task_marker = [np.ones(Ns[0]['N']) * Ns[0]['task_id']]
+        
+        #Loop through the rest of the tasks and concatenate
+        for i_block in range(1, len(Ns)):
+            
+            i_task = Ns[i_block]['task_id']
+            task = self.tasks[i_task]
+            N = Ns[i_block]['N']
+            X, Y = task.gen_dataset(N)
+            
+            #Zero-pad lower-dimensional tasks in inputs and outputs
+            if task.n_in < self.max_n_in:
+                zero_pads = np.zeros((N, self.max_n_in - task.n_in))
+                X = np.hstack([X, zero_pads])
+                
+            if task.n_out < self.max_n_out: 
+                zero_pads = np.zeros((N, self.max_n_out - task.n_out))
+                Y = np.hstack([Y, zero_pads])
+            
+            total_data['X'] = np.concatenate([total_data['X'], X], axis=0)
+            total_data['Y'] = np.concatenate([total_data['Y'], Y], axis=0)
+            
+            task_marker.append(np.ones(N) * i_task)
 
-
-
-
+        #Add task_marker to data
+        total_data['task_marker'] = np.concatenate(task_marker).astype(np.int)
+        
+        #If specified, turn task_marker intoa one-hot and append to inputs
+        if self.context_input:
+            context = np.eye(self.n_tasks)[total_data['task_marker']]
+            total_data['X'] = np.hstack([total_data['X'], context])
+            
+        return total_data
+    
+    def gen_data(self, N_train, N_test):
+        
+        data = {}
+        
+        data['train'] = self.gen_train_dataset(N_train)
+        for i_task, task in zip(self.tasks.keys(), self.tasks.values()):
+            
+            data['test_{}'.format(i_task)] = task.gen_dataset(N_test)
+            
+        return data
+            
+        
