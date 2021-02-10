@@ -517,6 +517,9 @@ class Multi_Task:
         self.max_n_in = max([t.n_in for t in self.tasks.values()])
         self.max_n_out = max([t.n_out for t in self.tasks.values()])
         
+        self.n_in = self.max_n_in + self.context_input * self.n_tasks
+        self.n_out = self.max_n_out
+        
         # if task_sample_method not in ['seq', 'random_choice']:
         #     raise ValueError('Invalid task_sample_method')
         # if task_duration_method not in ['uniform'. 'poisson']:
@@ -579,7 +582,14 @@ class Multi_Task:
         data['train'] = self.gen_train_dataset(N_train)
         for i_task, task in zip(self.tasks.keys(), self.tasks.values()):
             
-            data['test_{}'.format(i_task)] = task.gen_dataset(N_test)
+            X, Y = task.gen_dataset(N_test)
+            key = 'test_{}'.format(i_task)
+            data[key] = {'X': X, 'Y': Y}
+            
+            if self.context_input:
+                task_id = (np.ones(N_test) * i_task).astype(np.int)
+                context = np.eye(self.n_tasks)[task_id]
+                data[key]['X'] = np.hstack([data[key]['X'], context])
             
         return data
             

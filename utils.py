@@ -555,3 +555,5 @@ def get_Duncker_projections(A, X, rnn, inv_constant=0.001):
     P_y = np.linalg.inv(WH.dot(WH.T)/inv_constant + np.eye(rnn.n_out))
     
     return P_z, P_wz, P_h, P_y
+        
+        

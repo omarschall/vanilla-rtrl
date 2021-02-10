@@ -54,16 +54,17 @@ if os.environ['HOME'] == '/Users/omarschall':
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
 np.random.seed(0)
-task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
-N_train = 5000
-N_test = 5000
-checkpoint_interval = 100
+#task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
+#task = Add_Task(4, 6, deterministic=True)
+N_train = 12000
+N_test = 2000
+checkpoint_interval = 200
 sigma = 0.01
 name = params['name']
 file_name = '{}'.format(name)
 analysis_job_name = '{}'.format(name)
 compare_job_name = 'comp_' + analysis_job_name
-MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
+MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][0]
 
 """ -----------------------------------------"""
 """ --- TRAIN MODEL AND SAVE CHECKPOINTS --- """
@@ -71,8 +72,17 @@ MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
 
 if MODE == 'TRAIN': #Do this locally
     
+    task_1 = Add_Task(6, 12, deterministic=True)
+    task_2 = Add_Task(4, 9, deterministic=True)
+    task_3 = Add_Task(8, 11, deterministic=True)
+    task_4 = Add_Task(5, 6, deterministic=True)
+    task_5 = Add_Task(6, 9, deterministic=True)
+    task_6 = Add_Task(9, 12, deterministic=True)
+    task = Multi_Task([task_1, task_2, task_3, task_4, task_5, task_6], context_input=True)
+    data = task.gen_data(N_train, N_test)
+    
     n_in = task.n_in
-    n_hidden = 512
+    n_hidden = 32
     n_out = task.n_out
     W_in  = np.random.normal(0, np.sqrt(1/(n_in)), (n_hidden, n_in))
     #W_rec = np.linalg.qr(np.random.normal(0, 1, (n_hidden, n_hidden)))[0]
@@ -88,21 +98,18 @@ if MODE == 'TRAIN': #Do this locally
     rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
               activation=tanh,
               alpha=alpha,
-              output=identity,
-              loss=mean_squared_error)
+              output=softmax,
+              loss=softmax_cross_entropy)
     
     #optimizer = SGD_Momentum(lr=0.01, mu=0.6, clip_norm=None)
-    learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
+    #learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
+    learn_alg = RTRL(rnn)
+    #optimizer = Stochastic_Gradient_Descent(lr=0.005)
     
     comp_algs = []
-    monitors = ['rnn.a', 'rnn.x']
-    
+    monitors = ['rnn.loss_']
 
     ### --- SIMULATION 1 --- ####    
-
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,0,0])
-    data = task.gen_data(N_train, N_test)
-    proj_data = task.gen_data(0, 800)
     
     optimizer = Stochastic_Gradient_Descent(lr=0.01, clip_norm=None)
     
@@ -116,81 +123,27 @@ if MODE == 'TRAIN': #Do this locally
             report_loss=True,
             checkpoint_interval=checkpoint_interval)
     
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
-    test_data = task.gen_data(N_train, N_test)
-    
-    i_checkpoint = max(sim.checkpoints.keys())
-    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
-    
-    test_sim = Simulation(rnn)
-    test_sim.run(proj_data, mode='test', monitors=monitors, verbose=False)
-
-    P_z, P_wz, P_h, P_y = get_Duncker_projections(test_sim.mons['rnn.a'],
-                                                  test_sim.mons['rnn.x'],
-                                                  rnn)
-    
-    #P_z, P_wz, P_h, P_y = np.eye(rnn.n_h + rnn.n_in + 1), np.eye(rnn.n_h), np.eye(rnn.n_h + 1), np.eye(rnn.n_out)
-    
     ### --- SIMULATION 2 --- ####    
     
     #Create data
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[0,1,0])
-    data = task.gen_data(N_train, N_test)
+    # task = Add_Task(6, 10, deterministic=True)
+    # data = task.gen_data(N_train, N_test)
     
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
-    test_data = task.gen_data(N_train, N_test)
-    proj_data = task.gen_data(0, 800)
+    # learn_alg = Only_Output_Weights(rnn)
+    # optimizer = Stochastic_Gradient_Descent(lr=0.01, clip_norm=None)
     
-    optimizer = SGD_With_Projections(lr=0.01, rec_proj_mats=[P_wz, P_z],
-                                     out_proj_mats=[P_y, P_h])
+    # sim = Simulation(rnn)
+    # sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
+    #         sigma=sigma,
+    #         comp_algs=comp_algs,
+    #         monitors=monitors,
+    #         verbose=True,
+    #         report_accuracy=False,
+    #         report_loss=True,
+    #         checkpoint_interval=checkpoint_interval)
     
-    sim = Simulation(rnn)
-    sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
-            sigma=sigma,
-            comp_algs=comp_algs,
-            monitors=monitors,
-            verbose=True,
-            report_accuracy=False,
-            report_loss=True,
-            checkpoint_interval=checkpoint_interval)
-    
-    i_checkpoint = max(sim.checkpoints.keys())
-    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
-    
-    test_sim_2 = Simulation(rnn)
-    test_sim_2.run(proj_data, mode='test', monitors=monitors, verbose=False)
-
-    P_z, P_wz, P_h, P_y = get_Duncker_projections(test_sim_2.mons['rnn.a'],
-                                                  test_sim_2.mons['rnn.x'],
-                                                  rnn)
-    
-    ### --- SIMULATION 3 --- ####    
-    
-    #Create data
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[0,0,1])
-    data = task.gen_data(N_train, N_test)
-    
-    task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,1])
-    test_data = task.gen_data(N_train, N_test)
-    
-    optimizer = SGD_With_Projections(lr=0.01, rec_proj_mats=[P_wz, P_z],
-                                     out_proj_mats=[P_y, P_h])
-    
-    sim = Simulation(rnn)
-    sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
-            sigma=sigma,
-            comp_algs=comp_algs,
-            monitors=monitors,
-            verbose=True,
-            report_accuracy=False,
-            report_loss=True,
-            checkpoint_interval=checkpoint_interval)
-    
-    i_checkpoint = max(sim.checkpoints.keys())
-    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
-    
-    with open(os.path.join('saved_runs', file_name), 'wb') as f:
-        pickle.dump(sim, f)
+    # with open(os.path.join('saved_runs', file_name), 'wb') as f:
+    #     pickle.dump(sim, f)
 
 
 """ -----------------------"""
@@ -565,9 +518,24 @@ if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
     # plt.yticks([])
     # plt.xlabel('time steps')
     
-    # plt.figure()
-    # for key in monitors:
-    #     plt.plot(sim.mons[key])
+    plt.figure()
+    for key in monitors:
+        plt.plot(sim.mons[key])
+    
+    losses = get_multitask_loss_from_checkpoints(sim, task, 300)
+    plt.figure()
+    for i in range(task.n_tasks):
+        plt.plot(losses['task_{}_loss'.format(i)])
+    
+    # test_loss_A = []
+    # test_loss_B = []
+    # for i_checkpoint in range(len(sim.checkpoints)):
+    #     rnn = sim.checkpoints[i_checkpoint]
+        
+    #     test_sim_A = 
+        
+    #     test_loss_A
+        
     
 
 if os.environ['HOME'] == '/home/oem214':

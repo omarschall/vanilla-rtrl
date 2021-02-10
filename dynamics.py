@@ -580,3 +580,33 @@ def test_vae(model_checkpoint, data, test_checkpoint=None):
 
     return test_loss
 
+
+def get_multitask_loss_from_checkpoints(sim, multitask, N_test):
+    
+    data = multitask.gen_data(0, N_test)
+    
+    #set_trace()
+    
+    losses = {'task_{}_loss'.format(i): [] for i in range(multitask.n_tasks)}
+    
+    for i in range(multitask.n_tasks):
+        for j in sorted(sim.checkpoints.keys()):
+            
+            rnn = sim.checkpoints[j]['rnn']
+            test_sim = Simulation(rnn)
+            test_sim.run(data,
+                         mode='test_{}'.format(i),
+                         monitors=['rnn.loss_'],
+                         verbose=False)
+            
+            test_loss = test_sim.mons['rnn.loss_'].mean()
+            
+            losses['task_{}_loss'.format(i)].append(test_loss)
+            
+        losses['task_{}_loss'.format(i)] = np.array(losses['task_{}_loss'.format(i)])
+        
+    return losses
+        
+        
+        
+
