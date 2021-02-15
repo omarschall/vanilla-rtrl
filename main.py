@@ -39,8 +39,8 @@ if os.environ['HOME'] == '/home/oem214':
     except KeyError:
         i_job = 0
     #macro_configs = config_generator(i_start=list(range(0, 200000, 1000)))
-    macro_configs = config_generator(name=['seq_reg'],
-                                     i_start=list(range(0, 40000, 1000)))
+    macro_configs = config_generator(name=['check'],
+                                     i_start=list(range(0, 30000, 100)))
     #macro_configs = config_generator(algorithm=['RFLO'])
     micro_configs = tuple(product(macro_configs, list(range(n_seeds))))
 
@@ -49,17 +49,18 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'name': 'seq_reg'}
+    params = {'name': 'seq_fail', 'algorithm': 'RFLO'}
     i_job = 0
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
-np.random.seed(0)
-#task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
+i_seed = np.random.randint(0, 1000)
+np.random.seed(i_seed)
+task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
 #task = Add_Task(4, 6, deterministic=True)
-N_train = 12000
+N_train = 60000
 N_test = 2000
-checkpoint_interval = 200
-sigma = 0.01
+checkpoint_interval = 1000
+sigma = 0
 name = params['name']
 file_name = '{}'.format(name)
 analysis_job_name = '{}'.format(name)
@@ -79,6 +80,18 @@ if MODE == 'TRAIN': #Do this locally
     task_5 = Add_Task(6, 9, deterministic=True)
     task_6 = Add_Task(9, 12, deterministic=True)
     task = Multi_Task([task_1, task_2, task_3, task_4, task_5, task_6], context_input=True)
+    # task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
+    # task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[0,1,0])
+    # task_3 = Flip_Flop_Task(3, 0.05, dim_mask=[0,0,1])
+    # task = Multi_Task([task_1, task_2, task_3], context_input=False)
+    # combined_task = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,1])
+    #proj_task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
+    #proj_task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,0])
+    # N_train = [{'task_id': 0, 'N': 20000},
+    #             {'task_id': 1, 'N': 5000},
+    #             {'task_id': 2, 'N': 5000}]
+    
+    #task = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,1])
     data = task.gen_data(N_train, N_test)
     
     n_in = task.n_in
@@ -101,17 +114,31 @@ if MODE == 'TRAIN': #Do this locally
               output=softmax,
               loss=softmax_cross_entropy)
     
+    ###
+    # 1. Compare different ways of building cube, standard learning vs.
+    #       CL with [1,0,0]->[1,1,0]->[1,1,1] or [1,0,0]->[0,1,0]->[0,0,1]
+    #       and also with faiure case
+    # 2. Maybe figure out a  more automated visualization method?
+    # 3. 
+    
     #optimizer = SGD_Momentum(lr=0.01, mu=0.6, clip_norm=None)
-    #learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
+    
+    if params['algorithm'] == 'RFLO':
+        learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
+    if params['algorithm'] == 'REIN':
+        learn_alg = REINFORCE(rnn, sigma=sigma)
     learn_alg = RTRL(rnn)
     #optimizer = Stochastic_Gradient_Descent(lr=0.005)
     
     comp_algs = []
-    monitors = ['rnn.loss_']
+    monitors = ['rnn.a', 'rnn.x', 'rnn.W_rec']
+    monitors = ['rnn.W_rec']
+    #monitors = []
 
     ### --- SIMULATION 1 --- ####    
     
-    optimizer = Stochastic_Gradient_Descent(lr=0.01, clip_norm=None)
+    #optimizer = Stochastic_Gradient_Descent(lr=0.05, clip_norm=None)
+    optimizer = SGD_Momentum(lr=0.01, mu=0.6)
     
     sim = Simulation(rnn)
     sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -121,7 +148,10 @@ if MODE == 'TRAIN': #Do this locally
             verbose=True,
             report_accuracy=False,
             report_loss=True,
-            checkpoint_interval=checkpoint_interval)
+            checkpoint_interval=checkpoint_interval)#,
+            #N_Duncker_data=200,
+            #Duncker_proj_tasks=[proj_task_1, proj_task_2],
+            #lr_Duncker=0.01)
     
     ### --- SIMULATION 2 --- ####    
     
@@ -216,11 +246,7 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     name = params['name']
     print('Analyzing checkpoints...')
     
-    #contexts = [np.array([0, 0, 0, 1]), np.array([0, 0, 0, -1])]
     contexts = [None]
-    # inputs = [np.array([1, 0, 0, 0]), np.array([0, 1, 0, 0]),
-    #           np.array([0, 0, 1, 0]), np.array([-1, 0, 0, 0]),
-    #           np.array([0, -1, 0, 0]), np.array([0, 0, -1, 0])]
     inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
               np.array([0, 0, 1]), np.array([-1, 0, 0]),
               np.array([0, -1, 0]), np.array([0, 0, -1])]
@@ -228,7 +254,6 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     result = {}
     
     data = task.gen_data(100, 30000)
-    #big_data = task.gen_data(100, 500000)
     
     #Progress logging
     scratch_path = '/scratch/oem214/vanilla-rtrl/'
@@ -236,19 +261,16 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     
     #Retrieve data
     with open(os.path.join('saved_runs', file_name), 'rb') as f:
-        #sim = pickle.load(f)
-        checkpoints = pickle.load(f)
+        #checkpoints = pickle.load(f)
+        sim = pickle.load(f)
     
-    for i_checkpoint in range(params['i_start'], params['i_start'] + 1000, 100):
+    for i_checkpoint in range(params['i_start'], params['i_start'] + 100, 100):
 
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
-        
-        #checkpoint = sim.checkpoints[i_checkpoint]
-        checkpoint = checkpoints[i_checkpoint]
-        #checkpoint_flip = deepcopy(checkpoint)
-        
-        #analyze context 0
+            
+        #checkpoint = checkpoints[i_checkpoint]
+        checkpoint = sim.checkpoints[i_checkpoint]
         analyze_checkpoint(checkpoint, data, verbose=False,
                            sigma_pert=0.5, N=500, parallelize=False,
                            N_iters=6000, same_LR_criterion=5000,
@@ -256,28 +278,8 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
         
         get_graph_structure(checkpoint, parallelize=False, epsilon=0.01, background_input=0)
         get_input_dependent_graph_structure(checkpoint, inputs=inputs, contexts=None)
-        #train_VAE(checkpoint, big_data, T=10, latent_dim=128, lr=0.001)
-        
-        
-        if name == 'interp':
-            i_checkpoint_ = i_checkpoint + 10000
-        else:
-            i_checkpoint_ = i_checkpoint
-        result['checkpoint_{}'.format(i_checkpoint_)] = deepcopy(checkpoint)
-        
-        #analyze context 1
-        # analyze_checkpoint(checkpoint_flip, data, verbose=False,
-        #                    sigma_pert=0.5, N=600, parallelize=False,
-        #                    N_iters=8000, same_LR_criterion=7000,
-        #                    context=contexts[1])
-        
-        # get_graph_structure(checkpoint_flip, parallelize=False, epsilon=0.01, background_input=contexts[1])
 
-        # # inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
-        # #           np.array([0, 0, 1]), np.array([-1, 0, 0]),
-        # #           np.array([0, -1, 0]), np.array([0, 0, -1])]
-        # get_input_dependent_graph_structure(checkpoint_flip, inputs=inputs, contexts=contexts)
-        # result['checkpoint_{}_flip'.format(i_checkpoint)] = deepcopy(checkpoint_flip)
+        result['checkpoint_{}'.format(i_checkpoint)] = deepcopy(checkpoint)
 
 """ ----------------------------"""
 """ --- CALCULATE DISTANCES --- """
@@ -321,7 +323,7 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
     node_diff_distances = np.zeros((n_checkpoints, n_checkpoints))
     rec_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
     # output_weight_distances = np.zeros(n_checkpoints)
-    # participation_coefficients = np.zeros(n_checkpoints)
+    #participation_coefficients = np.zeros(n_checkpoints)
     
     for i in range(len(indices) - 1):
         
@@ -427,7 +429,8 @@ if MODE == 'PLOT':
     node_distances = np.array(node_distances)
     
     #collect all signals
-    signals = {'losses': losses, 'node_distances': node_distances, 'norms': norms}
+    signals = {'losses': losses, 'node_distances': node_distances,
+               'norms': norms}
     try:
         with open(comp_data_path, 'rb') as f:
             result = pickle.load(f)
@@ -487,10 +490,10 @@ if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
     
     pass
     # task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
-    # data = task.gen_data(N_train, N_test)
+    # test_data = combined_task.gen_data(0, 2000)
     
     # i_checkpoint = max(sim.checkpoints.keys())
-    # plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], data, n_PCs=rnn.n_out)
+    # plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
     #i_checkpoint = max(noisy_sim.checkpoints.keys())
     #plot_output_from_checkpoint(sim.checkpoints[N_train - 1], data, n_PCs=rnn.n_out)
     
@@ -518,25 +521,36 @@ if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
     # plt.yticks([])
     # plt.xlabel('time steps')
     
-    plt.figure()
-    for key in monitors:
-        plt.plot(sim.mons[key])
+    # plt.figure()
+    # for key in monitors:
+    #     plt.plot(sim.mons[key])
     
     losses = get_multitask_loss_from_checkpoints(sim, task, 300)
     plt.figure()
     for i in range(task.n_tasks):
-        plt.plot(losses['task_{}_loss'.format(i)])
+        plt.plot(losses['task_{}_loss'.format(i)], color='C{}'.format(i+1))
+    plt.legend(['Task {} Loss'.format(i) for i in range(task.n_tasks)])
+        
+    # losses = get_loss_from_checkpoints(sim, combined_task, 1000)
+    # plt.figure()
+    # plt.plot(losses)
+    # plt.legend(['Combined Task Loss'])
     
-    # test_loss_A = []
-    # test_loss_B = []
-    # for i_checkpoint in range(len(sim.checkpoints)):
-    #     rnn = sim.checkpoints[i_checkpoint]
+    participation_coeffs = []
+    norms = []
+    for i in range(len(sim.mons['rnn.W_rec'])):
         
-    #     test_sim_A = 
+        eigs, vecs = np.linalg.eig(sim.mons['rnn.W_rec'][i])
+        eig_norms = np.abs(eigs)
+        #participation_coeffs.append(np.sum(np.square(np.abs(eigs))) / np.square(np.abs(np.sum(eigs))))
+        participation_coeffs.append(np.sqrt(eig_norms).sum() / np.sqrt(eig_norms.sum()))
+        norms.append(norm(sim.mons['rnn.W_rec'][i]))
         
-    #     test_loss_A
-        
-    
+    plt.figure()
+    plt.plot(participation_coeffs, color='C8')
+    plt.plot(norms, color='C9')
+    plt.ylim([0, 8])
+    plt.legend(['W participation coefficient', 'W norm'])
 
 if os.environ['HOME'] == '/home/oem214':
 

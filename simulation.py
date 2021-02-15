@@ -9,8 +9,9 @@ Created on Mon Nov  5 12:54:56 2018
 from copy import copy, deepcopy
 import time
 from utils import (norm, classification_accuracy, normalized_dot_product,
-                   get_spectral_radius, rgetattr)
+                   get_spectral_radius, rgetattr, get_Duncker_projections)
 import numpy as np
+from optimizers import SGD_With_Projections
 
 class Simulation:
     """Simulates an RNN for a provided set of inputs and training procedures.
@@ -116,13 +117,17 @@ class Simulation:
                 yet validation loss.
             checkpoint_interval (int): Number of time steps between saving
                 rnn, learn_alg, optimizer, and i_t so that training can be
-                reproduced."""
+                reproduced.
+            'N_Duncker_data (int): Number of past data points to use for
+                calculating Duncker projections during a task switch."""
 
         allowed_kwargs = {'learn_alg', 'optimizer', 'a_initial', 'sigma',
                           'update_interval', 'comp_algs', 'verbose',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
-                          'overwrite_checkpoints', 'i_start', 'i_end'}
+                          'overwrite_checkpoints', 'i_start', 'i_end',
+                          'N_Duncker_data', 'lr_Duncker',
+                          'Duncker_proj_tasks', 'combined_task'}
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -324,6 +329,11 @@ class Simulation:
             self.i_t > 0 and
             self.verbose):
             self.report_progress(data)
+            
+        if self.N_Duncker_data is not None and self.i_t > 0:
+            task_marker = data['train']['task_marker']
+            if task_marker[self.i_t] != task_marker[self.i_t - 1]:
+                self.Duncker_CL_task_switch(self.N_Duncker_data)
 
         #Current inputs/labels become previous inputs/labels
         self.rnn.x_prev = self.rnn.x.copy()
@@ -526,6 +536,58 @@ class Simulation:
                      overwrite_checkpoints=overwrite_checkpoints,
                      **kwargs)
 
+    def Duncker_CL_task_switch(self, N_proj_data=500):
+    
+                
+        if self.combined_task is not None:
+            
+            proj_data = self.combined_task.gen_data(0, N_proj_data)
+            proj_sim = Simulation(self.rnn)
+            proj_sim.run(proj_data, mode='test',
+                         monitors=['rnn.a', 'rnn.x'],
+                         verbose=False)
+            
+            self.A_Duncker = proj_sim.mons['rnn.a']
+            self.X_Duncker = proj_sim.mons['rnn.x']
+            
+        elif self.Duncker_proj_tasks is not None:
+        
+            task = self.Duncker_proj_tasks.pop(0)
+            proj_data = task.gen_data(0, N_proj_data)
+            proj_sim = Simulation(self.rnn)
+            proj_sim.run(proj_data, mode='test',
+                         monitors=['rnn.a', 'rnn.x'],
+                         verbose=False)
+            
+            self.A_Duncker = proj_sim.mons['rnn.a']
+            self.X_Duncker = proj_sim.mons['rnn.x']
+            
+        else:
+            
+            A = np.array(self.mons['rnn.a'][-N_proj_data:])
+            X = np.array(self.mons['rnn.x'][-N_proj_data:])
+            
+            if not hasattr(self, 'A_Duncker'):
+                self.A_Duncker = A
+                self.X_Duncker = X
+            else:
+                self.A_Duncker = np.vstack([self.A_Duncker, A])
+                self.X_Duncker = np.vstack([self.X_Duncker, X])
+            
+        P_z, P_wz, P_h, P_y = get_Duncker_projections(self.A_Duncker,
+                                                      self.X_Duncker,
+                                                      rnn=self.rnn)
+        
+        if self.lr_Duncker is not None:
+            lr = self.lr_Duncker
+        else:
+            lr = self.optimizer.lr
+        
+        self.optimizer = SGD_With_Projections(lr=lr,
+                                              rec_proj_mats=[P_wz, P_z],
+                                              out_proj_mats=[P_y, P_h])
+        
+        
 
 
 

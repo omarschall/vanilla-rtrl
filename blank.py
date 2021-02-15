@@ -6,6 +6,23 @@ Created on Mon Mar 23 15:42:06 2020
 @author: omarschall
 """
 
+    #           np.array([0, 0, 1, 0]), np.array([-1, 0, 0, 0]),
+    #           np.array([0, -1, 0, 0]), np.array([0, 0, -1, 0])]
+
+    #analyze context 1
+    # analyze_checkpoint(checkpoint_flip, data, verbose=False,
+    #                    sigma_pert=0.5, N=600, parallelize=False,
+    #                    N_iters=8000, same_LR_criterion=7000,
+    #                    context=contexts[1])
+    
+    # get_graph_structure(checkpoint_flip, parallelize=False, epsilon=0.01, background_input=contexts[1])
+
+    # # inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
+    # #           np.array([0, 0, 1]), np.array([-1, 0, 0]),
+    # #           np.array([0, -1, 0]), np.array([0, 0, -1])]
+    # get_input_dependent_graph_structure(checkpoint_flip, inputs=inputs, contexts=contexts)
+    # result['checkpoint_{}_flip'.format(i_checkpoint)] = deepcopy(checkpoint_flip)
+
     #fig1.savefig(os.path.join(figs_path, 'fig22.pdf'), dpi=300, format='pdf')
 
     #checkpoints = {k:result[k] for k in result.keys() if 'checkpoint' in k}
