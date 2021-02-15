@@ -365,6 +365,11 @@ class Simulation:
         time_elapsed = np.round(time.time() - self.start_time, 1)
 
         summary = '\rProgress: {}% complete \nTime Elapsed: {}s \n'
+        
+        mode = 'test'
+        
+        if 'task_marker' in data['train'].keys():
+            mode += '_{}'.format(data['train']['task_marker'][self.i_t])
 
         if 'rnn.loss_' in self.mons.keys():
             interval = self.report_interval
@@ -374,7 +379,7 @@ class Simulation:
 
         if self.report_accuracy or self.report_loss:
             test_sim = self.get_test_sim()
-            test_sim.run(data, mode='test',
+            test_sim.run(data, mode=mode,
                          monitors=['rnn.y_hat', 'rnn.loss_'],
                          verbose=False,
                          a_initial=np.copy(self.rnn.a))
