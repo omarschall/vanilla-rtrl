@@ -56,7 +56,12 @@ if os.environ['HOME'] == '/Users/omarschall':
     save_dir = '/Users/omarschall/vanilla-rtrl/library'
 
 np.random.seed(1)
-task = Add_Task(t_1=3, t_2=5, deterministic=True)
+
+task_1 = Add_Task(t_1=3, t_2=5, deterministic=True)
+task_2 = Add_Task(t_1=5, t_2=8, deterministic=True)
+task_3 = Add_Task(t_1=2, t_2=10, deterministic=True)
+tasks = [task_1, task_2, task_3]
+task = Multi_Task(tasks, context_input=False)
 N_train = 100000
 N_test = 5000
 checkpoint_interval = None
