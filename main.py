@@ -59,7 +59,7 @@ task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
 #task = Add_Task(4, 6, deterministic=True)
 N_train = 60000
 N_test = 2000
-checkpoint_interval = 1000
+checkpoint_interval = 500
 sigma = 0
 name = params['name']
 file_name = '{}'.format(name)
@@ -73,25 +73,16 @@ MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][0]
 
 if MODE == 'TRAIN': #Do this locally
     
-    task_1 = Add_Task(6, 12, deterministic=True)
-    task_2 = Add_Task(4, 9, deterministic=True)
-    task_3 = Add_Task(8, 11, deterministic=True)
-    task_4 = Add_Task(5, 6, deterministic=True)
-    task_5 = Add_Task(6, 9, deterministic=True)
-    task_6 = Add_Task(9, 12, deterministic=True)
-    task = Multi_Task([task_1, task_2, task_3, task_4, task_5, task_6], context_input=True)
-    # task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
-    # task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[0,1,0])
-    # task_3 = Flip_Flop_Task(3, 0.05, dim_mask=[0,0,1])
-    # task = Multi_Task([task_1, task_2, task_3], context_input=False)
-    # combined_task = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,1])
-    #proj_task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
-    #proj_task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,0])
-    # N_train = [{'task_id': 0, 'N': 20000},
-    #             {'task_id': 1, 'N': 5000},
-    #             {'task_id': 2, 'N': 5000}]
-    
-    #task = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,1])
+    task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
+    task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[0,1,0])
+    task_3 = Flip_Flop_Task(3, 0.05, dim_mask=[0,0,1])
+    task = Multi_Task([task_1, task_2, task_3], context_input=False)
+    combined_task = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,1])
+    proj_task_1 = Flip_Flop_Task(3, 0.05, dim_mask=[1,0,0])
+    proj_task_2 = Flip_Flop_Task(3, 0.05, dim_mask=[1,1,0])
+    N_train = [{'task_id': 0, 'N': 20000},
+                {'task_id': 1, 'N': 5000},
+                {'task_id': 2, 'N': 5000}]
     data = task.gen_data(N_train, N_test)
     
     n_in = task.n_in
@@ -111,15 +102,15 @@ if MODE == 'TRAIN': #Do this locally
     rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
               activation=tanh,
               alpha=alpha,
-              output=softmax,
-              loss=softmax_cross_entropy)
+              output=identity,
+              loss=mean_squared_error)
     
     ###
     # 1. Compare different ways of building cube, standard learning vs.
     #       CL with [1,0,0]->[1,1,0]->[1,1,1] or [1,0,0]->[0,1,0]->[0,0,1]
     #       and also with faiure case
     # 2. Maybe figure out a  more automated visualization method?
-    # 3. 
+    # 3. Validate a PC metric
     
     #optimizer = SGD_Momentum(lr=0.01, mu=0.6, clip_norm=None)
     
@@ -127,18 +118,16 @@ if MODE == 'TRAIN': #Do this locally
         learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
     if params['algorithm'] == 'REIN':
         learn_alg = REINFORCE(rnn, sigma=sigma)
-    learn_alg = RTRL(rnn)
-    #optimizer = Stochastic_Gradient_Descent(lr=0.005)
     
     comp_algs = []
     monitors = ['rnn.a', 'rnn.x', 'rnn.W_rec']
-    monitors = ['rnn.W_rec']
+    #monitors = ['rnn.W_rec']
     #monitors = []
 
     ### --- SIMULATION 1 --- ####    
     
     #optimizer = Stochastic_Gradient_Descent(lr=0.05, clip_norm=None)
-    optimizer = SGD_Momentum(lr=0.01, mu=0.6)
+    optimizer = SGD_Momentum(lr=0.1, mu=0.6)
     
     sim = Simulation(rnn)
     sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -148,10 +137,10 @@ if MODE == 'TRAIN': #Do this locally
             verbose=True,
             report_accuracy=False,
             report_loss=True,
-            checkpoint_interval=checkpoint_interval)#,
-            #N_Duncker_data=200,
+            checkpoint_interval=checkpoint_interval,
+            N_Duncker_data=None)
             #Duncker_proj_tasks=[proj_task_1, proj_task_2],
-            #lr_Duncker=0.01)
+            #lr_Duncker=0.1)
     
     ### --- SIMULATION 2 --- ####    
     
@@ -489,11 +478,11 @@ if MODE == 'PLOT':
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
     
     pass
-    # task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
-    # test_data = combined_task.gen_data(0, 2000)
+    #task = Flip_Flop_Task(3, 0.05, input_magnitudes=None, dim_mask=[1,1,0])
+    test_data = combined_task.gen_data(0, 2000)
     
-    # i_checkpoint = max(sim.checkpoints.keys())
-    # plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
+    i_checkpoint = max(sim.checkpoints.keys())
+    plot_output_from_checkpoint(sim.checkpoints[i_checkpoint], test_data, n_PCs=rnn.n_out)
     #i_checkpoint = max(noisy_sim.checkpoints.keys())
     #plot_output_from_checkpoint(sim.checkpoints[N_train - 1], data, n_PCs=rnn.n_out)
     
@@ -531,10 +520,10 @@ if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
         plt.plot(losses['task_{}_loss'.format(i)], color='C{}'.format(i+1))
     plt.legend(['Task {} Loss'.format(i) for i in range(task.n_tasks)])
         
-    # losses = get_loss_from_checkpoints(sim, combined_task, 1000)
-    # plt.figure()
-    # plt.plot(losses)
-    # plt.legend(['Combined Task Loss'])
+    losses = get_loss_from_checkpoints(sim, combined_task, 1000)
+    plt.figure()
+    plt.plot(losses)
+    plt.legend(['Combined Task Loss'])
     
     participation_coeffs = []
     norms = []
