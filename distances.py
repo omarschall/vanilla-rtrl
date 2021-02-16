@@ -60,7 +60,7 @@ def SVCCA_distance(checkpoint_1, checkpoint_2, data, R=3):
     between two different networks."""
     
     A_1 = get_test_sim_data(checkpoint_1, data)
-    A_2 = get_test_sim_data(checkpoint_1, data)
+    A_2 = get_test_sim_data(checkpoint_2, data)
     
     cca = CCA(n_components=R)
     cca.fit(A_1, A_2)
