@@ -163,7 +163,11 @@ class Stochastic_Gradient_Descent(Optimizer):
             grads = self.normalize_gradient(grads)
             
         updated_params = []
+
         for param, grad in zip(params, grads):
+            print('param',param.shape)
+            print('grad',grad.shape)
+            print('lr',self.lr)
             updated_params.append(param - self.lr * grad)
 
         return updated_params
@@ -243,7 +247,9 @@ class Private_LR_SGD(Optimizer):
             updated_params (list): List of newly updated parameters."""
             
         updated_params = []
+        print(len(grads))
         for param, grad, lr_ in zip(params, grads, self.lr):
+
             updated_params.append(param - lr_ * grad)
 
         return updated_params

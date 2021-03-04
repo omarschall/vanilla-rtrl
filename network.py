@@ -105,6 +105,8 @@ class RNN:
         self.activation = activation
         self.output = output
         self.loss = loss
+        self.a_prev = np.zeros(self.n_h)
+        
 
         #Number of parameters
         self.n_h_params = (self.W_rec.size +

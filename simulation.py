@@ -148,7 +148,7 @@ class Simulation:
         self.i_start = 0
         self.i_end = self.total_time_steps
         self.sigma = 0
-        self.outer_loop = False
+        self.outer_loop = True
 
         #Overwrite defaults with any provided keyword args
         self.__dict__.update(kwargs)
@@ -246,7 +246,7 @@ class Simulation:
 
         self.i_t_trial = self.i_t%self.time_steps_per_trial
         if self.i_t_trial == 0:
-            self.i_trial = self.i_t//self.time_steps_per_trial
+            self.i_trial = self.i_t//self.time_steps_per_trial  ## typo?
             if self.reset_sigma is not None:
                 self.rnn.reset_network(sigma=self.reset_sigma)
                 self.learn_alg.reset_learning()
@@ -323,6 +323,7 @@ class Simulation:
             #Get updated parameters
             opt.params = self.meta_optimizer.get_updated_params(opt.params,
                                                                 self.meta_grads_list)
+            print(opt.params)
             self.optimizer.lr = opt.params
 
     def end_time_step(self, data):

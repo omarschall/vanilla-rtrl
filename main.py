@@ -90,9 +90,9 @@ rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
 
 
 optimizer = Private_LR_SGD(rnn)
-meta_optimizer = Stochastic_Gradient_Descent(lr=0.001)
+meta_optimizer = Stochastic_Gradient_Descent(lr=0.0001)
 learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-meta_learn_alg = Meta_Learning_Algorithm(rnn)
+meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer)
 
 comp_algs = []
 monitors = []
@@ -105,7 +105,11 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
         verbose=True,
         report_accuracy=False,
         report_loss=True,
-        checkpoint_interval=checkpoint_interval)
+        checkpoint_interval=checkpoint_interval,
+        #outer_loop = True,
+        meta_learn_alg= meta_learn_alg,
+        meta_optimizer = meta_optimizer
+        )
     
 
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
