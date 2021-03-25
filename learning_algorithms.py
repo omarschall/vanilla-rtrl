@@ -559,7 +559,8 @@ class KF_RTRL(Stochastic_Algorithm):
         A = self.nu[0]*self.p0*self.A + self.nu[1]*self.p1*self.a_hat
         B = (self.nu[0]*(1/self.p0)*self.B_forwards +
              self.nu[1]*(1/self.p1)*self.D)
-
+        # if np.sum(A)==0:
+        #     set_trace()
         return A, B
 
     def get_rec_grads(self):

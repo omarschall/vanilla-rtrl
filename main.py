@@ -5,7 +5,7 @@ Created on Mon Sep 10 16:30:58 2018
 
 @author: omarschall
 """
-
+# %%
 import numpy as np
 from network import *
 from simulation import *
@@ -85,17 +85,18 @@ sigma = 0
 rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
           activation=tanh,
           alpha=alpha,
-          output=identity,
-          loss=mean_squared_error)
+          output=softmax,
+          loss=softmax_cross_entropy)
 
 
-optimizer = Private_LR_SGD(rnn)
-meta_optimizer = Stochastic_Gradient_Descent(lr=0.0001)
+optimizer = Private_LR_SGD(rnn,init_lr=0.01)
+meta_optimizer = Stochastic_Gradient_Descent(lr=0)
 learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
 meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer)
 
 comp_algs = []
-monitors = []
+monitors = ['meta_learn_alg.alpha-norm','meta_learn_alg.F1-norm','meta_learn_alg.F2_alpha-norm']
+
 
 sim = Simulation(rnn)
 sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -106,11 +107,14 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
         report_accuracy=False,
         report_loss=True,
         checkpoint_interval=checkpoint_interval,
-        #outer_loop = True,
+        outer_loop = True,
         meta_learn_alg= meta_learn_alg,
         meta_optimizer = meta_optimizer
         )
-    
+# %%   
+
+sim.mons['meta_learn_alg.F1-norm'][:1000]
+# %%  
 
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
 

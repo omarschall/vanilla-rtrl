@@ -122,7 +122,7 @@ class Simulation:
                           'update_interval', 'comp_algs', 'verbose',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
-                          'overwrite_checkpoints', 'i_start', 'i_end'
+                          'overwrite_checkpoints', 'i_start', 'i_end',
                           'outer_loop', 'meta_learn_alg', 'meta_optimizer'}
         for k in kwargs:
             if k not in allowed_kwargs:
@@ -148,7 +148,7 @@ class Simulation:
         self.i_start = 0
         self.i_end = self.total_time_steps
         self.sigma = 0
-        self.outer_loop = True
+        self.outer_loop = False
 
         #Overwrite defaults with any provided keyword args
         self.__dict__.update(kwargs)
@@ -288,7 +288,7 @@ class Simulation:
         #Update learn_alg variables and get gradients
         self.learn_alg.update_learning_vars()
         self.grads_list = self.learn_alg()
-
+        #print([np.mean(i) for i in self.grads_list])
 
         ### --- Calculate gradients for comparison algorithms --- ###
 
@@ -317,13 +317,12 @@ class Simulation:
         #Update learn_alg variables and get gradients
         self.meta_learn_alg.update_learning_vars()
         self.meta_grads_list = self.meta_learn_alg()
-
+        #print([np.mean(i) for i in self.meta_grads_list])
         #Only update on schedule (default update_interval=1)
         if self.i_t%self.update_interval == 0:
             #Get updated parameters
             opt.params = self.meta_optimizer.get_updated_params(opt.params,
                                                                 self.meta_grads_list)
-            print(opt.params)
             self.optimizer.lr = opt.params
 
     def end_time_step(self, data):

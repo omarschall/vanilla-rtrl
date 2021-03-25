@@ -41,19 +41,17 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         self.name = 'Meta' #Algorithm name
         allowed_kwargs_ = {'nu_dist',} #No special kwargs for RTRL
         super().__init__(rnn, allowed_kwargs_, **kwargs)
-        self.n_nu = self.n_h
+        self.n_nu = 4
         #Initialize alpha and beta
         self.alpha = np.random.normal(0, 1, (self.n_h,self.n_h))
         self.beta = np.random.normal(0, 1, (self.m,self.m))
         
         self.rnn = rnn
         self.inner_algo = inner_algo
+        self.optimizer = optimizer
 
         # Calculate dldw (as q in inner loop)
-        self.dldw = np.ones((self.n_h,self.m))#self.inner_algo.rec_grads
-        
-        #Initialize private learning rate
-        self.lam = np.ones((self.n_h,self.m))  #self.inner_algo.outer_grads   #optimizer.params
+        self.dldw = np.ones((self.n_h,self.m))
     
 
     def approximate_H_first_term(self):
@@ -62,7 +60,8 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         beta1 = np.outer(self.inner_algo.A ,self.inner_algo.A)
         WB = np.dot(self.rnn.W_out,self.inner_algo.B)
         alpha1 = np.sum(WB[:, :, None] * WB[:, None, :],axis=0)
-        
+        #alpha_t = np.outer(WB[0,:],WB[0,:]) + np.outer(WB[1,:],WB[1,:])
+
         return alpha1, beta1
 
     def approximate_H_second_term(self):
@@ -73,7 +72,7 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
                                      np.array([1])])
 
         beta2 = np.outer(self.a_hat,self.a_hat)
-        alpha2 = np.diag(self.q * self.rnn.activation.f_pp(self.rnn.h))
+        alpha2 = np.diag(self.inner_algo.q * self.rnn.activation.f_pp(self.rnn.h))
 
         return alpha2,beta2
 
@@ -82,13 +81,13 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         """Get the new values of alpha and beta"""
         
         # get Hessian components
-        F1, G1 = self.approximate_H_first_term()
+        self.F1, G1 = self.approximate_H_first_term()
         F2, G2 = self.approximate_H_second_term()
 
-        F1_alpha = np.dot(F1,self.alpha)
-        G1_beta = np.dot(G1,self.beta)
-        F2_alpha = np.dot(F2,self.alpha)
-        G2_beta = np.dot(G2,self.beta)
+        self.F1_alpha = np.dot(self.F1,self.alpha)
+        self.G1_beta = np.dot(G1,self.beta)
+        self.F2_alpha = np.dot(F2,self.alpha)
+        self.G2_beta = np.dot(G2,self.beta)
         
 
         # third term
@@ -97,36 +96,58 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         self.nu = self.sample_nu()
         
-        p0 = np.sqrt(norm(self.beta)/norm(self.alpha))
-        p1 = np.sqrt(norm(G1_beta)/norm(F1_alpha))
-        p2 = np.sqrt(norm(G2_beta)/norm(F2_alpha))
-        p3 = np.sqrt(norm(A_diag)/norm(qB_diag))
+        # approximate lambda
+        lam_nu = np.random.choice([-1, 1], self.n_h)
+        lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
+        gamma = lam_nu
+        eta = np.dot(lam_nu,lam)
 
+        # UORO update
+        v0 = self.alpha
+        v1 = (self.F1_alpha.T*gamma).T
+        v2 = (self.F2_alpha.T*gamma).T 
+        v3 = qB_diag
 
-        self.alpha = self.nu[0] * p0 * self.alpha \
-                    + ((self.nu[1] * p1 * F1_alpha \
-                    + self.nu[2] * p2 * F2_alpha).T * self.nu).T\
-                    + self.nu[3] * p3 * qB_diag
+        w0 = self.beta
+        w1 = (self.G1_beta.T * eta).T
+        w2 = (self.G2_beta.T * eta).T
+        w3 = A_diag
+
+        p0 = np.sqrt(norm(w0)/norm(v0))
+        p1 = np.sqrt(norm(w1)/norm(v1))
+        p2 = np.sqrt(norm(w2)/norm(v2))
+        # if norm(F2_alpha) == 0:
+        #     set_trace()
+        p3 = np.sqrt(norm(w3)/norm(v3))
         
-
-        self.beta = self.nu[0] * (1/p0) * self.beta \
-                    + ((self.nu[1] * (1/p1) * G1_beta  \
-                    + self.nu[2] * (1/p2) * G2_beta).T * np.dot(self.nu,self.lam)).T \
-                    + self.nu[3] * (1/p3) * A_diag
+   
+        self.alpha = self.nu[0] * p0 * v0 \
+                    + self.nu[1] * p1 * v1 \
+                    + self.nu[2] * p2 * v2\
+                    + self.nu[3] * p3 * v3
         
+        
+        self.beta = self.nu[0] * (1/p0) * w0 \
+                    + self.nu[1] * (1/p1) * w1  \
+                    + self.nu[2] * (1/p2) * w2 \
+                    + self.nu[3] * (1/p3) * w3
+        # if np.mean(np.abs(self.alpha)) > 10:
+        #     set_trace()
     
     def get_rec_grads(self):
         
         """Get the LR gradients in an array of shape [n_h, m]"""
+        g = np.matmul(self.alpha.T,np.dot(self.inner_algo.rec_grads,self.beta))
         
-        return np.matmul(self.alpha.T,np.dot(self.dldw,self.beta))
+
+        return g
     
     def __call__(self):
         
         """Return gradients for LR in a list of arrays"""
         
         #let's hard code in the "outer grads" as 0 for now
-        self.outer_grads = np.zeros((self.rnn.n_h, self.rnn.n_h + 1))
+        self.outer_grads = np.zeros((self.rnn.n_out, self.rnn.n_h + 1))
         self.rec_grads = self.get_rec_grads()
         rec_grads_list = split_weight_matrix(self.rec_grads,
                                              [self.n_h, self.n_in, 1])
