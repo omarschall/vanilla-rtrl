@@ -62,10 +62,33 @@ def SVCCA_distance(checkpoint_1, checkpoint_2, data, R=3):
     A_1 = get_test_sim_data(checkpoint_1, data)
     A_2 = get_test_sim_data(checkpoint_2, data)
     
-    cca = CCA(n_components=R)
+    #U_1, S_1, V_1 = np.linalg.svd(A_1)
+    #U_2, S_2, V_2 = np.linalg.svd(A_2)
+    
+    cca = CCA(n_components=R, max_iter=1000)
+    #cca.fit(V_1, V_2)
+    #cca.fit(A_1.dot(V_1), A_2.dot(V_2))
     cca.fit(A_1, A_2)
     
+    #return 1 - cca.score(A_1.dot(V_1), A_2.dot(V_2))
+    #return 1 - cca.score(V_1, V_2)
     return 1 - cca.score(A_1, A_2)
+
+def CKA_distance(checkpoint_1, checkpoint_2, data, centered=False):
+    """Compute CKA distance between two checkpoints"""
+    
+    A_1 = get_test_sim_data(checkpoint_1, data)
+    A_2 = get_test_sim_data(checkpoint_2, data)
+    
+    N = A_1.shape[0]
+    
+    if centered:
+        A_1 = A_1 - np.mean(A_1, axis=0)
+        A_2 = A_2 - np.mean(A_2, axis=0)
+        
+    return 1 - (norm(A_1.T.dot(A_2)) / (norm(A_1.T.dot(A_1)) * norm(A_2.T.dot(A_2))))
+    #return 1 - (norm(A_1.dot(A_2.T)) / (norm(A_1.dot(A_1.T)) * norm(A_2.dot(A_2.T))))
+    
 
 def rec_weight_distance(checkpoint_1, checkpoint_2):
     """Computes the norm of the difference in the recurrent weight matrix
@@ -141,6 +164,40 @@ def PC_distance_2(checkpoint_1, checkpoint_2):
     M = V1.T.dot(V2)
     
     return np.arccos(np.sqrt(np.linalg.det(M.dot(M.T))))
+
+def PC_distance_3(checkpoint_1, checkpoint_2, N_avg=None, N_test=2000,
+                  task=None):
+    
+    n_dim = checkpoint_1['V'].shape[1]
+    
+    if N_avg is None:
+        
+        V1 = checkpoint_1['V']
+        V2 = checkpoint_2['V']
+        
+        return 1 - np.sort(np.abs(V1.T.dot(V2)).flatten())[-n_dim:].sum() / n_dim
+    
+    else:
+        
+        n_1 = checkpoint_1['rnn'].n_h
+        n_2 = checkpoint_2['rnn'].n_h
+        
+        
+        Ds = []
+        for i in range(N_avg):
+            np.random.seed(i)
+            test_data = task.gen_data(0, N_test)
+            transform = Vanilla_PCA(checkpoint_1, test_data)
+            V1 = transform(np.eye(n_1))
+            transform = Vanilla_PCA(checkpoint_2, test_data)
+            V2 = transform(np.eye(n_2))
+            Ds.append(1 - np.sort(np.abs(V1.T.dot(V2)).flatten())[-n_dim:].sum() / n_dim)
+            
+        #set_trace()
+        
+        return np.mean(Ds)
+            
+            
 
 def VAE_distance(checkpoint_1, checkpoint_2, big_data):
     """Returns the reconstruction error of trajectories sampled from the RNN

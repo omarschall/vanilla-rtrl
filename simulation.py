@@ -11,7 +11,7 @@ import time
 from utils import (norm, classification_accuracy, normalized_dot_product,
                    get_spectral_radius, rgetattr, get_Duncker_projections)
 import numpy as np
-from optimizers import SGD_With_Projections
+from optimizers import SGD_With_Projections, SGD_Momentum_With_Projections
 
 class Simulation:
     """Simulates an RNN for a provided set of inputs and training procedures.
@@ -273,6 +273,9 @@ class Simulation:
         if self.trial_mask is not None:
             rnn.loss_ *= self.trial_mask[self.i_t_trial]
             rnn.error *= self.trial_mask[self.i_t_trial]
+        # if self.dim_mask is not None:
+        #     rnn.loss_ *= self.dim_mask
+        #     rnn.error *= self.dim_mask
 
     def train_step(self):
         """Uses self.learn_alg to calculate gradients and self.optimizer to
@@ -583,9 +586,12 @@ class Simulation:
         else:
             lr = self.optimizer.lr
         
-        self.optimizer = SGD_With_Projections(lr=lr,
-                                              rec_proj_mats=[P_wz, P_z],
-                                              out_proj_mats=[P_y, P_h])
+        # self.optimizer = SGD_With_Projections(lr=lr,
+        #                                       rec_proj_mats=[P_wz, P_z],
+        #                                       out_proj_mats=[P_y, P_h])
+        self.optimizer = SGD_Momentum_With_Projections(lr=lr, mu=self.optimizer.mu,
+                                                       rec_proj_mats=[P_wz, P_z],
+                                                       out_proj_mats=[P_y, P_h])
         
         
 

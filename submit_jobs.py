@@ -21,7 +21,8 @@ def clear_results(job_file, data_path='/Users/omarschall/cluster_results/vanilla
 def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
                username='oem214', domain='greene.hpc.nyu.edu'):
 
-    job_name = job_file.split('/')[-1].split('.')[0]
+    #job_name = job_file.split('/')[-1].split('.')[0]
+    job_name = '.'.join(job_file.split('/')[-1].split('.')[:-1])
     data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
     data_dir = os.path.join(data_path, job_name)
 

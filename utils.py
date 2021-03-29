@@ -251,14 +251,20 @@ def plot_array_of_downsampled_signals(signals, ticks=None, return_fig=False,
     if return_fig:
         return fig
     
-def plot_signal_xcorr(s1, s2, return_fig=False):
+def plot_signal_xcorr(s1, s2, return_fig=False, finite_diff=True):
     
     assert s1.shape == s2.shape
     
+    #finite_difference
+    
+    if finite_diff:
+        s1 = (s1[1:] - s1[:-1])# / (np.abs(s1[1:]) + np.abs(s1[:-1]) + 1)
+        s2 = (s2[1:] - s2[:-1])# / (np.abs(s2[1:]) + np.abs(s2[:-1]) + 1)
+    
     n_pts = s1.shape[0]
     lags = np.arange(1 - n_pts, n_pts)
-    s1 = (s1 - s1.mean()) / np.std(s1)
-    s2 = (s2 - s2.mean()) / np.std(s2)
+    #s1 = (s1 - s1.mean()) / np.std(s1)
+    #s2 = (s2 - s2.mean()) / np.std(s2)
     
     xcorr = np.correlate(s1, s2, 'full') / max(len(s1), len(s2))
     

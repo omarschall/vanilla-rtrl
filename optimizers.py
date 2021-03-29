@@ -292,7 +292,67 @@ class SGD_With_Projections(Optimizer):
 
         return updated_params
     
+class SGD_Momentum_With_Projections(Optimizer):
+    """Impelements SGD with classical momentum."""
     
+    def __init__(self, lr=0.001, mu=0.8, rec_proj_mats=[], out_proj_mats=[],
+                 **kwargs):
+
+        allowed_kwargs_ = set()
+        super().__init__(allowed_kwargs_, **kwargs)
+
+        self.lr_ = np.copy(lr)
+        self.lr = lr
+        self.mu = mu
+        self.vel = None
+        self.rec_proj_mats = rec_proj_mats
+        self.out_proj_mats = out_proj_mats
+        
+    def get_updated_params(self, params, grads):
+        """Returns a list of updated parameter values (NOT the change in value).
+
+        Args:
+            params (list): List of trainable parameters as numpy arrays
+            grads (list): List of corresponding gradients as numpy arrays.
+        Returns:
+            updated_params (list): List of newly updated parameters."""
+
+        if self.lr_decay_rate is not None:
+            self.lr = self.lr_decay()
+
+        if self.clip_norm is not None:
+            grads = self.clip_gradient(grads)
+            
+        if self.normalize:
+            grads = self.normalize_gradient(grads)
+
+        if self.vel is None:
+            self.vel = [np.zeros_like(g) for g in params]        
+
+        n_h = grads[0].shape[0]
+        n_in = grads[1].shape[1]
+            
+        #Concatenate gradients in relevant directions
+        W_grad = np.concatenate([grads[0], grads[1],
+                                 grads[2].reshape(-1,1)], axis=1)
+        W_out_grad = np.concatenate([grads[3], grads[4].reshape(-1,1)], axis=1)
+        
+        #Project along projection matrices
+        W_grad_proj = self.rec_proj_mats[0].dot(W_grad)
+        W_grad_proj = W_grad_proj.dot(self.rec_proj_mats[1])
+        W_out_grad_proj = self.out_proj_mats[0].dot(W_out_grad)
+        W_out_grad_proj = W_out_grad_proj.dot(self.out_proj_mats[1])
+        
+        delta_W = split_weight_matrix(W_grad_proj, [n_h, n_in, 1])
+        delta_W += split_weight_matrix(W_out_grad_proj, [n_h, 1])
+        
+        self.vel = [self.mu * v - self.lr * g for v, g in zip(self.vel, delta_W)]
+
+        updated_params = []
+        for param, v in zip(params, self.vel):
+            updated_params.append(param + v)
+
+        return updated_params
     
     
     
