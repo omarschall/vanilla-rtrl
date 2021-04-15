@@ -499,7 +499,8 @@ class Fixed_Point_Transition_Task(Task):
     """A task where a given number of states in output space is provided,
     along with a set of transition matrices as functions of possible inputs."""
     
-    def __init__(self, states, T_dict, p_transition=0.05, deterministic=True):
+    def __init__(self, states, T_dict, p_transition=0.05, deterministic=True,
+                 delay=None):
         """Initializes an instance of the task by specifying the states
         (points in output space) to be reported, as well as a dictionary
         specifying the transition patterns for each input.
@@ -514,13 +515,16 @@ class Fixed_Point_Transition_Task(Task):
             p_transition (float): A float indicating the probability of
                 encountering a transition at each time point.
             deterministic (bool): A boolean indicating True if you know
-                T_dict to be deterministic, which simplifies data gen."""
+                T_dict to be deterministic, which simplifies data gen.
+            delay (int): An integer indicating the number of time steps to
+                delay the indicated transition."""
                 
         self.states = states
         self.n_states = len(states)
         self.T_dict = T_dict
         self.p_transition = p_transition
         self.deterministic = deterministic
+        self.delay = delay
         
         super().__init__(len(T_dict.keys()), states[0].shape[0])
         
@@ -575,6 +579,9 @@ class Fixed_Point_Transition_Task(Task):
         I_Y += ([I_Y[-1]] * (len(I_X) - last_T_time - 1))
             
         Y = np.array([self.states[i_y] for i_y in I_Y])
+        
+        if self.delay is not None:
+            Y = np.roll(Y, shift=self.delay, axis=0)
         
         return X, Y
 
