@@ -298,8 +298,10 @@ def plot_MDS_from_distance_matrix(distances, return_fig=False):
 def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
     
     
+    n_params = checkpoint_lists[0]['rnn'].n_h_params
+    
     fig = plt.figure()
-    U = np.linalg.qr(np.random.normal(0, 1, (1152, 1152)))[0][:2]
+    U = np.linalg.qr(np.random.normal(0, 1, (n_params, n_params)))[0][:2]
     
     for i_list, checkpoints_list in enumerate(checkpoint_lists):
         rec_params = []
