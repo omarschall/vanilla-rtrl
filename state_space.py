@@ -204,7 +204,8 @@ def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, sigma=0,
 
 def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
                                   i_input=None, plotting_noise=0.05,
-                                  return_fig=False):
+                                  return_fig=False, n_inputs=None,
+                                  color_scheme='dotted'):
     
     n_nodes = checkpoint['nodes'].shape[0]
     
@@ -226,20 +227,33 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
                  color=('0.6'))
 
     
+    if n_inputs is None:
+        n_in = 6
+    else:
+        n_in = n_inputs
+        
+    n_half = n_in // 2
+    
     #keys = [k for k in checkpoint.keys() if 'adjmat' in k]
     
     if i_input is not None:
         keys = ['adjmat_input_{}'.format(i_input)]
     else:
-        keys = ['adjmat_input_{}'.format(i) for i in range(6)]
+        keys = ['adjmat_input_{}'.format(i) for i in range(n_in)]
     np.random.seed(0)
     leg = []
     for key in keys:
         
         graph = checkpoint[key]
         i_input_ = int(key.split('_')[2])
-        i_color = i_input_ % 3
-        linestyle = ['-', '--'][i_input_ // 3]
+        
+        if color_scheme == 'dotted':
+            i_color = i_input_ % 3
+            linestyle = ['-', '--'][i_input_ // n_half]
+        if color_scheme == 'different':
+            i_color = i_input_
+            linestyle = '-'
+            
         leg_ = 'Input {}'.format(i_color)
         if linestyle == '-':
             leg_ += ', +'
@@ -289,11 +303,95 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
     if return_fig:
         return fig
     
+def plot_input_dependent_task_topology(task, reference_checkpoint=None,
+                                       i_input=None, plotting_noise=0.05,
+                                       return_fig=False, color_scheme='dotted'):
     
+    n_nodes = task.n_states
+    total_nodes = n_nodes
     
+    fig = plt.figure(figsize=(4, 4))
+    plt.title('Task structure')
     
+    t_range = np.arange(np.pi, -np.pi, -2 * np.pi / total_nodes)
+    circle_nodes = np.array([[np.cos(t), np.sin(t)] for t in t_range[:n_nodes]])
     
+    #plot little circles
+    theta = np.arange(0, 2 * np.pi, 0.01)
+    for node in circle_nodes:
+        plt.plot(node[0] + 0.18 * np.cos(theta), node[1] + 0.18 * np.sin(theta),
+                 color=('0.6'))
+
+    n_in = len(task.T_dict.keys())        
+    n_half = n_in // 2
     
+    if i_input is not None:
+        keys = ['input_{}'.format(i_input)]
+    else:
+        keys = ['input_{}'.format(i) for i in range(n_in)]
+    np.random.seed(0)
+    leg = []
+    for key in keys:
+        
+        graph = task.T_dict[key]
+        i_input_ = int(key.split('_')[1])
+        
+        if color_scheme == 'dotted':
+            i_color = i_input_ % 3
+            linestyle = ['-', '--'][i_input_ // n_half]
+        if color_scheme == 'different':
+            i_color = i_input_
+            linestyle = '-'
+            
+        leg_ = 'Input {}'.format(i_color)
+        
+        if linestyle == '-':
+            leg_ += ', +'
+        else:
+            leg_ += ', -'
+        leg.append(leg_)
+        
+        for i, j in zip(*np.where(graph != 0)):
+    
+            if i == j:
+                continue
+    
+            weight = graph[i, j]
+            
+            if weight < 0.05:
+                continue
+            
+            line = np.array([circle_nodes[i], circle_nodes[j]])
+            
+            start = circle_nodes[i] + np.random.normal(0, plotting_noise, 2)
+            end = circle_nodes[j] + np.random.normal(0, plotting_noise, 2)
+            
+            plt.plot([start[0], end[0]],
+                      [start[1], end[1]],
+                      color='C{}'.format(i_color), alpha=weight,
+                      linestyle=linestyle)
+            
+            plt.plot([start[0]],
+                      [start[1]], 'x',
+                      color='C{}'.format(i_color), alpha=weight)
+            
+            plt.plot([end[0]],
+                      [end[1]], '.',
+                      color='C{}'.format(i_color), alpha=weight)
+            
+            # plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1],
+            #           color='C{}'.format(i_color), alpha=weight,
+            #           head_width=0.025, head_length=0.05,
+            #           linestyle=linestyle)
+        
+    plt.xlim([-1.4, 1.4])
+    plt.ylim([-1.4, 1.4])
+    #plt.legend(leg)
+    #plt.axis('equal')
+    #set_trace()
+    
+    if return_fig:
+        return fig
     
     
     
