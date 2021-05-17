@@ -293,7 +293,7 @@ class Simulation:
         
         ### --- Continual learning --- ###
 
-        if hasattr(self.learn_alg, 'CL_method') and self.i_t > 0:
+        if self.learn_alg.CL_method is not None and self.i_t > 0:
             self.learn_alg.CL_method.mini_update(self)
             if self.task_marker[self.i_t] != self.task_marker[self.i_t - 1]:
                 self.learn_alg.CL_method.task_switch_update(self)

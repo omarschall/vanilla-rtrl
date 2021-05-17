@@ -328,7 +328,8 @@ class Flip_Flop_Task(Task):
     specified by the "p_flip" parameter."""
 
     def __init__(self, n_bit, p_flip, tau_task=1, p_context_flip=None,
-                 input_magnitudes=None, dim_mask=[1,1,1]):
+                 input_magnitudes=None,
+                 x_dim_mask=[1,1,1], y_dim_mask=[1,1,1]):
         """Initiates an instance of the n-bit flip flop task by specifying the
         probability of a nonzero input and timescale of the task.
 
@@ -353,7 +354,8 @@ class Flip_Flop_Task(Task):
         self.tau_task = tau_task
         self.p_context_flip = p_context_flip
         self.input_magnitudes = input_magnitudes
-        self.dim_mask = np.array(dim_mask)
+        self.x_dim_mask = np.array(x_dim_mask)
+        self.y_dim_mask = np.array(y_dim_mask)
 
     def gen_dataset(self, N):
         """Generates a dataset for the flip-flop task."""
@@ -394,8 +396,8 @@ class Flip_Flop_Task(Task):
             X[np.where(x_context == -1), :-1] *= -1
             
         #Mask any dimensions
-        X = X * self.dim_mask
-        Y = Y * self.dim_mask
+        X = X * self.x_dim_mask
+        Y = Y * self.y_dim_mask
             
         return X, Y
 
