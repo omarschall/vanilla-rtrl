@@ -8,3 +8,4 @@ notebooks/good_ones/*
 saved_runs
 job_scripts
 fp_tasks
+.ipynb_checkpoints
