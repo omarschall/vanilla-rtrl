@@ -298,8 +298,10 @@ def plot_MDS_from_distance_matrix(distances, return_fig=False):
 def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
     
     
+    n_params = checkpoint_lists[0]['rnn'].n_h_params
+    
     fig = plt.figure()
-    U = np.linalg.qr(np.random.normal(0, 1, (1152, 1152)))[0][:2]
+    U = np.linalg.qr(np.random.normal(0, 1, (n_params, n_params)))[0][:2]
     
     for i_list, checkpoints_list in enumerate(checkpoint_lists):
         rec_params = []
@@ -379,7 +381,7 @@ def unpack_analysis_results(data_path):
     
     return indices, checkpoints
     
-def align_checkpoints(checkpoint, reference_checkpoint):
+def align_checkpoints(checkpoint, reference_checkpoint, n_inputs=6):
     """Finds the best possible alignment between fixed point clusters (as
     found by DBSCAN) between an reference checkpoint and the second. Only
     the second is changed.
@@ -436,7 +438,7 @@ def align_checkpoints(checkpoint, reference_checkpoint):
     [extra_indices.remove(i) for i in I_]
     I = I_ + extra_indices
         
-    keys = ['adjmat_input_{}'.format(i) for i in range(6)] + ['nodes']
+    keys = ['adjmat_input_{}'.format(i) for i in range(n_inputs)] + ['nodes']
     
     for key in keys:
         
@@ -539,7 +541,8 @@ def concatenate_simulation_checkpoints(simulations):
     return ret
     
             
-def get_Duncker_projections(A, X, rnn, inv_constant=0.001):
+def get_Duncker_projections(A, X, rnn, n_switches=1,
+                            inv_constant=0.001):
     """Get the continual learning projections from Duncker et al. given the
     data that should be included and the current parameters of the rnn."""
     
@@ -550,16 +553,54 @@ def get_Duncker_projections(A, X, rnn, inv_constant=0.001):
                         rnn.b_rec.reshape((-1, 1))], axis=1)
     WZ = W.dot(Z)
     
-    P_z = np.linalg.inv(Z.dot(Z.T)/inv_constant + np.eye(m))
-    P_wz = np.linalg.inv(WZ.dot(WZ.T)/inv_constant + np.eye(rnn.n_h))
+    P_z = np.linalg.inv(Z.dot(Z.T)/(n_switches * inv_constant) + np.eye(m))
+    P_wz = np.linalg.inv(WZ.dot(WZ.T)/(n_switches * inv_constant) + np.eye(rnn.n_h))
     
     H = np.concatenate([A, np.ones((A.shape[0], 1))], axis=1).T
     W_o = np.concatenate([rnn.W_out, rnn.b_out.reshape((-1, 1))], axis=1)
     WH = W_o.dot(H)
     
-    P_h = np.linalg.inv(H.dot(H.T)/inv_constant + np.eye(rnn.n_h + 1))
-    P_y = np.linalg.inv(WH.dot(WH.T)/inv_constant + np.eye(rnn.n_out))
+    P_h = np.linalg.inv(H.dot(H.T)/(n_switches * inv_constant) + np.eye(rnn.n_h + 1))
+    P_y = np.linalg.inv(WH.dot(WH.T)/(n_switches * inv_constant) + np.eye(rnn.n_out))
     
     return P_z, P_wz, P_h, P_y
         
+def generate_ergodic_markov_task(one_hot_dim=4, n_inputs=4, idem=True):
+
+    FPs = [np.eye(one_hot_dim)[i] for i in range(one_hot_dim)]
+    n_states = len(FPs)
+    
+    done = False
+    
+    while not done:
+    
+        T_dict = {}
         
+        for i_input in range(n_inputs):
+            
+            T = np.zeros((n_states, n_states))
+            perm = np.random.permutation(range(n_states))
+            
+            for i_fp in range(n_states):
+                T[i_fp, perm[i_fp]] = 1
+              
+            if idem:
+                #force to be idempotent
+                for i_fp in np.random.permutation(range(n_states)):
+                    if T[:,i_fp].sum() > 0:
+                        T[i_fp, :] = np.eye(n_states)[i_fp]
+        
+                #check if idempotent
+                assert (T == T.dot(T)).all()
+            
+            T_dict['input_{}'.format(i_input)] = T
+            
+        T_avg = sum([T for T in T_dict.values()]) / len(T_dict.keys())
+        
+        
+        T_power = np.round(np.linalg.matrix_power(T_avg, 1000), 2)
+        
+        if (T_power[0] > 0).all():
+            done = True
+        
+    return FPs, T_dict

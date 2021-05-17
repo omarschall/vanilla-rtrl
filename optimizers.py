@@ -190,8 +190,9 @@ class Stochastic_Gradient_Descent(Optimizer):
             grads = self.normalize_gradient(grads)
             
         updated_params = []
-        for param, grad in zip(params, grads):
-            updated_params.append(param - self.lr * grad)
+        self.vel = [-self.lr * g for g in grads]
+        for param, v in zip(params, self.vel):
+            updated_params.append(param + v)
 
         return updated_params
 

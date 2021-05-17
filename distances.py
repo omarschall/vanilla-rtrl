@@ -206,17 +206,18 @@ def VAE_distance(checkpoint_1, checkpoint_2, big_data):
     return test_vae(model_checkpoint=checkpoint_1, data=big_data,
                     test_checkpoint=checkpoint_2)
 
-def aligned_graph_distance(checkpoint_1, checkpoint_2, node_diff_penalty=1):
+def aligned_graph_distance(checkpoint_1, checkpoint_2, node_diff_penalty=1,
+                           n_inputs=6):
     """Returns the custom graph similarity metric for aligned nodes.
     
     We assume checkpoint_2 *follows* checkpoint_1, i.e. checkpoint_1 was used
     to align the nodes of checkpoint_2.
     """
     
-    adjmats_1 = [checkpoint_1['forwardshared_adjmat_input_{}'.format(i)] for i in range(6)]
-    adjmats_2 = [checkpoint_2['backshared_adjmat_input_{}'.format(i)] for i in range(6)]
+    adjmats_1 = [checkpoint_1['forwardshared_adjmat_input_{}'.format(i)] for i in range(n_inputs)]
+    adjmats_2 = [checkpoint_2['backshared_adjmat_input_{}'.format(i)] for i in range(n_inputs)]
     
-    ret = 1 - sum([normalized_dot_product(M1, M2) for M1, M2 in zip(adjmats_1, adjmats_2)]) / 6
+    ret = 1 - sum([normalized_dot_product(M1, M2) for M1, M2 in zip(adjmats_1, adjmats_2)]) / n_inputs
     
     n_1 = checkpoint_1['nodes'].shape[0]
     n_2 = checkpoint_2['nodes'].shape[0]

@@ -45,7 +45,7 @@ class Learning_Algorithm:
                 common to all child classes of Learning_Algorithm, 'W_FB' and
                 'L2_reg'."""
 
-        allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg',
+        allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg', 'CL_method',
                           'maintain_sparsity'}.union(allowed_kwargs_)
 
         for k in kwargs:
@@ -193,6 +193,9 @@ class Learning_Algorithm:
 
         if self.L2_reg is not None:
             grads_list = self.L2_regularization(grads_list)
+
+        if self.CL_method is not None:
+            grads_list = self.CL_method(grads_list)
 
         if self.maintain_sparsity:
             grads_list = self.apply_sparsity_to_grads(grads_list)

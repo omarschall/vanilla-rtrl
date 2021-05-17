@@ -40,8 +40,8 @@ if os.environ['HOME'] == '/home/oem214':
         i_job = 0
     #i_job = 61
     #macro_configs = config_generator(i_start=list(range(0, 200000, 1000)))
-    macro_configs = config_generator(name=['init_g=1.5'],
-                                     i_start=list(range(0, 20000, 100)))
+    macro_configs = config_generator(name=['best_grid_2'],
+                                     i_start=list(range(0, 2000000, 5000)))
     #macro_configs = config_generator(algorithm=['RFLO'])
     micro_configs = tuple(product(macro_configs, list(range(n_seeds))))
 
@@ -50,7 +50,7 @@ if os.environ['HOME'] == '/home/oem214':
     np.random.seed(i_job)
     
 if os.environ['HOME'] == '/Users/omarschall':
-    params = {'name': 'init_g=1.5',
+    params = {'name': 'diag',
               'algorithm': 'RFLO',
               'tasks': 'all'}
     i_job = 0
@@ -60,15 +60,16 @@ i_seed = np.random.randint(0, 1000)
 np.random.seed(i_seed)
 task = Flip_Flop_Task(3, 0.05, input_magnitudes=None)
 #task = Add_Task(4, 6, deterministic=True)
-N_train = 20000
+N_train = 2000000
 N_test = 2000
-checkpoint_interval = 100
+checkpoint_interval = 5000
 sigma = 0
 name = params['name']
 #algorithm = params['algorithm']
 file_name = '{}'.format(name)
 analysis_job_name = '{}'.format(name)
 compare_job_name = 'comp_{}'.format(analysis_job_name)
+task_name = '{}_task'.format(name)
 MODE = ['TRAIN', 'CHECK', 'ANALYZE', 'COMPARE', 'PLOT'][4]
 #print(sklearn.__version__)
 
@@ -260,15 +261,6 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     name = params['name']
     print('Analyzing checkpoints...')
     
-    contexts = [None]
-    inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
-              np.array([0, 0, 1]), np.array([-1, 0, 0]),
-              np.array([0, -1, 0]), np.array([0, 0, -1])]
-    
-    result = {}
-    
-    data = task.gen_data(100, 30000)
-    
     #Progress logging
     scratch_path = '/scratch/oem214/vanilla-rtrl/'
     log_path = os.path.join(scratch_path, 'log/' + analysis_job_name) + '_{}.log'.format(i_job)
@@ -277,8 +269,21 @@ if MODE == 'ANALYZE': #Do this on cluster with array jobs on 'i_start'
     with open(os.path.join('saved_runs', file_name), 'rb') as f:
         #checkpoints = pickle.load(f)
         sim = pickle.load(f)
+        
+    with open(os.path.join('fp_tasks', task_name), 'rb') as f:
+        #checkpoints = pickle.load(f)
+        task = pickle.load(f)
     
-    for i_checkpoint in range(params['i_start'], params['i_start'] + 100, checkpoint_interval):
+    contexts = [None]
+    # inputs = [np.array([1, 0, 0]), np.array([0, 1, 0]),
+    #           np.array([0, 0, 1]), np.array([-1, 0, 0]),
+    #           np.array([0, -1, 0]), np.array([0, 0, -1])]
+    inputs = [np.eye(task.n_in)[i] for i in range(task.n_in)]
+    result = {}
+    
+    data = task.gen_data(100, 30000)
+    
+    for i_checkpoint in range(params['i_start'], params['i_start'] + checkpoint_interval, checkpoint_interval):
 
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
@@ -308,7 +313,7 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
     n_off_diagonals = 1
     
     #big_data = task.gen_data(100, 20000)
-    data = task.gen_data(100, 10000)
+    #data = task.gen_data(100, 10000)
     scratch_path = '/scratch/oem214/vanilla-rtrl/'
     if os.environ['HOME'] == '/home/oem214':
         data_path = os.path.join(scratch_path, 'library/' + analysis_job_name)
@@ -368,8 +373,8 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
             
             #align checkpoints
             try:
-                align_checkpoints(checkpoint_2, checkpoint_1)
-                align_checkpoints(checkpoint_2, checkpoint_1)
+                align_checkpoints(checkpoint_2, checkpoint_1, n_inputs=4)
+                align_checkpoints(checkpoint_2, checkpoint_1, n_inputs=4)
             except ValueError:
                 break
                 #print('checkpoint 2 keys:/n', checkpoint_2.keys())
@@ -398,7 +403,8 @@ if MODE == 'COMPARE': #Do this on cluster with single job (for now)
             #                                                                 checkpoint_2)
             aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                 checkpoint_2,
-                                                                node_diff_penalty=0)
+                                                                node_diff_penalty=0,
+                                                                n_inputs=4)
             node_diff_distances[i, j] = node_diff_distance(checkpoint_1, checkpoint_2)
             rec_weight_distances[i, j] = rec_weight_distance(checkpoint_1,
                                                           checkpoint_2)
@@ -430,8 +436,12 @@ if MODE == 'PLOT':
     #- do windowed standard deviation for normalized trace comparison
     #
     
+    #with open(os.path.join('fp_tasks', task_name), 'rb') as f:
+        #checkpoints = pickle.load(f)
+    #    task = pickle.load(f)
+    
     local_results = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    figs_path = '/Users/omarschall/weekly-reports/report_10-29-2020/figs'
+    figs_path = '/Users/omarschall/career-stuff/thesis_committee/meeting_april-2021'
     comp_data_path = os.path.join(local_results, compare_job_name, 'result_0')
     data_path = os.path.join(local_results, analysis_job_name)
     indices, checkpoints = unpack_analysis_results(data_path)
@@ -441,15 +451,16 @@ if MODE == 'PLOT':
     rec_params = []
     CCA_distances = []
     largest_evals = []
-    CCA_data = task.gen_data(0, 1000)
+    weight_stds = []
+    CCA_data = task.gen_data(10, 1000)
     for i_index in range(1, len(indices)):
         ref_checkpoint = checkpoints['checkpoint_{}'.format(indices[i_index - 1])]
         checkpoint = checkpoints['checkpoint_{}'.format(indices[i_index])]
         if i_index % 100 == 0:
             print(i_index)
         try:
-            align_checkpoints(checkpoint, ref_checkpoint)
-            align_checkpoints(checkpoint, ref_checkpoint)
+            align_checkpoints(checkpoint, ref_checkpoint, n_inputs=4)
+            align_checkpoints(checkpoint, ref_checkpoint, n_inputs=4)
         except ValueError:
             continue
         d = norm(np.array(checkpoint['corr_node_distances']))
@@ -460,6 +471,7 @@ if MODE == 'PLOT':
         rec_params.append(params)
         eigs, vecs = np.linalg.eig(checkpoint['rnn'].W_rec)
         largest_evals.append(np.abs(eigs[0]))
+        weight_stds.append(rnn.W_rec.std())
         #CCA_distances.append(SVCCA_distance(checkpoint, ref_checkpoint, CCA_data))
         #grad_norms.append(norm(checkpoint['learn_alg'].rec_grads))
     losses = np.array(losses)
@@ -467,17 +479,21 @@ if MODE == 'PLOT':
     largest_evals = np.array(largest_evals)
     norms = np.square(rec_params[1:] - rec_params[:-1]).sum(1)
     node_distances = np.array(node_distances)
+    weight_stds = np.array(weight_stds)
     
     #collect all signals
     signals = {'losses': losses, 'node_distances': node_distances,
-               'norms': norms, 'largest_evals': largest_evals}
+               'norms': norms, 'largest_evals': largest_evals,
+               'weight_stds': weight_stds}
+    signals = {'losses': losses}
     try:
         with open(comp_data_path, 'rb') as f:
             result = pickle.load(f)
     
         for i_key, key in enumerate(result.keys()):
             
-            if 'distances' in key or 'participation' in key:
+            #if 'distances' in key or 'participation' in key:
+            if 'aligned' in key:
                 
                 x = np.diag(result[key][:-1,1:])
                 signals[key] = x.copy()
@@ -488,8 +504,9 @@ if MODE == 'PLOT':
     
     #Plot all signals
     
-    fig1 = plt.figure(figsize=(10,10))
+    fig1 = plt.figure(figsize=(10,2))
     leg = []
+    colors = ['#89949B', '#E89C15']
     for i_key, key in enumerate(signals):
         
         x = signals[key].copy()
@@ -503,13 +520,14 @@ if MODE == 'PLOT':
         
         x = (x - x_min) / (x_max - x_min)
         
-        plt.plot(x - 1.2 * i_key)
+        plt.plot(x - 1.2 * i_key, color=colors[i_key])
         if key == 'largest_evals':
             unit_circle = (1 - x_min) / (x_max - x_min)
             plt.axhline(y=unit_circle - 1.2 * i_key, color=('0.6'), linestyle='--', label='_nolegend_')
         leg.append(key)
                 
-    plt.legend(leg)
+    #plt.legend(leg)
+    plt.xticks([0, 100, 200, 300, 400], ['0', '500k', '1M', '1.5M', '2M'])
     plt.yticks([])
     
     
@@ -517,7 +535,7 @@ if MODE == 'PLOT':
     data = task.gen_data(100, 10000)
     # sparse_inputs_task = Flip_Flop_Task(task.n_bit, 0.001)
     
-    i_checkpoint = 14990
+    i_checkpoint = max(indices)
     checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
     transform = Vanilla_PCA(checkpoint, data)
     ssa_2 = State_Space_Analysis(checkpoint, data, transform=transform)

@@ -127,7 +127,8 @@ class Simulation:
                           'best_model_interval', 'checkpoint_interval',
                           'overwrite_checkpoints', 'i_start', 'i_end',
                           'N_Duncker_data', 'lr_Duncker',
-                          'Duncker_proj_tasks', 'combined_task'}
+                          'Duncker_proj_tasks', 'combined_task',
+                          'SI_reg'}
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -140,6 +141,8 @@ class Simulation:
         self.monitors = monitors
         self.x_inputs = data[mode]['X']
         self.y_labels = data[mode]['Y']
+        if 'task_marker' in data[mode].keys():
+            self.task_marker = data[mode]['task_marker']
         self.total_time_steps = self.x_inputs.shape[0]
 
         #Set defaults
@@ -197,6 +200,8 @@ class Simulation:
         #Delete data to save space
         del(self.x_inputs)
         del(self.y_labels)
+        if 'task_marker' in data[mode].keys():
+            del(self.task_marker)
 
     def initialize_run(self):
         """Initializes a few variables before the time loop."""
@@ -282,10 +287,18 @@ class Simulation:
         apply them to self.rnn. Also calculates gradients from comparison
         algorithms."""
 
-        ### --- Calculate gradients --- ###
 
         #Pointer for convenience
         rnn = self.rnn
+        
+        ### --- Continual learning --- ###
+
+        if self.learn_alg.CL_method is not None and self.i_t > 0:
+            self.learn_alg.CL_method.mini_update(self)
+            if self.task_marker[self.i_t] != self.task_marker[self.i_t - 1]:
+                self.learn_alg.CL_method.task_switch_update(self)
+
+        ### --- Calculate gradients --- ###
 
         #Update learn_alg variables and get gradients
         self.learn_alg.update_learning_vars()
@@ -337,6 +350,29 @@ class Simulation:
             task_marker = data['train']['task_marker']
             if task_marker[self.i_t] != task_marker[self.i_t - 1]:
                 self.Duncker_CL_task_switch(self.N_Duncker_data)
+                
+        if self.SI_reg is not None and self.i_t > 0:
+            
+            #Update omegas
+            for i_param in range(len(self.SI_omega)):
+                v = self.optimizer.vel[i_param]
+                g = self.grads_list[i_param]
+                self.SI_omega[i_param] -= v * g
+            
+            #Refresh omegas, update Omegas
+            task_marker = data['train']['task_marker']
+            if task_marker[self.i_t] != task_marker[self.i_t - 1]:
+                
+                self.SI_Theta.append([p.copy() for p in self.rnn.params])
+                self.SI_Delta.append([p - q for p, q in zip(self.SI_Theta[-1],
+                                                            self.SI_Theta[-2])])
+                
+                for i_param in range(len(self.SI_omega)):
+                    o = self.SI_omega[i_param]
+                    D = self.SI_Delta[i_param]
+                    self.SI_Omega[i_param] += o / (D**2 + 0.001)
+                
+                self.SI_omega = [np.zeros(s) for s in self.rnn.shapes]
 
         #Current inputs/labels become previous inputs/labels
         self.rnn.x_prev = self.rnn.x.copy()

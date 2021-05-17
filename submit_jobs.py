@@ -9,6 +9,7 @@ Created on Thu Oct 18 19:19:46 2018
 import subprocess
 import os
 import numpy as np
+from pdb import set_trace
 import pickle
 
 def clear_results(job_file, data_path='/Users/omarschall/cluster_results/vanilla-rtrl/'):
@@ -137,9 +138,9 @@ def process_results(job_file):
                              job_name)
     dir_list = os.listdir(data_path)
     dir_list.pop(dir_list.index('code'))
-    for file in dir_list:
-        if 'rnn' not in file:
-            del(dir_list[dir_list.index(file)])
+    # for file in dir_list:
+    #     if 'rnn' not in file:
+    #         del(dir_list[dir_list.index(file)])
 
     max_seed = 0
 
@@ -167,7 +168,9 @@ def process_results(job_file):
         configs_array[key] = sorted(configs_array[key])
 
     array_dims = [len(configs_array[key]) for key in key_order]
-    processed_data_example = [d for d in data['processed_data'].values()][0]
+    #processed_data_example = [d for d in data['processed_data'].values()][0]
+    processed_data_example = np.array([d for d in data['processed_data'].values()])
+    #processed_data_example = 0.6
     if type(processed_data_example) != np.float64:
         #set_trace()
         array_dims += [len(processed_data_example)]
@@ -193,9 +196,13 @@ def process_results(job_file):
                 sim_dict_key += (str(data['i_seed']))
         index = tuple(index)
         #set_trace()
-        processed_data = [d for d in data['processed_data'].values()][0]
+        #processed_data = [d for d in data['processed_data'].values()][0]
+        losses = np.array([data['processed_data']['task_{}'.format(i)] for i in range(1,4)] + 
+                          [data['processed_data']['combined_task']])
+        #set_trace()
+        results_array[index] = losses
         #results_array[index] = data['processed_data']['test_loss']
-        results_array[index] = processed_data
+        #results_array[index] = data['processed_data']
         try:
             sim_dict[sim_dict_key] = data['sim']
         except AttributeError:
