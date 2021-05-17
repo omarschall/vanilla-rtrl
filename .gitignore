@@ -7,3 +7,4 @@ venv
 notebooks/good_ones/*
 saved_runs
 job_scripts
+fptasks
