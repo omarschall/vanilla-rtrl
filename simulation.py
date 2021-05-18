@@ -11,7 +11,6 @@ import time
 from utils import (norm, classification_accuracy, normalized_dot_product,
                    get_spectral_radius, rgetattr, get_Duncker_projections)
 import numpy as np
-from optimizers import SGD_With_Projections, SGD_Momentum_With_Projections
 
 class Simulation:
     """Simulates an RNN for a provided set of inputs and training procedures.
@@ -125,10 +124,7 @@ class Simulation:
                           'update_interval', 'comp_algs', 'verbose',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
-                          'overwrite_checkpoints', 'i_start', 'i_end',
-                          'N_Duncker_data', 'lr_Duncker',
-                          'Duncker_proj_tasks', 'combined_task',
-                          'SI_reg'}
+                          'overwrite_checkpoints', 'i_start', 'i_end'}
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -290,7 +286,7 @@ class Simulation:
 
         #Pointer for convenience
         rnn = self.rnn
-        
+
         ### --- Continual learning --- ###
 
         if self.learn_alg.CL_method is not None and self.i_t > 0:
@@ -345,34 +341,6 @@ class Simulation:
             self.i_t > 0 and
             self.verbose):
             self.report_progress(data)
-            
-        if self.N_Duncker_data is not None and self.i_t > 0:
-            task_marker = data['train']['task_marker']
-            if task_marker[self.i_t] != task_marker[self.i_t - 1]:
-                self.Duncker_CL_task_switch(self.N_Duncker_data)
-                
-        if self.SI_reg is not None and self.i_t > 0:
-            
-            #Update omegas
-            for i_param in range(len(self.SI_omega)):
-                v = self.optimizer.vel[i_param]
-                g = self.grads_list[i_param]
-                self.SI_omega[i_param] -= v * g
-            
-            #Refresh omegas, update Omegas
-            task_marker = data['train']['task_marker']
-            if task_marker[self.i_t] != task_marker[self.i_t - 1]:
-                
-                self.SI_Theta.append([p.copy() for p in self.rnn.params])
-                self.SI_Delta.append([p - q for p, q in zip(self.SI_Theta[-1],
-                                                            self.SI_Theta[-2])])
-                
-                for i_param in range(len(self.SI_omega)):
-                    o = self.SI_omega[i_param]
-                    D = self.SI_Delta[i_param]
-                    self.SI_Omega[i_param] += o / (D**2 + 0.001)
-                
-                self.SI_omega = [np.zeros(s) for s in self.rnn.shapes]
 
         #Current inputs/labels become previous inputs/labels
         self.rnn.x_prev = self.rnn.x.copy()
@@ -387,7 +355,7 @@ class Simulation:
 
         summary = '\rProgress: {}% complete \nTime Elapsed: {}s \n'
         mode = 'test'
-        
+
         if 'task_marker' in data['train'].keys():
             mode += '_{}'.format(data['train']['task_marker'][self.i_t])
 
@@ -468,7 +436,7 @@ class Simulation:
                       'learn_alg': deepcopy(self.learn_alg),
                       'optimizer': deepcopy(self.optimizer),
                       'i_t': copy(self.i_t)}
-        if (self.i_t not in self.checkpoints.keys() or 
+        if (self.i_t not in self.checkpoints.keys() or
             self.overwrite_checkpoints):
             self.checkpoints[self.i_t] = checkpoint
 
@@ -529,7 +497,7 @@ class Simulation:
         for key in self.rec_grads_dict:
             if len(self.rec_grads_dict[key]) >= self.T_lag:
                 del(self.rec_grads_dict[key][0])
-                
+
     def resume_sim_at_checkpoint(self, data, i_checkpoint, N=None,
                                  checkpoint_interval=None,
                                  overwrite_checkpoints=False,
@@ -540,7 +508,7 @@ class Simulation:
                                  **kwargs):
 
         checkpoint = self.checkpoints[i_checkpoint]
-        
+
         if new_rnn is None:
             rnn = deepcopy(checkpoint['rnn'])
         else:
@@ -555,12 +523,12 @@ class Simulation:
             optimizer = new_optimizer
 
         if auto_resample:
-            
+
             i_checkpoints = sorted(self.checkpoints.keys())
             j = i_checkpoints.index(i_checkpoint) + 1
             N = i_checkpoints[j] - i_checkpoints[j-1]
             checkpoint_interval = N // 10
-            
+
             self.rnn = rnn
             self.run(data, learn_alg=learn_alg, optimizer=optimizer,
                      checkpoint_interval=checkpoint_interval,
@@ -574,62 +542,6 @@ class Simulation:
                      checkpoint_interval=None,
                      overwrite_checkpoints=overwrite_checkpoints,
                      **kwargs)
-
-    def Duncker_CL_task_switch(self, N_proj_data=500):
-    
-                
-        if self.combined_task is not None:
-            
-            proj_data = self.combined_task.gen_data(0, N_proj_data)
-            proj_sim = Simulation(self.rnn)
-            proj_sim.run(proj_data, mode='test',
-                         monitors=['rnn.a', 'rnn.x'],
-                         verbose=False)
-            
-            self.A_Duncker = proj_sim.mons['rnn.a']
-            self.X_Duncker = proj_sim.mons['rnn.x']
-            
-        elif self.Duncker_proj_tasks is not None:
-        
-            task = self.Duncker_proj_tasks.pop(0)
-            proj_data = task.gen_data(0, N_proj_data)
-            proj_sim = Simulation(self.rnn)
-            proj_sim.run(proj_data, mode='test',
-                         monitors=['rnn.a', 'rnn.x'],
-                         verbose=False)
-            
-            self.A_Duncker = proj_sim.mons['rnn.a']
-            self.X_Duncker = proj_sim.mons['rnn.x']
-            
-        else:
-            
-            A = np.array(self.mons['rnn.a'][-N_proj_data:])
-            X = np.array(self.mons['rnn.x'][-N_proj_data:])
-            
-            if not hasattr(self, 'A_Duncker'):
-                self.A_Duncker = A
-                self.X_Duncker = X
-            else:
-                self.A_Duncker = np.vstack([self.A_Duncker, A])
-                self.X_Duncker = np.vstack([self.X_Duncker, X])
-            
-        P_z, P_wz, P_h, P_y = get_Duncker_projections(self.A_Duncker,
-                                                      self.X_Duncker,
-                                                      rnn=self.rnn)
-        
-        if self.lr_Duncker is not None:
-            lr = self.lr_Duncker
-        else:
-            lr = self.optimizer.lr
-        
-        # self.optimizer = SGD_With_Projections(lr=lr,
-        #                                       rec_proj_mats=[P_wz, P_z],
-        #                                       out_proj_mats=[P_y, P_h])
-        self.optimizer = SGD_Momentum_With_Projections(lr=lr, mu=self.optimizer.mu,
-                                                       rec_proj_mats=[P_wz, P_z],
-                                                       out_proj_mats=[P_y, P_h])
-        
-        
 
 
 
