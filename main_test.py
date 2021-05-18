@@ -98,7 +98,8 @@ monitors = ['learn_alg.CL_method.loss']
 ### --- SIMULATION 1 --- ####
 
 #optimizer = Stochastic_Gradient_Descent(lr=0.005, clip_norm=None)
-optimizer = SGD_Momentum(lr=params['lr'], mu=0.6)
+#optimizer = SGD_Momentum(lr=params['lr'], mu=0.6)
+optimizer = Adam(lr=0.01)
 
 sim = Simulation(rnn)
 sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
@@ -108,11 +109,7 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
         verbose=True,
         report_accuracy=False,
         report_loss=True,
-        checkpoint_interval=checkpoint_interval,
-        N_Duncker_data=None,
-        combined_task=None,
-        lr_Duncker=None,
-        Duncker_proj_tasks=None)
+        checkpoint_interval=checkpoint_interval)
 
 
 data_1 = task_1.gen_data(0, N_test)
