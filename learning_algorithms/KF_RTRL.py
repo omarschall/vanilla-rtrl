@@ -1,6 +1,6 @@
 from learning_algorithms.Stochastic_Algorithm import Stochastic_Algorithm
-from utils import *
-from functions import *
+import numpy as np
+from utils import norm
 
 class KF_RTRL(Stochastic_Algorithm):
     """Implements the Kronecker-Factored Real-Time Recurrent Learning Algorithm

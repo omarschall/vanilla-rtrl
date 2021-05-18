@@ -1,6 +1,5 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
+import numpy as np
 
 class Future_BPTT(Learning_Algorithm):
     """Implements the 'F-BPTT' version of backprop we discuss in the paper for

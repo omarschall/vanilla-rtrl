@@ -1,6 +1,5 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
+import numpy as np
 
 class Only_Output_Weights(Learning_Algorithm):
     """Updates only the output weights W_out and b_out"""

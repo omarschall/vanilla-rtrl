@@ -1,5 +1,4 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
 from functions import *
 
 class DNI(Learning_Algorithm):

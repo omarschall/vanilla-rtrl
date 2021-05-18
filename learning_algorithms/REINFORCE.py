@@ -1,11 +1,10 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
+import numpy as np
 
 class REINFORCE(Learning_Algorithm):
     def __init__(self, rnn, sigma=0, **kwargs):
-        """Inits an instance of REINFORCE by specifying the optimizer used to train
-        the A and alpha values and a noise standard deviation for the
+        """Inits an instance of REINFORCE by specifying the optimizer used to
+        train the A and alpha values and a noise standard deviation for the
         perturbations.
         Args:
             optimizer (optimizers.Optimizer): An instance of the Optimizer class
@@ -15,8 +14,10 @@ class REINFORCE(Learning_Algorithm):
                 A and alpha.
         Keyword args:
             decay (numpy float): value of decay for the eligibility trace.
-                Must be a value between 0 and 1, default is 0, indicating no decay
-            loss_decay (numpy float): time constant of the filtered average of the activations"""
+                Must be a value between 0 and 1, default is 0, indicating
+                no decay.
+            loss_decay (numpy float): time constant of the filtered average of
+                the activations."""
 
         self.name = 'REINFORCE'
         allowed_kwargs_ = {'decay', 'loss_decay'}
@@ -36,16 +37,20 @@ class REINFORCE(Learning_Algorithm):
         """Updates the eligibility traces used for learning"""
         # presynaptic variables/parameters
 
-        self.a_hat = np.concatenate([self.rnn.a_prev, self.rnn.x, np.array([1])])
+        self.a_hat = np.concatenate([self.rnn.a_prev,
+                                     self.rnn.x,
+                                     np.array([1])])
         # postsynaptic variables/parameters
         self.D = self.rnn.activation.f_prime(self.rnn.h) * self.rnn.noise
 
         # matrix of pre/post activations
         self.e_immediate = np.outer(self.D, self.a_hat) / self.sigma ** 2
-        self.e_trace = (1 - self.decay) * self.e_trace + self.decay * self.e_immediate
+        self.e_trace = ((1 - self.decay) * self.e_trace +
+                        self.decay * self.e_immediate)
         self.loss_prev = self.loss
         self.loss = self.rnn.loss_
-        self.loss_avg = (1 - self.loss_decay) * self.loss_avg + self.loss_decay * self.loss_prev
+        self.loss_avg = ((1 - self.loss_decay) * self.loss_avg +
+                         self.loss_decay * self.loss_prev)
 
     def get_rec_grads(self):
         """Combine the eligibility trace and the reward to get an estimate

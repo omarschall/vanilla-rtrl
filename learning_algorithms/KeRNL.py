@@ -1,6 +1,6 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
+import numpy as np
+from copy import deepcopy
 
 class KeRNL(Learning_Algorithm):
     """Implements the Kernel RNN Learning (KeRNL) algorithm from Roth et al.

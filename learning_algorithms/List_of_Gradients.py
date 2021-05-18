@@ -1,7 +1,4 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
-
 
 class List_of_Gradients(Learning_Algorithm):
     """Simply prescribe a series of updates to the network"""
@@ -17,6 +14,7 @@ class List_of_Gradients(Learning_Algorithm):
                 'L2_reg'."""
 
         allowed_kwargs = {}.union(allowed_kwargs_)
+        super().__init__(rnn, allowed_kwargs_, **kwargs)
 
         self.rnn = rnn
-        self.grads_list_list = grads_list
+        self.grads_list_list = grads_list_list

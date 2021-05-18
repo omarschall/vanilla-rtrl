@@ -1,6 +1,5 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
-from utils import *
-from functions import *
+import numpy as np
 
 class Stochastic_Algorithm(Learning_Algorithm):
 

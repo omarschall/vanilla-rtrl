@@ -1,7 +1,5 @@
-
-from utils import *
-from functions import *
-
+import numpy as np
+from utils import split_weight_matrix
 
 class Learning_Algorithm:
     """Parent class for all learning algorithms.
