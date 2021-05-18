@@ -5,31 +5,17 @@ Created on Fri Apr 30 00:03:45 2021
 
 @author: omarschall
 """
-import numpy as np
-from network import *
-from simulation import *
+#import numpy as np
+#from network import *
+#from simulation import *
 from gen_data import *
 try:
     import matplotlib.pyplot as plt
 except ModuleNotFoundError:
     pass
 from optimizers import *
-from analysis_funcs import *
 from learning_algorithms import *
 from continual_learning import *
-from functions import *
-from itertools import product
-import os
-import pickle
-from time import time
-from copy import deepcopy
-from scipy.ndimage.filters import uniform_filter1d
-from sklearn import linear_model
-from state_space import *
-from dynamics import *
-import multiprocessing as mp
-from functools import partial
-from sklearn.cluster import DBSCAN
 from distances import *
 
 if os.environ['HOME'] == '/home/oem214':
@@ -100,6 +86,11 @@ cl_method = Duncker_Method(rnn, N_proj_data=params['N_Duncker_data'],
                            mode='previous', proj_tasks=proj_tasks)
 learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001,
                  CL_method=cl_method)
+SG_optimizer = Stochastic_Gradient_Descent(lr=0.01)
+#learn_alg = DNI(rnn, SG_optimizer)
+learn_alg = Random_Noise_Gradients(rnn, sigma=0.01)
+learn_alg = REINFORCE(rnn, sigma=0.01)
+learn_alg = RFLO(rnn, alpha=1)
 
 comp_algs = []
 monitors = ['learn_alg.CL_method.loss']
