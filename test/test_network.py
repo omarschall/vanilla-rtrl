@@ -5,7 +5,7 @@ from network import *
 from numpy.testing import assert_allclose
 
 class Test_Network(unittest.TestCase):
-    """Tests methods from the network.py module."""
+    """Tests methods from the RNN.py module."""
 
     @classmethod
     def setUpClass(cls):

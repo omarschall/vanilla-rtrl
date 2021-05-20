@@ -4,7 +4,7 @@ import unittest
 from gen_data import *
 
 class Test_Gen_Data(unittest.TestCase):
-    """Tests methods from the network.py module."""
+    """Tests methods from the RNN.py module."""
 
     @classmethod
     def setUpClass(cls):
