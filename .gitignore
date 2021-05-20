@@ -11,3 +11,4 @@ job_scripts
 fp_tasks
 .ipynb_checkpoints
 *.pyc
+files/
