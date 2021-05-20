@@ -1,5 +1,5 @@
 import numpy as np
-from utils import split_weight_matrix
+from utils import split_weight_matrix, norm
 
 class Learning_Algorithm:
     """Parent class for all learning algorithms.
