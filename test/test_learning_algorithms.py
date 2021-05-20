@@ -3,8 +3,7 @@ sys.path.append(os.path.abspath('..'))
 from numpy.testing import assert_allclose
 import unittest
 from unittest.mock import MagicMock
-from network import RNN
-from simulation import Simulation
+from core import RNN, Simulation
 from learning_algorithms import *
 from functions import *
 from gen_data import *

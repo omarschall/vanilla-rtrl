@@ -1,7 +1,7 @@
 import sys, os
 sys.path.append(os.path.abspath('..'))
 import unittest
-from network import *
+from core import RNN
 from numpy.testing import assert_allclose
 
 class Test_Network(unittest.TestCase):
