@@ -1,0 +1,3 @@
+from .Continual_Learning import Continual_Learning
+from .Duncker_Method import Duncker_Method
+from .Synaptic_Intelligence import Synaptic_Intelligence

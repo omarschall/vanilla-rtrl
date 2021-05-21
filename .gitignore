@@ -1,4 +1,5 @@
-
+learning_algorithms/__pycache__
+*/__pycache__/*
 __pycache__/*
 .DS_Store
 .idea
@@ -7,3 +8,7 @@ venv
 notebooks/good_ones/*
 saved_runs
 job_scripts
+fp_tasks
+.ipynb_checkpoints
+*.pyc
+files/
