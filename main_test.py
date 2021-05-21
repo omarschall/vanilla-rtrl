@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Apr 30 00:03:45 2021
-
-@author: omarschall
-"""
-#import numpy as np
-#from network import *
-#from simulation import *
 from gen_data import *
 try:
     import matplotlib.pyplot as plt
@@ -16,7 +6,9 @@ except ModuleNotFoundError:
 from optimizers import *
 from learning_algorithms import *
 from continual_learning import *
-from distances import *
+from core import RNN
+from plotting import *
+from functions import *
 
 if os.environ['HOME'] == '/home/oem214':
     n_seeds = 3
