@@ -1,5 +1,6 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
 from functions import *
+import numpy as np
 
 class DNI(Learning_Algorithm):
     """Implements the Decoupled Neural Interface (DNI) algorithm for an RNN from
