@@ -1,4 +1,9 @@
+import sys, os
+sys.path.append(os.path.abspath('..'))
 import numpy as np
+from core import Simulation
+from itertools import product
+
 
 def generate_ergodic_markov_task(one_hot_dim=4, n_inputs=4, idem=True):
     """Generates a random set of fixed_points as one hots and associated
@@ -54,3 +59,54 @@ def concatenate_datasets(data_1, data_2):
                                             data_2[dataset][io]], axis=0)
 
     return data
+
+def get_multitask_loss_from_checkpoints(sim, multitask, N_test):
+
+    data = multitask.gen_data(0, N_test)
+
+    #set_trace()
+
+    losses = {'task_{}_loss'.format(i): [] for i in range(multitask.n_tasks)}
+
+    for i in range(multitask.n_tasks):
+        for j in sorted(sim.checkpoints.keys()):
+
+            rnn = sim.checkpoints[j]['rnn']
+            test_sim = Simulation(rnn)
+            test_sim.run(data,
+                         mode='test_{}'.format(i),
+                         monitors=['rnn.loss_'],
+                         verbose=False)
+
+            test_loss = test_sim.mons['rnn.loss_'].mean()
+
+            losses['task_{}_loss'.format(i)].append(test_loss)
+
+        losses['task_{}_loss'.format(i)] = np.array(losses['task_{}_loss'.format(i)])
+
+    return losses
+
+def get_loss_from_checkpoints(sim, task, N_test):
+
+    data = task.gen_data(0, N_test)
+
+    #set_trace()
+
+    losses = []
+
+    for j in sorted(sim.checkpoints.keys()):
+
+        rnn = sim.checkpoints[j]['rnn']
+        test_sim = Simulation(rnn)
+        test_sim.run(data,
+                     mode='test',
+                     monitors=['rnn.loss_'],
+                     verbose=False)
+
+        test_loss = test_sim.mons['rnn.loss_'].mean()
+
+        losses.append(test_loss)
+
+    losses = np.array(losses)
+
+    return losses
