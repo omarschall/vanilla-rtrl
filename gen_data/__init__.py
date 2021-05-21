@@ -7,3 +7,4 @@ from .Sensorimotor_Mapping import Sensorimotor_Mapping
 from .Sequential_MNIST import Sequential_MNIST
 from .Sine_Wave import Sine_Wave
 from .Task import Task
+from .gen_data_utils import *

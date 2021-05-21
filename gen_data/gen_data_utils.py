@@ -42,3 +42,15 @@ def generate_ergodic_markov_task(one_hot_dim=4, n_inputs=4, idem=True):
             done = True
 
     return FPs, T_dict
+
+def concatenate_datasets(data_1, data_2):
+    """Takes in two data dicts of form in gen_data and concatenates the data
+    sequentially in time."""
+
+    data = {'train': {}, 'test': {}}
+
+    for dataset, io in product(['train', 'test'], ['X', 'Y']):
+        data[dataset][io] = np.concatenate([data_1[dataset][io],
+                                            data_2[dataset][io]], axis=0)
+
+    return data
