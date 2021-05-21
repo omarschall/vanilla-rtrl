@@ -51,7 +51,7 @@ class Test_Gen_Data(unittest.TestCase):
         """Verifies that the proper RNN output is returned as label in a simple
         case where the RNN simply counts the number of time steps."""
 
-        from network import RNN
+        from core import RNN
         from functions import identity, mean_squared_error
 
         n_in = 2

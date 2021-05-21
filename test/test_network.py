@@ -1,8 +1,10 @@
 import sys, os
 sys.path.append(os.path.abspath('..'))
 import unittest
+import numpy as np
 from core import RNN
 from numpy.testing import assert_allclose
+from functions import *
 
 class Test_Network(unittest.TestCase):
     """Tests methods from the RNN.py module."""
@@ -95,7 +97,7 @@ class Test_Network(unittest.TestCase):
     def test_get_network_speed_gradient(self):
 
         self.rnn.reset_network(a=np.ones(self.rnn.n_h))
-        x = tanh_derivative(2) * (np.tanh(2) - 1)
+        x = tanh.f_prime(2) * (np.tanh(2) - 1)
         correct_answer = np.ones(8) * 1.2 * x
         assert_allclose(self.rnn.get_network_speed_gradient(), correct_answer)
 
