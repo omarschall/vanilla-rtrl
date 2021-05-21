@@ -1,7 +1,6 @@
 from copy import copy, deepcopy
 import time
-from utils import (norm, classification_accuracy, normalized_dot_product,
-                   get_spectral_radius, rgetattr, get_Duncker_projections)
+from utils import *
 import numpy as np
 
 class Simulation:
