@@ -1,4 +1,5 @@
 from functions.Function import Function
+from functions.softmax import softmax_
 import numpy as np
 
 ### --- Define softmax cross-entropy --- ###
