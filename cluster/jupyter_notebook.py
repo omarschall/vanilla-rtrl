@@ -16,8 +16,6 @@ def start_jupyter_notebook(home_path='/Users/omarschall/vanilla-rtrl/',
     ### --- Clear old notebook data files and cancel old notebooks --- ###
 
     subprocess.run(['ssh', remote,
-                    'rm', '~/jupyter_notebook/connection_info.txt'])
-    subprocess.run(['ssh', remote,
                     'rm', '~/jupyter_notebook/jupyter.o'])
 
     ### --- Run new jupyter notebook --- ###
