@@ -3,7 +3,7 @@ import pickle
 from dynamics import *
 from math import ceil
 
-def analyze_training_run(sim, job_name, sigma=0):
+def analyze_training_run(sim, job_name, sigma=0, task_name=None):
 
     indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
     n_checkpoints = len(indices)
@@ -25,14 +25,14 @@ def analyze_training_run(sim, job_name, sigma=0):
 
     # Retrieve data
     with open(os.path.join('saved_runs', job_name), 'rb') as f:
-        # checkpoints = pickle.load(f)
         sim = pickle.load(f)
 
-    with open(os.path.join('fp_tasks', task_name), 'rb') as f:
-        # checkpoints = pickle.load(f)
-        task = pickle.load(f)
+    try:
+        with open(os.path.join('fp_tasks', task_name), 'rb') as f:
+            task = pickle.load(f)
+    except FileNotFoundError:
+        task =
 
-    contexts = [None]
     inputs = [np.eye(task.n_in)[i] for i in range(task.n_in)]
     result = {}
 
