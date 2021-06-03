@@ -50,7 +50,7 @@ def start_jupyter_notebook(home_path='/Users/omarschall/vanilla-rtrl/',
 
         time.sleep(5)
 
-
-
         webbrowser.open(url)
 
+if __name__ == '__main__':
+    start_jupyter_notebook()
