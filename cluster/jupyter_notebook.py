@@ -1,4 +1,3 @@
-import os
 import subprocess
 from sync import sync_cluster
 import webbrowser
@@ -23,8 +22,10 @@ def start_jupyter_notebook(home_path='/Users/omarschall/vanilla-rtrl/',
     subprocess.run(['ssh', remote,
                     'sbatch', 'jupyter_notebook/jupyter.s'])
 
-    done = False
 
+    ### --- Repeatedly check for connection info in output file --- ###
+
+    done = False
     while not done:
 
         sp = subprocess.run(['ssh', remote,
@@ -39,16 +40,20 @@ def start_jupyter_notebook(home_path='/Users/omarschall/vanilla-rtrl/',
 
         done = True
 
-        url = line_info.split(' ')[-1]
+    ### -- Extract url and port info from output file --- ###
 
-        port = url.split('/?token')[0].split('localhost:')[-1]
+    url = line_info.split(' ')[-1]
+    port = url.split('/?token')[0].split('localhost:')[-1]
 
-        cluster_login = 'ssh -L {}:localhost:{} {}'.format(port, port, remote)
-        appscript.app('Terminal').do_script(cluster_login)
+    ### --- Open terminal window and SSH into cluster --- ###
 
-        time.sleep(5)
+    cluster_login = 'ssh -L {}:localhost:{} {}'.format(port, port, remote)
+    appscript.app('Terminal').do_script(cluster_login)
+    time.sleep(5) #Give terminal a few seconds to run SSH
 
-        webbrowser.open(url)
+    ### --- Open jupyter notebook in browser --- ###
+
+    webbrowser.open(url)
 
 if __name__ == '__main__':
     start_jupyter_notebook()
