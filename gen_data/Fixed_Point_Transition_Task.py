@@ -31,6 +31,8 @@ class Fixed_Point_Transition_Task(Task):
         self.p_transition = p_transition
         self.deterministic = deterministic
         self.delay = delay
+        self.probe_inputs = [np.eye(self.n_states)[i]
+                             for i in range(self.n_states)]
 
         super().__init__(len(T_dict.keys()), states[0].shape[0])
 
