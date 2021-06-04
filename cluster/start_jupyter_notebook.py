@@ -1,5 +1,5 @@
 import subprocess
-from sync_cluster import sync_cluster
+from .sync_cluster import sync_cluster
 import webbrowser
 import appscript
 import time
