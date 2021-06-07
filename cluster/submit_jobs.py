@@ -51,7 +51,7 @@ def submit_job(job_file, n_array, scratch_path='/scratch/oem214/vanilla-rtrl/',
                     '--exclude', '.git',
                     '/Users/omarschall/vanilla-rtrl/',
                     code_dir])
-    
+
     subprocess.run(['rsync',
                     '-aav',
                     '--exclude', '.git',
@@ -131,6 +131,100 @@ def write_job_file(job_name, py_file_name='main.py',
 
     return job_file
 
+def write_job_file_2(job_name, py_file_name='main.py',
+                     sbatch_path='/scratch/oem214/notebooks/job_scripts/',
+                     scratch_path='/scratch/oem214/vanilla-rtrl/',
+                     nodes=1, ppn=1, mem=16, n_hours=24):
+    """
+    Create a job file.
+    Parameters
+    ----------
+    job_name : str
+              Name of the job.
+    sbatch_path : str
+              Directory to store SBATCH file in.
+    scratch_path : str
+                  Directory to store output files in.
+    nodes : int, optional
+            Number of compute nodes.
+    ppn : int, optional
+          Number of cores per node.
+    gpus : int, optional
+           Number of GPU cores.
+    mem : int, optional
+          Amount, in GB, of memory.s
+    n_hours : int, optional
+            Running time, in hours.
+    Returns
+    -------
+    jobfile : str
+              Path to the job file.
+    """
+
+    job_file = os.path.join(sbatch_path, job_name + '.s')
+    log_name = os.path.join('log', job_name)
+
+    command = ('pwd > {}.log; '.format(log_name)
+              + 'date >> {}.log; '.format(log_name)
+              + 'which python >> {}.log; '.format(log_name)
+              + 'python {}\n'.format(py_file_name))
+
+    with open(job_file, 'w') as f:
+        f.write(
+            '#! /bin/bash\n'
+            + '\n'
+            + '#SBATCH --nodes={}\n'.format(nodes)
+            + '#SBATCH --ntasks-per-node=1\n'
+            + '#SBATCH --cpus-per-task={}\n'.format(ppn)
+            + '#SBATCH --mem={}GB\n'.format(mem)
+            + '#SBATCH --time={}:00:00\n'.format(n_hours)
+            + '#SBATCH --job-name={}\n'.format(job_name[0:16])
+            + '#SBATCH --output={}log/{}.o\n'.format(scratch_path, job_name[0:16])
+            + '\n'
+            + 'module purge\n'
+            + 'SAVEPATH={}library/{}\n'.format(scratch_path, job_name)
+            + 'export SAVEPATH\n'
+            #+ 'module load python3/intel/3.6.3\n'
+            + 'cd {}\n'.format(scratch_path)
+            + 'singularity exec --nv '
+            + '--overlay /scratch/oem214/vanilla-rtrl/pytorch1.7.0-cuda11.0.ext3:ro '
+            + '/scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif '
+            + 'bash -c "source /ext3/env.sh; {}"'.format(command)
+            # + 'pwd > {}.log\n'.format(log_name)
+            # + 'date >> {}.log\n'.format(log_name)
+            # + 'which python >> {}.log\n'.format(log_name)
+            #+ 'cd /home/oem214/py3.6.3\n'
+            #+ 'source py3.6.3/bin/activate\n'=
+            )
+
+    return job_file
+
+def submit_job_2(job_file, n_array, scratch_path='/scratch/oem214/vanilla-rtrl/',
+                 username='oem214', domain='greene.hpc.nyu.edu'):
+
+    job_name = job_file.split('/')[-1]
+    data_path = '/scratch/{}/cluster_results/'.format(username)
+    data_dir = os.path.join(data_path, job_name.split('.')[0])
+
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
+        code_dir = os.path.join(data_dir, 'code')
+        os.mkdir(code_dir)
+
+    code_dir = os.path.join(data_dir, 'code')
+
+    #copy code repo to results
+    subprocess.run(['rsync',
+                    '-aav',
+                    '--exclude', '.git',
+                    '/scratch/{}/vanilla-rtrl/'.format(username),
+                    code_dir])
+
+    subprocess.run(['scp', job_file, username+'@'+domain+':/home/oem214/'])
+
+    subprocess.run(['ssh', username+'@'+domain,
+                    'sbatch', '--array=1-'+str(n_array), job_name])
+
 def process_results(job_file):
 
     job_name = job_file.split('/')[-1].split('.')[0]
@@ -197,7 +291,7 @@ def process_results(job_file):
         index = tuple(index)
         #set_trace()
         #processed_data = [d for d in data['processed_data'].values()][0]
-        losses = np.array([data['processed_data']['task_{}'.format(i)] for i in range(1,4)] + 
+        losses = np.array([data['processed_data']['task_{}'.format(i)] for i in range(1,4)] +
                           [data['processed_data']['combined_task']])
         #set_trace()
         results_array[index] = losses
