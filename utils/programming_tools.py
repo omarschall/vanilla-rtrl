@@ -2,8 +2,6 @@
 import numpy as np
 import itertools
 from functools import reduce
-from copy import deepcopy
-from itertools import product
 
 def config_generator(**kwargs):
     """Generator object that produces a Cartesian product of configurations.
