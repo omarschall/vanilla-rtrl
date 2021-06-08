@@ -1,2 +1,0 @@
-def compare_checkpoints():
-
