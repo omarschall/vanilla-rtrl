@@ -1,7 +1,10 @@
 import subprocess
-from sync_cluster import sync_cluster
-import webbrowser
-import appscript
+from cluster.sync_cluster import sync_cluster
+try:
+    import webbrowser
+    import appscript
+except ModuleNotFoundError:
+    pass
 import time
 
 def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
@@ -66,6 +69,3 @@ def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
     ### --- Open jupyter notebook in browser --- ###
 
     webbrowser.open(url)
-
-if __name__ == '__main__':
-    start_jupyter_notebook()
