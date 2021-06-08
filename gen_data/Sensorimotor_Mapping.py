@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Sensorimotor_Mapping(Task):
     """Class for a simple working memory task, where a binary input is given

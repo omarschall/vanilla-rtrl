@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Flip_Flop_Task(Task):
     """Class for the N-bit flip-flop task.

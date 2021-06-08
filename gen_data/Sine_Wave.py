@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Sine_Wave(Task):
     """Class for the sine wave task.

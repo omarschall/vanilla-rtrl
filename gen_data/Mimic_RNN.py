@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Mimic_RNN(Task):
     """Class for the 'Mimic Task,' where the inputs are random i.i.d. Bernoulli

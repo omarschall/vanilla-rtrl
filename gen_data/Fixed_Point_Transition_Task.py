@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Fixed_Point_Transition_Task(Task):
     """A task where a given number of states in output space is provided,
