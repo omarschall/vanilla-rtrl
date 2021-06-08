@@ -21,8 +21,6 @@ def analyze_training_run(sim, task, job_name, sigma=0):
     # Progress logging
     scratch_path = '/scratch/oem214/vanilla-rtrl/'
     log_path = os.path.join(scratch_path, 'log/' + job_name) + '_{}.log'.format(i_job)
-
-    inputs = task.probe_inputs
     result = {}
 
     data = task.gen_data(100, 30000)
