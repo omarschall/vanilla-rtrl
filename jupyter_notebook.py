@@ -1,6 +1,8 @@
 from cluster import start_jupyter_notebook, close_jupyter_notebook
-
 import argparse
+
+### Open or close a jupyter notebook depending on arguments passed when
+### calling script
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-open', dest='open_', action='store_true')
