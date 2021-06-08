@@ -1,12 +1,17 @@
-import subprocess
+import subprocess, os
 
-def sync_cluster(local_path='/Users/omarschall/vanilla-rtrl/',
-                 scratch_path='/scratch/oem214/vanilla-rtrl/',
+def sync_cluster(local_module_path='/Users/omarschall/vanilla-rtrl/',
+                 module_name='vanilla-rtrl',
                  username='oem214', domain='greene.hpc.nyu.edu'):
-    """Sync local code with scratch path on cluster."""
+    """Sync local code with module path on cluster."""
 
-    remote_path = '{}@{}:{}'.format(username, domain, scratch_path)
+    scratch_path = '/scratch/{}/'.format(username)
+
+    module_path = os.path.join(scratch_path, module_name)
+
+
+    remote_path = '{}@{}:{}'.format(username, domain, module_path)
     subprocess.run(['rsync', '-aav',
                     '--exclude', '.git',
                     '--exclude', 'files',
-                    local_path, remote_path])
+                    local_module_path, remote_path])
