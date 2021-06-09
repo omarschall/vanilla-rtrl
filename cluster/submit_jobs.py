@@ -80,11 +80,13 @@ def submit_job(job_file_path, n_array,
 
     ### --- Copy state of module to code dir --- ###
 
-    subprocess.run(['rsync',
-                    '-aav',
-                    '--exclude', '.git',
-                    '/Users/omarschall/vanilla-rtrl/',
-                    code_dir])
+    module_dir = os.path.join('/scratch/', username, module_name)
+    subprocess.run(['rsync', '-aav', module_dir, code_dir])
+
+    ### -- Submit job --- ###
+    subprocess.run(['sbatch', '--array=1-{}'.format(n_array), job_name + '.s'])
+
+
 
 
 def write_job_file(job_name, py_file_name='main.py',
