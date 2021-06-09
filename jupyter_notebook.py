@@ -7,7 +7,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-open', dest='open_', action='store_true')
 parser.add_argument('-close', dest='close_', action='store_true')
-parser.set_defaults(open_=False, close_=False)
+parser.set_defaults(open_=True, close_=False)
 
 args = parser.parse_args()
 
