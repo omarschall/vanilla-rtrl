@@ -11,7 +11,7 @@ parser.set_defaults(open_=True, close_=False)
 
 args = parser.parse_args()
 
-if args.open_:
+if args.open_ and not args.close_:
 
     start_jupyter_notebook()
 
