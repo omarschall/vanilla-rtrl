@@ -31,38 +31,6 @@ def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
 
     subprocess.run(['rsync', '-aav', source_path, data_dir])
 
-def submit_job(job_file, n_array, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='greene.hpc.nyu.edu'):
-
-    job_name = job_file.split('/')[-1]#
-    data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    data_dir = os.path.join(data_path, job_name.split('.')[0])
-
-    if not os.path.exists(data_dir):
-        os.mkdir(data_dir)
-        code_dir = os.path.join(data_dir, 'code')
-        os.mkdir(code_dir)
-
-    code_dir = os.path.join(data_dir, 'code')
-
-    #copy main script to results dir
-    subprocess.run(['rsync',
-                    '-aav',
-                    '--exclude', '.git',
-                    '/Users/omarschall/vanilla-rtrl/',
-                    code_dir])
-
-    subprocess.run(['rsync',
-                    '-aav',
-                    '--exclude', '.git',
-                    '/Users/omarschall/vanilla-rtrl/',
-                    username+'@'+domain+':'+scratch_path])
-
-    subprocess.run(['scp', job_file, username+'@'+domain+':/home/oem214/'])
-
-    subprocess.run(['ssh', username+'@'+domain,
-                    'sbatch', '--array=1-'+str(n_array), job_name])
-
 def submit_job(job_file_path, n_array,
                project_name='learning-dynamics',
                module_name='vanilla-rtrl',
