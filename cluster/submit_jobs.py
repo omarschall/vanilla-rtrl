@@ -6,8 +6,10 @@ def submit_job(job_file_path, n_array,
                project_name='learning-dynamics',
                module_name='vanilla-rtrl',
                username='oem214'):
+    """Submit an array job in reference to a particular job file, with a
+    specified number of sub-jobs. Creates directories for storing results."""
 
-    ### --- Make resutls directory -- ###
+    ### --- Make results directory -- ###
 
     job_name = job_file_path.split('/')[-1].split('.')[0]
     project_dir = os.path.join('/scratch/', username, project_name)
@@ -100,80 +102,75 @@ def write_job_file(job_name, py_file_name='main.py',
 
     return job_path
 
-def process_results(job_file):
+def unpack_processed_data(job_file_path,
+                          project_name='learning-dynamics',
+                          username='oem214'):
+    """Unpack processed data from an array job."""
 
-    job_name = job_file.split('/')[-1].split('.')[0]
-    data_path = os.path.join('/Users/omarschall/cluster_results/vanilla-rtrl/',
-                             job_name)
-    dir_list = os.listdir(data_path)
-    dir_list.pop(dir_list.index('code'))
-    # for file in dir_list:
-    #     if 'rnn' not in file:
-    #         del(dir_list[dir_list.index(file)])
+    job_name = job_file_path.split('/')[-1].split('.')[0]
+    project_dir = os.path.join('/scratch/', username, project_name)
+    data_dir = os.path.join(project_dir, 'results', job_name)
+    dir_list = sorted([s for s in os.listdir(data_dir) if 'result' in s])
 
     max_seed = 0
 
+    ### --- Find and organized unique macro configs --- ###
+
     for i_file, file in enumerate(dir_list):
 
-        with open(os.path.join(data_path, file), 'rb') as f:
-            data = pickle.load(f)
+        with open(os.path.join(data_dir, file), 'rb') as f:
+            result = pickle.load(f)
 
         if i_file == 0:
 
-            configs_array = {key : [] for key in data['config'].keys()}
-            key_order = [key for key in data['config'].keys()]
+            configs_array = {key: [] for key in result['config'].keys()}
+            key_order = [key for key in result['config'].keys()]
 
-        for key in data['config'].keys():
-            if data['config'][key] not in configs_array[key]:
-                configs_array[key].append(data['config'][key])
+        for key in result['config'].keys():
+            if result['config'][key] not in configs_array[key]:
+                configs_array[key].append(result['config'][key])
 
-        max_seed = np.maximum(max_seed, data['i_seed'])
+        max_seed = np.maximum(max_seed, result['i_seed'])
 
     configs_array['i_seed'] = list(range(max_seed + 1))
     key_order.append('i_seed')
+
+    ### --- Sort individual config dimensions --- ####
 
     for key in configs_array.keys():
 
         configs_array[key] = sorted(configs_array[key])
 
+    ### --- Determine shape of processed data --- ###
+
     array_dims = [len(configs_array[key]) for key in key_order]
-    #processed_data_example = [d for d in data['processed_data'].values()][0]
-    processed_data_example = np.array([d for d in data['processed_data'].values()])
-    #processed_data_example = 0.6
+    processed_data_example = result['processed_data']
     if type(processed_data_example) != np.float64:
-        #set_trace()
         array_dims += [len(processed_data_example)]
     results_array = np.zeros(array_dims)
 
-    #set_trace()
+    ### --- Put data in array with shape matched to config arrays --- ###
 
-    #Put data in array
     sim_dict = {}
     for i_file, file in enumerate(dir_list):
 
-        with open(os.path.join(data_path, file), 'rb') as f:
-            data = pickle.load(f)
+        with open(os.path.join(data_dir, file), 'rb') as f:
+            result = pickle.load(f)
 
         sim_dict_key = ''
         index = []
         for key in key_order:
             try:
-                index.append(configs_array[key].index(data['config'][key]))
-                sim_dict_key += (str(data['config'][key]) + '_')
+                index.append(configs_array[key].index(result['config'][key]))
+                sim_dict_key += (str(result['config'][key]) + '_')
             except KeyError:
-                index.append(data['i_seed'])
-                sim_dict_key += (str(data['i_seed']))
+                index.append(result['i_seed'])
+                sim_dict_key += (str(result['i_seed']))
         index = tuple(index)
-        #set_trace()
-        #processed_data = [d for d in data['processed_data'].values()][0]
-        losses = np.array([data['processed_data']['task_{}'.format(i)] for i in range(1,4)] +
-                          [data['processed_data']['combined_task']])
-        #set_trace()
-        results_array[index] = losses
-        #results_array[index] = data['processed_data']['test_loss']
-        #results_array[index] = data['processed_data']
+
+        results_array[index] = result['processed_data']
         try:
-            sim_dict[sim_dict_key] = data['sim']
+            sim_dict[sim_dict_key] = result['sim']
         except AttributeError:
             pass
 
