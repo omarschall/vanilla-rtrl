@@ -1,35 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 18 19:19:46 2018
-
-@author: omarschall
-"""
-
-import subprocess
 import os
 import numpy as np
-from pdb import set_trace
 import pickle
-
-def clear_results(job_file, data_path='/Users/omarschall/cluster_results/vanilla-rtrl/'):
-
-    job_name = job_file.split('/')[-1].split('.')[0]
-    data_dir = os.path.join(data_path, job_name)
-
-    subprocess.run(['rm', data_dir+'/*_*'])
-
-def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='greene.hpc.nyu.edu'):
-
-    #job_name = job_file.split('/')[-1].split('.')[0]
-    job_name = '.'.join(job_file.split('/')[-1].split('.')[:-1])
-    data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    data_dir = os.path.join(data_path, job_name)
-
-    source_path = username+'@'+domain+':'+scratch_path+'library/'+job_name+'/'
-
-    subprocess.run(['rsync', '-aav', source_path, data_dir])
 
 def submit_job(job_file_path, n_array,
                project_name='learning-dynamics',
@@ -39,23 +10,31 @@ def submit_job(job_file_path, n_array,
     ### --- Make resutls directory -- ###
 
     job_name = job_file_path.split('/')[-1].split('.')[0]
-    results_dir = os.path.join('/scratch/', username,
-                               project_name, 'results', job_name)
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_dir = os.path.join(project_dir, 'results', job_name)
+    code_dir = os.path.join(results_dir, 'code')
+    main_dir = os.path.join(project_dir, 'cluster_main_scripts')
+    main_path = os.path.join(main_dir, job_name+'.py')
+    job_path = os.path.join(project_dir, 'job_scripts', job_name + '.s')
+
     if not os.path.exists(results_dir):
         os.mkdir(results_dir)
-        code_dir = os.path.join(results_dir, 'code')
+    if not os.path.exists(code_dir):
         os.mkdir(code_dir)
+
+    ### --- Clear old results --- ###
+
+    get_ipython().system('rm {}/result_*'.format(results_dir))
 
     ### --- Copy state of module to code dir --- ###
 
     module_dir = os.path.join('/scratch/', username, module_name)
-    subprocess.run(['rsync', '-aav', module_dir, code_dir])
+    get_ipython().system('rsync -aav {} {}'.format(module_dir, code_dir))
+    get_ipython().system('scp {} {}'.format(main_path, code_dir))
 
     ### -- Submit job --- ###
-    subprocess.run(['sbatch', '--array=1-{}'.format(n_array), job_name + '.s'])
 
-
-
+    get_ipython().system('sbatch --array=1-{} {}'.format(n_array, job_path))
 
 def write_job_file(job_name, py_file_name='main.py',
                    project_name='learning-dynamics',
@@ -95,6 +74,7 @@ def write_job_file(job_name, py_file_name='main.py',
     singularity_dir = '/scratch/work/public/singularity/'
     singularity_name = 'cuda11.0-cudnn8-devel-ubuntu18.04.sif'
     singularity_path = os.path.join(singularity_dir, singularity_name)
+    singularity_exe_path = '/share/apps/singularity/bin/singularity'
 
     ### --- Write job file -- ###
 
@@ -114,7 +94,7 @@ def write_job_file(job_name, py_file_name='main.py',
             + 'SAVEDIR={}\n'.format(save_dir)
             + 'export SAVEDIR\n'
             + 'cd {}\n'.format(main_dir)
-            + 'singularity exec --nv '
+            + '{} exec '.format(singularity_exe_path)
             + '--overlay {} {} '.format(overlay, singularity_path)
             + 'bash -c "source /ext3/env.sh; {}"'.format(command))
 
