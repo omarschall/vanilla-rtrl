@@ -57,7 +57,7 @@ def start_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtrl/',
 
         line_info = str(sp.stdout, 'utf-8')
 
-        if 'http' not in line_info:
+        if 'http://localhost' not in line_info:
             continue
 
         done = True
