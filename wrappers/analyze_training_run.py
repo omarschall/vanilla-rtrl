@@ -3,26 +3,54 @@ import pickle
 from dynamics import *
 from math import ceil
 
-def analyze_training_run(sim, task, job_name, sigma=0):
+default_analysis_args = {'sigma_pert': 0.5, 'N': 500,
+                         'N_iters': 6000, 'same_LR_criterion': 5000,
+                         'sigma': 0}
+default_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
+                      'sigma': 0}
+default_input_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
+                            'sigma': 0}
+
+def analyze_training_run(saved_run_name,
+                         analysis_args=default_analysis_args,
+                         graph_args=default_graph_args,
+                         input_graph_args=default_input_graph_args,
+                         username='oem214',
+                         project_name='learning-dynamics'):
+    """For a given simulation (containing checkpoints), analyzes some subset
+    of the checkpoints for a given job ID depending on how many total.
+
+    Analysis includes finding the fixed points, clustering them, and extracting
+    autonomous and input-driven transition probabilities."""
+
+    ### --- Define relevant paths --- ###
+
+    project_dir = os.path.join('scratch/{}/'.format(username), project_name)
+    analysis_job_name = 'analyze_{}'.format(saved_run_name)
+    log_path = os.path.join(project_dir, 'logs/' + analysis_job_name) + '.o.log'
+
+    ### --- Load sim and task --- ###
+
+    saved_runs_dir = os.path.join(project_dir, 'notebooks', 'saved_runs')
+
+    with open(os.path.join(saved_runs_dir, saved_run_name), 'rb') as f:
+        saved_run = pickle.load(f)
+
+    sim = saved_run['sim']
+    task = saved_run['task']
+
+    ### --- Determine which checkpoints to analyze for this job id --- ###
 
     indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
     n_checkpoints = len(indices)
     n_checkpoints_per_job = ceil(n_checkpoints / 1000)
-
-    n_jobs = n_checkpoints / n_checkpoints_per_job
-    n_jobs_per_checkpoint = n_checkpoints / n_jobs
-
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
-    i_start = sim.checkpoint_interval * n_jobs_per_checkpoint * i_job
-    i_end = sim.checkpoint_interval * n_jobs_per_checkpoint * (i_job + 1)
+    i_start = sim.checkpoint_interval * n_checkpoints_per_job * i_job
+    i_end = sim.checkpoint_interval * n_checkpoints_per_job * (i_job + 1)
 
-    print('Analyzing checkpoints...')
+    ### --- Analyze each checkpoint --- ###
 
-    # Progress logging
-    scratch_path = '/scratch/oem214/vanilla-rtrl/'
-    log_path = os.path.join(scratch_path, 'log/' + job_name) + '_{}.log'.format(i_job)
     result = {}
-
     data = task.gen_data(100, 30000)
 
     for i_checkpoint in range(i_start, i_end, sim.checkpoint_interval):
@@ -30,25 +58,22 @@ def analyze_training_run(sim, task, job_name, sigma=0):
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
 
         checkpoint = sim.checkpoints[i_checkpoint]
-        analyze_checkpoint(checkpoint, data, verbose=False,
-                           sigma_pert=0.5, N=500, parallelize=False,
-                           N_iters=6000, same_LR_criterion=5000,
-                           context=contexts[0], sigma=sigma)
+        analyze_checkpoint(checkpoint, data, verbose=False, parallelize=False,
+                           **analysis_args)
 
-        get_graph_structure(checkpoint, parallelize=False,
-                            epsilon=0.01, background_input=0)
+        get_graph_structure(checkpoint, parallelize=False, background_input=0,
+                            **graph_args)
         get_input_dependent_graph_structure(checkpoint,
                                             inputs=task.probe_inputs,
-                                            contexts=None)
+                                            **input_graph_args)
 
         result['checkpoint_{}'.format(i_checkpoint)] = deepcopy(checkpoint)
 
     result['i_job'] = i_job
-    result['config'] = params
-    save_dir = os.environ['SAVEPATH']
+    save_dir = os.environ['SAVEDIR']
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    save_path = os.path.join(save_dir, 'result_'+str(i_job))
+    save_path = os.path.join(save_dir, 'result_{}'.format(i_job))
 
     with open(save_path, 'wb') as f:
         pickle.dump(result, f)
