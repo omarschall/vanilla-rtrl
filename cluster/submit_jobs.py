@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 
 def submit_job(job_file_path, n_array,
+               id_dependency=None,
                project_name='learning-dynamics',
                module_name='vanilla-rtrl',
                username='oem214'):
@@ -34,11 +35,23 @@ def submit_job(job_file_path, n_array,
     get_ipython().system('rsync -aav {} {}'.format(module_dir, code_dir))
     get_ipython().system('scp {} {}'.format(main_path, code_dir))
 
-    ### -- Submit job --- ###
+    ### --- Include dependencies on previous jobs --- ###
 
-    get_ipython().system('sbatch --array=1-{} {}'.format(n_array, job_path))
+    dependency_arg = ''
+    if id_dependency is not None:
+        dependency_arg = '--dependency=afterok:{}'.format(id_dependency)
+
+    ### -- Submit job --- ###
+    sbatch_command = 'sbatch {} --array=1-{} {}'.format(dependency_arg,
+                                                        n_array,
+                                                        job_path)
+    job_stdout = get_ipython().getoutput(sbatch_command)
+    job_id = int(job_stdout[0].split(' ')[-1])
+
+    return job_id
 
 def write_job_file(job_name, py_file_name='main.py',
+                   py_args='',
                    project_name='learning-dynamics',
                    username='oem214',
                    nodes=1, ppn=1, mem=16, n_hours=24):
@@ -70,7 +83,7 @@ def write_job_file(job_name, py_file_name='main.py',
     command = ('pwd > {}.log; '.format(log_path)
               + 'date >> {}.log; '.format(log_path)
               + 'which python >> {}.log; '.format(log_path)
-              + 'python {}\n'.format(py_file_name))
+              + 'python {} {}\n'.format(py_file_name, py_args))
 
     overlay = '/home/{}/pytorch1.7.0-cuda11.0.ext3:ro'.format(username)
     singularity_dir = '/scratch/work/public/singularity/'
@@ -101,6 +114,25 @@ def write_job_file(job_name, py_file_name='main.py',
             + 'bash -c "source /ext3/env.sh; {}"'.format(command))
 
     return job_path
+
+# def write_dependent_job_script(job_name, job_name_1, job_name_2,
+#                                project_name='learning-dynamics',
+#                                username='oem214',):
+#
+#     project_dir = os.path.join('/scratch/', username, project_name)
+#     sbatch_dir = os.path.join(project_dir, 'job_scripts')
+#     job_path = os.path.join(sbatch_dir, job_name)
+#
+#     ### --- Write job file -- ###
+#
+#     with open(job_path, 'w') as f:
+#         f.write(
+#             '#! /bin/bash\n'
+#             + '\n'
+#             + 'jid=$(sbatch --array=1-{} {}.s | cut -d " " -f 4)\n'.format(n_array, job_name_1))
+#             + 'sbatch --dependency=afterok:${jid} {}'.format(job_name_2))
+#
+#     return job_path
 
 def unpack_processed_data(job_file_path,
                           project_name='learning-dynamics',
