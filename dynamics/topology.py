@@ -244,8 +244,8 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
     checkpoint[key] = adjacency_matrix
 
 def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
+                                        N=100, time_steps=50, epsilon=0.01,
                                         parallelize=False,
-                                        nodes_matrix=None,
                                         node_thresh=0.05,
                                         sigma=0):
     """After running get_graph_structure, this can be used to find input-
@@ -270,20 +270,15 @@ def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
         if contexts is None:
             key = 'adjmat_input_{}'.format(i_x)
 
-            adjacency_matrix = get_graph_structure(checkpoint,
-                                                   parallelize=parallelize,
-                                                   key=key,
-                                                   input_pulse=x,
-                                                   nodes=nodes,
-                                                   sigma=sigma)
+            get_graph_structure(checkpoint, N=N, time_steps=time_steps,
+                                epsilon=epsilon, parallelize=parallelize,
+                                key=key, input_pulse=x, nodes=nodes,
+                                sigma=sigma)
         else:
             key = 'adjmat_input_{}_context_{}'.format(i_x // len(inputs),
                                                       i_x % len(inputs))
 
-            adjacency_matrix = get_graph_structure(checkpoint,
-                                                   parallelize=parallelize,
-                                                   key=key,
-                                                   input_pulse=x[0],
-                                                   background_input=x[1],
-                                                   nodes=nodes,
-                                                   sigma=sigma)
+            get_graph_structure(checkpoint, N=N, time_steps=time_steps,
+                                epsilon=epsilon, parallelize=parallelize,
+                                key=key, input_pulse=x[0],
+                                background_input=x[1], nodes=nodes, sigma=sigma)

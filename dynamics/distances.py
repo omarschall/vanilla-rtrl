@@ -1,8 +1,11 @@
+from dynamics.dynamics_utils import get_test_sim_data
+from dynamics.Dynamics import Vanilla_PCA
 import numpy as np
 from netcomp.distance import netsimile
 from pyemd import emd
-from utils import norm
-
+from sklearn.cross_decomposition import CCA
+from utils import norm, normalized_dot_product
+from dynamics.VAE import test_vae
 
 def wasserstein_distance(checkpoint_1, checkpoint_2):
     """Calculates the Wassterstein ("Earth Mover's") distance between the
