@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Fixed_Point_Transition_Task(Task):
     """A task where a given number of states in output space is provided,
@@ -31,6 +31,8 @@ class Fixed_Point_Transition_Task(Task):
         self.p_transition = p_transition
         self.deterministic = deterministic
         self.delay = delay
+        self.probe_inputs = [np.eye(self.n_states)[i]
+                             for i in range(self.n_states)]
 
         super().__init__(len(T_dict.keys()), states[0].shape[0])
 

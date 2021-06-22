@@ -1,107 +1,102 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Oct 18 19:19:46 2018
-
-@author: omarschall
-"""
-
-import subprocess
 import os
 import numpy as np
-from pdb import set_trace
 import pickle
 
-def clear_results(job_file, data_path='/Users/omarschall/cluster_results/vanilla-rtrl/'):
+def submit_job(job_file_path, n_array,
+               py_file_name=None,
+               id_dependency=None,
+               project_name='learning-dynamics',
+               module_name='vanilla-rtrl',
+               username='oem214'):
+    """Submit an array job in reference to a particular job file, with a
+    specified number of sub-jobs. Creates directories for storing results."""
 
-    job_name = job_file.split('/')[-1].split('.')[0]
-    data_dir = os.path.join(data_path, job_name)
+    ### --- Make results directory -- ###
 
-    subprocess.run(['rm', data_dir+'/*_*'])
+    job_name = job_file_path.split('/')[-1].split('.')[0]
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_dir = os.path.join(project_dir, 'results', job_name)
+    code_dir = os.path.join(results_dir, 'code')
+    main_dir = os.path.join(project_dir, 'cluster_main_scripts')
+    if py_file_name is None:
+        py_file_name = job_name+'.py'
+    main_path = os.path.join(main_dir, py_file_name)
+    job_path = os.path.join(project_dir, 'job_scripts', job_name + '.s')
 
-def retrieve_results(job_file, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='greene.hpc.nyu.edu'):
-
-    #job_name = job_file.split('/')[-1].split('.')[0]
-    job_name = '.'.join(job_file.split('/')[-1].split('.')[:-1])
-    data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    data_dir = os.path.join(data_path, job_name)
-
-    source_path = username+'@'+domain+':'+scratch_path+'library/'+job_name+'/'
-
-    subprocess.run(['rsync', '-aav', source_path, data_dir])
-
-def submit_job(job_file, n_array, scratch_path='/scratch/oem214/vanilla-rtrl/',
-               username='oem214', domain='greene.hpc.nyu.edu'):
-
-    job_name = job_file.split('/')[-1]#
-    data_path = '/Users/omarschall/cluster_results/vanilla-rtrl/'
-    data_dir = os.path.join(data_path, job_name.split('.')[0])
-
-    if not os.path.exists(data_dir):
-        os.mkdir(data_dir)
-        code_dir = os.path.join(data_dir, 'code')
+    if not os.path.exists(results_dir):
+        os.mkdir(results_dir)
+    if not os.path.exists(code_dir):
         os.mkdir(code_dir)
 
-    code_dir = os.path.join(data_dir, 'code')
+    ### --- Clear old results --- ###
 
-    #copy main script to results dir
-    subprocess.run(['rsync',
-                    '-aav',
-                    '--exclude', '.git',
-                    '/Users/omarschall/vanilla-rtrl/',
-                    code_dir])
-    
-    subprocess.run(['rsync',
-                    '-aav',
-                    '--exclude', '.git',
-                    '/Users/omarschall/vanilla-rtrl/',
-                    username+'@'+domain+':'+scratch_path])
+    get_ipython().system('rm {}/result_*'.format(results_dir))
 
-    subprocess.run(['scp', job_file, username+'@'+domain+':/home/oem214/'])
+    ### --- Copy state of module to code dir --- ###
 
-    subprocess.run(['ssh', username+'@'+domain,
-                    'sbatch', '--array=1-'+str(n_array), job_name])
+    module_dir = os.path.join('/scratch/', username, module_name)
+    get_ipython().system('rsync -aav {} {}'.format(module_dir, code_dir))
+    get_ipython().system('scp {} {}'.format(main_path, code_dir))
+
+    ### --- Include dependencies on previous jobs --- ###
+
+    dependency_arg = ''
+    if id_dependency is not None:
+        dependency_arg = '--dependency=afterok:{}'.format(id_dependency)
+
+    ### -- Submit job --- ###
+    sbatch_command = 'sbatch {} --array=1-{} {}'.format(dependency_arg,
+                                                        n_array,
+                                                        job_path)
+    job_stdout = get_ipython().getoutput(sbatch_command)
+    job_id = int(job_stdout[0].split(' ')[-1])
+
+    return job_id
 
 def write_job_file(job_name, py_file_name='main.py',
-                   sbatch_path='/Users/omarschall/vanilla-rtrl/job_scripts/',
-                   scratch_path='/scratch/oem214/vanilla-rtrl/',
+                   py_args='',
+                   project_name='learning-dynamics',
+                   username='oem214',
                    nodes=1, ppn=1, mem=16, n_hours=24):
-    """
-    Create a job file.
-    Parameters
-    ----------
-    job_name : str
-              Name of the job.
-    sbatch_path : str
-              Directory to store SBATCH file in.
-    scratch_path : str
-                  Directory to store output files in.
-    nodes : int, optional
-            Number of compute nodes.
-    ppn : int, optional
-          Number of cores per node.
-    gpus : int, optional
-           Number of GPU cores.
-    mem : int, optional
-          Amount, in GB, of memory.s
-    n_hours : int, optional
-            Running time, in hours.
-    Returns
-    -------
-    jobfile : str
-              Path to the job file.
-    """
+    """Create a job file for running a standard single-main-script job.
 
-    job_file = os.path.join(sbatch_path, job_name + '.s')
-    log_name = os.path.join('log', job_name)
+    Args:
+        job_name (str): String specifying the name of the job (without .s
+            extension.)
+        py_file_name (str): Name of the python file (including .py extension)
+            to be run on the cluster.
+        project_name (str): Name of the project directory
+        nodes (int): Number of nodes requested (use default of 1 probably)
+        ppn (int): Number of processes per node (again use default 1)
+        mem (int): Memory requirements in GB
+        n_hours (int): Number of hours before job automatically terminates."""
 
-    command = ('pwd > {}.log; '.format(log_name)
-              + 'date >> {}.log; '.format(log_name)
-              + 'which python >> {}.log; '.format(log_name)
-              + 'python {}\n'.format(py_file_name))
+    ### --- Define key paths --- ###
 
-    with open(job_file, 'w') as f:
+    project_dir = os.path.join('/scratch/', username, project_name)
+    sbatch_dir = os.path.join(project_dir, 'job_scripts')
+    main_dir = os.path.join(project_dir, 'cluster_main_scripts')
+    save_dir = os.path.join(project_dir, 'results', job_name)
+
+    job_path = os.path.join(sbatch_dir, job_name + '.s')
+    log_path = os.path.join(project_dir, 'logs', job_name + '.o')
+
+    ### --- Define key commands and singularity environments --- ###
+
+    command = ('pwd > {}.log; '.format(log_path)
+              + 'date >> {}.log; '.format(log_path)
+              + 'which python >> {}.log; '.format(log_path)
+              + 'python {} {}\n'.format(py_file_name, py_args))
+
+    overlay = '/home/{}/pytorch1.7.0-cuda11.0.ext3:ro'.format(username)
+    singularity_dir = '/scratch/work/public/singularity/'
+    singularity_name = 'cuda11.0-cudnn8-devel-ubuntu18.04.sif'
+    singularity_path = os.path.join(singularity_dir, singularity_name)
+    singularity_exe_path = '/share/apps/singularity/bin/singularity'
+
+    ### --- Write job file -- ###
+
+    with open(job_path, 'w') as f:
         f.write(
             '#! /bin/bash\n'
             + '\n'
@@ -111,100 +106,106 @@ def write_job_file(job_name, py_file_name='main.py',
             + '#SBATCH --mem={}GB\n'.format(mem)
             + '#SBATCH --time={}:00:00\n'.format(n_hours)
             + '#SBATCH --job-name={}\n'.format(job_name[0:16])
-            + '#SBATCH --output={}log/{}.o\n'.format(scratch_path, job_name[0:16])
+            + '#SBATCH --output={}\n'.format(log_path)
             + '\n'
             + 'module purge\n'
-            + 'SAVEPATH={}library/{}\n'.format(scratch_path, job_name)
-            + 'export SAVEPATH\n'
-            #+ 'module load python3/intel/3.6.3\n'
-            + 'cd {}\n'.format(scratch_path)
-            + 'singularity exec --nv '
-            + '--overlay /scratch/oem214/vanilla-rtrl/pytorch1.7.0-cuda11.0.ext3:ro '
-            + '/scratch/work/public/singularity/cuda11.0-cudnn8-devel-ubuntu18.04.sif '
-            + 'bash -c "source /ext3/env.sh; {}"'.format(command)
-            # + 'pwd > {}.log\n'.format(log_name)
-            # + 'date >> {}.log\n'.format(log_name)
-            # + 'which python >> {}.log\n'.format(log_name)
-            #+ 'cd /home/oem214/py3.6.3\n'
-            #+ 'source py3.6.3/bin/activate\n'=
-            )
+            + 'SAVEDIR={}\n'.format(save_dir)
+            + 'export SAVEDIR\n'
+            + 'cd {}\n'.format(main_dir)
+            + '{} exec '.format(singularity_exe_path)
+            + '--overlay {} {} '.format(overlay, singularity_path)
+            + 'bash -c "source /ext3/env.sh; {}"'.format(command))
 
-    return job_file
+    return job_path
 
-def process_results(job_file):
+# def write_dependent_job_script(job_name, job_name_1, job_name_2,
+#                                project_name='learning-dynamics',
+#                                username='oem214',):
+#
+#     project_dir = os.path.join('/scratch/', username, project_name)
+#     sbatch_dir = os.path.join(project_dir, 'job_scripts')
+#     job_path = os.path.join(sbatch_dir, job_name)
+#
+#     ### --- Write job file -- ###
+#
+#     with open(job_path, 'w') as f:
+#         f.write(
+#             '#! /bin/bash\n'
+#             + '\n'
+#             + 'jid=$(sbatch --array=1-{} {}.s | cut -d " " -f 4)\n'.format(n_array, job_name_1))
+#             + 'sbatch --dependency=afterok:${jid} {}'.format(job_name_2))
+#
+#     return job_path
 
-    job_name = job_file.split('/')[-1].split('.')[0]
-    data_path = os.path.join('/Users/omarschall/cluster_results/vanilla-rtrl/',
-                             job_name)
-    dir_list = os.listdir(data_path)
-    dir_list.pop(dir_list.index('code'))
-    # for file in dir_list:
-    #     if 'rnn' not in file:
-    #         del(dir_list[dir_list.index(file)])
+def unpack_processed_data(job_file_path,
+                          project_name='learning-dynamics',
+                          username='oem214'):
+    """Unpack processed data from an array job."""
+
+    job_name = job_file_path.split('/')[-1].split('.')[0]
+    project_dir = os.path.join('/scratch/', username, project_name)
+    data_dir = os.path.join(project_dir, 'results', job_name)
+    dir_list = sorted([s for s in os.listdir(data_dir) if 'result' in s])
 
     max_seed = 0
 
+    ### --- Find and organized unique macro configs --- ###
+
     for i_file, file in enumerate(dir_list):
 
-        with open(os.path.join(data_path, file), 'rb') as f:
-            data = pickle.load(f)
+        with open(os.path.join(data_dir, file), 'rb') as f:
+            result = pickle.load(f)
 
         if i_file == 0:
 
-            configs_array = {key : [] for key in data['config'].keys()}
-            key_order = [key for key in data['config'].keys()]
+            configs_array = {key: [] for key in result['config'].keys()}
+            key_order = [key for key in result['config'].keys()]
 
-        for key in data['config'].keys():
-            if data['config'][key] not in configs_array[key]:
-                configs_array[key].append(data['config'][key])
+        for key in result['config'].keys():
+            if result['config'][key] not in configs_array[key]:
+                configs_array[key].append(result['config'][key])
 
-        max_seed = np.maximum(max_seed, data['i_seed'])
+        max_seed = np.maximum(max_seed, result['i_seed'])
 
     configs_array['i_seed'] = list(range(max_seed + 1))
     key_order.append('i_seed')
+
+    ### --- Sort individual config dimensions --- ####
 
     for key in configs_array.keys():
 
         configs_array[key] = sorted(configs_array[key])
 
+    ### --- Determine shape of processed data --- ###
+
     array_dims = [len(configs_array[key]) for key in key_order]
-    #processed_data_example = [d for d in data['processed_data'].values()][0]
-    processed_data_example = np.array([d for d in data['processed_data'].values()])
-    #processed_data_example = 0.6
+    processed_data_example = result['processed_data']
     if type(processed_data_example) != np.float64:
-        #set_trace()
         array_dims += [len(processed_data_example)]
     results_array = np.zeros(array_dims)
 
-    #set_trace()
+    ### --- Put data in array with shape matched to config arrays --- ###
 
-    #Put data in array
     sim_dict = {}
     for i_file, file in enumerate(dir_list):
 
-        with open(os.path.join(data_path, file), 'rb') as f:
-            data = pickle.load(f)
+        with open(os.path.join(data_dir, file), 'rb') as f:
+            result = pickle.load(f)
 
         sim_dict_key = ''
         index = []
         for key in key_order:
             try:
-                index.append(configs_array[key].index(data['config'][key]))
-                sim_dict_key += (str(data['config'][key]) + '_')
+                index.append(configs_array[key].index(result['config'][key]))
+                sim_dict_key += (str(result['config'][key]) + '_')
             except KeyError:
-                index.append(data['i_seed'])
-                sim_dict_key += (str(data['i_seed']))
+                index.append(result['i_seed'])
+                sim_dict_key += (str(result['i_seed']))
         index = tuple(index)
-        #set_trace()
-        #processed_data = [d for d in data['processed_data'].values()][0]
-        losses = np.array([data['processed_data']['task_{}'.format(i)] for i in range(1,4)] + 
-                          [data['processed_data']['combined_task']])
-        #set_trace()
-        results_array[index] = losses
-        #results_array[index] = data['processed_data']['test_loss']
-        #results_array[index] = data['processed_data']
+
+        results_array[index] = result['processed_data']
         try:
-            sim_dict[sim_dict_key] = data['sim']
+            sim_dict[sim_dict_key] = result['sim']
         except AttributeError:
             pass
 

@@ -1,11 +1,15 @@
-import subprocess
-from sync_cluster import sync_cluster
-import webbrowser
-import appscript
+import subprocess, os
+from cluster.sync_cluster import sync_cluster
+try:
+    import webbrowser
+    import appscript
+except ModuleNotFoundError:
+    pass
 import time
 
-def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
-                           scratch_path='/scratch/oem214/vanilla-rtrl/',
+def start_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtrl/',
+                           module_name='vanilla-rtrl/',
+                           project_name='learning-dynamics',
                            username='oem214', domain='greene.hpc.nyu.edu'):
     """For given user data, opens a jupyter notebook on the cluster, accesses
     port/token info, and opens a web browser with jupyter notebook running.
@@ -20,19 +24,25 @@ def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
     for relevant connection info (port and token) in jupyter.o file, and when
     available opens a browser connecting to this notebook job."""
 
-    sync_cluster(local_path=local_path, scratch_path=scratch_path,
+    sync_cluster(local_module_path=local_module_path, module_name=module_name,
                  username=username, domain=domain)
     remote = '{}@{}'.format(username, domain)
+
+    scratch_path = '/scratch/{}/'.format(username)
+    project_path = os.path.join(scratch_path, project_name)
+    jupyter_path = os.path.join(project_path, 'jupyter_notebook')
+    jupyter_slurm_path = os.path.join(jupyter_path, 'jupyter.s')
+    jupyter_output_path = os.path.join(jupyter_path, 'jupyter.o')
 
     ### --- Clear old notebook data files and cancel old notebooks --- ###
 
     subprocess.run(['ssh', remote,
-                    'rm', '~/jupyter_notebook/jupyter.o'])
+                    'rm', jupyter_output_path])
 
     ### --- Run new jupyter notebook --- ###
 
     subprocess.run(['ssh', remote,
-                    'sbatch', 'jupyter_notebook/jupyter.s'])
+                    'sbatch', jupyter_slurm_path])
 
 
     ### --- Repeatedly check for connection info in output file --- ###
@@ -41,13 +51,13 @@ def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
     while not done:
 
         sp = subprocess.run(['ssh', remote,
-                             'tail', '-2', 'jupyter_notebook/jupyter.o',
+                             'tail', '-2', jupyter_output_path,
                              '|', 'head', '-1'],
                             capture_output=True)
 
         line_info = str(sp.stdout, 'utf-8')
 
-        if 'http' not in line_info:
+        if 'http://localhost' not in line_info:
             continue
 
         done = True
@@ -66,6 +76,3 @@ def start_jupyter_notebook(local_path='/Users/omarschall/vanilla-rtrl/',
     ### --- Open jupyter notebook in browser --- ###
 
     webbrowser.open(url)
-
-if __name__ == '__main__':
-    start_jupyter_notebook()

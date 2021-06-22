@@ -1,6 +1,6 @@
 import numpy as np
 import pickle
-from .Task import Task
+from gen_data.Task import Task
 
 class Sequential_MNIST(Task):
     """Class for the Sequential MNIST task, where chunks of a given MNIST

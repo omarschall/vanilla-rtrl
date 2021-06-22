@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Add_Task(Task):
     """Class for the 'Add Task', an input-label mapping with i.i.d. Bernoulli

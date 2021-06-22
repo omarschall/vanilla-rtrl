@@ -1,5 +1,5 @@
 import numpy as np
-from .Task import Task
+from gen_data.Task import Task
 
 class Flip_Flop_Task(Task):
     """Class for the N-bit flip-flop task.
@@ -38,6 +38,8 @@ class Flip_Flop_Task(Task):
         self.input_magnitudes = input_magnitudes
         self.x_dim_mask = np.array(x_dim_mask)
         self.y_dim_mask = np.array(y_dim_mask)
+        self.probe_inputs = ([np.eye(n_bit)[i] for i in range(n_bit)] +
+                             [-np.eye(n_bit)[i] for i in range(n_bit)])
 
     def gen_dataset(self, N):
         """Generates a dataset for the flip-flop task."""
