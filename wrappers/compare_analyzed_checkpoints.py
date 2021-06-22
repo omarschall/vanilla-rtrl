@@ -6,7 +6,7 @@ default_compare_args = {'wasserstein': False,
                         'VAE_': False,
                         'PC1': False,
                         'PC2': False,
-                        'PC3': True,
+                        'PC3': False,
                         'SVCCA': False,
                         'aligned_graph': True,
                         'node_diff': True,
@@ -35,7 +35,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
 
     ### --- Get paths, extract and unpack data --- ###
 
-    project_dir = os.path.join('scratch/{}/'.format(username), project_name)
+    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
     results_dir = os.path.join(project_dir, 'results/')
     analysis_dir = os.path.join(results_dir, analysis_job_name)
 

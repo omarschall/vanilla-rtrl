@@ -3,8 +3,8 @@ import pickle
 from dynamics import *
 from math import ceil
 
-default_analysis_args = {'sigma_pert': 0.5, 'N': 500,
-                         'N_iters': 6000, 'same_LR_criterion': 5000,
+default_analysis_args = {'sigma_pert': 0.5, 'N': 200,
+                         'N_iters': 5000, 'same_LR_criterion': 3000,
                          'sigma': 0}
 default_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
                       'sigma': 0}
@@ -25,7 +25,7 @@ def analyze_training_run(saved_run_name,
 
     ### --- Define relevant paths --- ###
 
-    project_dir = os.path.join('scratch/{}/'.format(username), project_name)
+    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
     log_path = os.path.join(project_dir, 'logs/' + analysis_job_name) + '.o.log'
 
@@ -57,7 +57,10 @@ def analyze_training_run(saved_run_name,
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
 
-        checkpoint = sim.checkpoints[i_checkpoint]
+        try:
+            checkpoint = sim.checkpoints[i_checkpoint]
+        except KeyError:
+            continue
         analyze_checkpoint(checkpoint, data, verbose=False, parallelize=False,
                            **analysis_args)
 

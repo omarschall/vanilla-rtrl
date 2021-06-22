@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 
 def submit_job(job_file_path, n_array,
+               py_file_name=None,
                id_dependency=None,
                project_name='learning-dynamics',
                module_name='vanilla-rtrl',
@@ -17,7 +18,9 @@ def submit_job(job_file_path, n_array,
     results_dir = os.path.join(project_dir, 'results', job_name)
     code_dir = os.path.join(results_dir, 'code')
     main_dir = os.path.join(project_dir, 'cluster_main_scripts')
-    main_path = os.path.join(main_dir, job_name+'.py')
+    if py_file_name is None:
+        py_file_name = job_name+'.py'
+    main_path = os.path.join(main_dir, py_file_name)
     job_path = os.path.join(project_dir, 'job_scripts', job_name + '.s')
 
     if not os.path.exists(results_dir):
