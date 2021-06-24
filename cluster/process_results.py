@@ -1,4 +1,5 @@
 import os, pickle
+import numpy as np
 
 def unpack_analysis_results(data_path):
     """For a path to results, unpacks the data into a dict of checkpoints
