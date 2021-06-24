@@ -167,3 +167,40 @@ def plot_MDS_from_distance_matrix(distances, return_fig=False):
     if return_fig:
         return fig
 
+
+def plot_signals(signals, key_restriction=None, title=None,
+                 signal_clips={}):
+    """For a dictionary of 1D time series signals, plots each vertically
+    in a min-max range from 0 to 1.
+
+    Includes option to clip any signal from above for easier visualization,
+    via the signal_clips dictionary."""
+
+    keys = signals.keys()
+    if key_restriction is not None:
+        keys = key_restriction
+
+    fig = plt.figure(figsize=(10, 2 * len(keys)))
+    leg = []
+    for i_key, key in enumerate(keys):
+
+        x = signals[key].copy()
+
+        if key in signal_clips.keys():
+            x = np.clip(x, 0, signal_clips[key])
+
+        x_max = np.amax(x)
+        x_min = np.amin(x)
+
+        x = (x - x_min) / (x_max - x_min)
+
+        plt.plot(x - 1.2 * i_key, color='C{}'.format(i_key))
+        leg.append(key)
+
+    plt.legend(leg)
+    plt.yticks([])
+    if title is not None:
+        plt.title(title)
+
+    return fig
+
