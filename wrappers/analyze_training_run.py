@@ -3,8 +3,8 @@ import pickle
 from dynamics import *
 from math import ceil
 
-default_analysis_args = {'sigma_pert': 0.5, 'N': 200,
-                         'N_iters': 5000, 'same_LR_criterion': 3000,
+default_analysis_args = {'sigma_pert': 0.5, 'N': 600,
+                         'N_iters': 6000, 'same_LR_criterion': 5000,
                          'sigma': 0}
 default_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
                       'sigma': 0}

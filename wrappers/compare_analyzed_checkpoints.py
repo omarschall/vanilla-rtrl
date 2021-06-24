@@ -10,6 +10,7 @@ default_compare_args = {'wasserstein': False,
                         'SVCCA': False,
                         'aligned_graph': True,
                         'node_diff': True,
+                        'node_drift': True,
                         'rec_weight': True}
 
 def compare_analyzed_checkpoints(analysis_job_name,
@@ -31,6 +32,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     SVCCA = compare_args['SVCCA']
     aligned_graph = compare_args['aligned_graph']
     node_diff = compare_args['node_diff']
+    node_drift = compare_args['node_drift']
     rec_weight = compare_args['rec_weight']
 
     ### --- Get paths, extract and unpack data --- ###
@@ -77,6 +79,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         aligned_graph_distances = np.zeros((n_checkpoints, n_checkpoints))
     if node_diff:
         node_diff_distances = np.zeros((n_checkpoints, n_checkpoints))
+    if node_drift:
+        node_drift_distances = np.zeros((n_checkpoints, n_checkpoints))
     if rec_weight:
         rec_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
 
@@ -134,6 +138,10 @@ def compare_analyzed_checkpoints(analysis_job_name,
             if node_diff:
                 node_diff_distances[i, j] = node_diff_distance(checkpoint_1,
                                                                checkpoint_2)
+
+            if node_drift:
+                node_drift_distances[i, j] = np.sum(checkpoint_2['corr_node_distances'])
+
             if rec_weight:
                 rec_weight_distances[i, j] = rec_weight_distance(checkpoint_1,
                                                                  checkpoint_2)
@@ -156,6 +164,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         result['aligned_graph_distances'] = aligned_graph_distances
     if node_diff:
         result['node_diff_distances'] = node_diff_distances
+    if node_drift:
+        result['node_drift_distances'] = node_drift_distances
     if rec_weight:
         result['rec_weight_distances'] = rec_weight_distances
 
