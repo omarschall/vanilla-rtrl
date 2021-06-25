@@ -66,8 +66,8 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
         checkpoint['rnn'].reset_network(a=cluster_mean)
         a_J = checkpoint['rnn'].get_a_jacobian(update=False)
         cluster_eigs.append(np.abs(np.linalg.eig(a_J)[0][0]))
-        KE = checkpoint['rnn'].get_network_speed()
-        cluster_KEs.append(KE)
+        cluster_KE = checkpoint['rnn'].get_network_speed()
+        cluster_KEs.append(cluster_KE)
     cluster_eigs = np.array(cluster_eigs)
     cluster_KEs = np.array(cluster_KEs)
 

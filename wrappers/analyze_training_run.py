@@ -61,10 +61,10 @@ def analyze_training_run(saved_run_name,
             checkpoint = sim.checkpoints[i_checkpoint]
         except KeyError:
             continue
-        analyze_checkpoint(checkpoint, data, verbose=False, parallelize=False,
+        analyze_checkpoint(checkpoint, data, verbose=False, parallelize=True,
                            **analysis_args)
 
-        get_graph_structure(checkpoint, parallelize=False, background_input=0,
+        get_graph_structure(checkpoint, parallelize=True, background_input=0,
                             **graph_args)
         get_input_dependent_graph_structure(checkpoint,
                                             inputs=task.probe_inputs,

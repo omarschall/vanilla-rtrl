@@ -9,7 +9,7 @@ from scipy.spatial import distance
 
 def find_KE_minima(checkpoint, test_data, N=1000, verbose_=False,
                    parallelize=False, sigma_pert=0, PCs=None, weak_input=None,
-                   context=None, **kwargs):
+                   context=None, n_cpus=16, **kwargs):
     """Find many KE minima for a given checkpoint of training. Includes option
     to parallelize or not."""
 
@@ -40,7 +40,7 @@ def find_KE_minima(checkpoint, test_data, N=1000, verbose_=False,
     if parallelize:
 
         func_ = partial(find_KE_minimum, **kwargs)
-        with mp.Pool(mp.cpu_count()) as pool:
+        with mp.Pool(min(mp.cpu_count(), n_cpus)) as pool:
                 results = pool.map(func_, RNNs)
 
     if not parallelize:
@@ -176,7 +176,7 @@ def run_autonomous_sim(a_initial, rnn, N, monitors=[],
 def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
                         parallelize=True, key='adjacency_matrix',
                         input_pulse=None, background_input=0, nodes=None,
-                        sigma=0):
+                        sigma=0, n_cpus=16):
     """For each fixed point cluster, runs an autonomous simulation with
     initial condition in small small neighborhood of a point and evaluates
     where it ends up."""
@@ -201,7 +201,7 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
                             background_input=background_input,
                             sigma=sigma)
             #set_trace()
-            with mp.Pool(mp.cpu_count()) as pool:
+            with mp.Pool(min(mp.cpu_count(), n_cpus)) as pool:
                 final_states = pool.map(func_, a_init)
 
             final_states = np.array(final_states)
