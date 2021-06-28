@@ -245,7 +245,7 @@ def get_graph_structure(checkpoint, N=100, time_steps=50, epsilon=0.01,
 
 def get_input_dependent_graph_structure(checkpoint, inputs, contexts=None,
                                         N=100, time_steps=50, epsilon=0.01,
-                                        parallelize=False,
+                                        parallelize=True,
                                         node_thresh=0.05,
                                         sigma=0):
     """After running get_graph_structure, this can be used to find input-
