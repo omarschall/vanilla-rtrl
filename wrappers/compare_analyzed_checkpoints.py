@@ -11,7 +11,8 @@ default_compare_args = {'wasserstein': False,
                         'aligned_graph': True,
                         'node_diff': True,
                         'node_drift': True,
-                        'rec_weight': True}
+                        'rec_weight': True,
+                        'n_inputs': 6}
 
 def compare_analyzed_checkpoints(analysis_job_name,
                                  compare_args=default_compare_args,
@@ -102,8 +103,10 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 continue
 
             try:
-                align_checkpoints(checkpoint_2, checkpoint_1, n_inputs=4)
-                align_checkpoints(checkpoint_2, checkpoint_1, n_inputs=4)
+                align_checkpoints(checkpoint_2, checkpoint_1,
+                                  n_inputs=compare_args['n_inputs'])
+                align_checkpoints(checkpoint_2, checkpoint_1,
+                                  n_inputs=compare_args['n_inputs'])
             except ValueError:
                 break
 
