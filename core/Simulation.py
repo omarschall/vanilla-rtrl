@@ -115,7 +115,8 @@ class Simulation:
                           'update_interval', 'comp_algs', 'verbose',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
-                          'overwrite_checkpoints', 'i_start', 'i_end'}
+                          'overwrite_checkpoints', 'i_start', 'i_end',
+                          'checkpoint_learn_alg', 'checkpoint_optimizer'}
         for k in kwargs:
             if k not in allowed_kwargs:
                 raise TypeError('Unexpected keyword argument '
@@ -142,6 +143,8 @@ class Simulation:
         self.i_start = 0
         self.i_end = self.total_time_steps
         self.sigma = 0
+        self.checkpoint_learn_alg = False
+        self.checkpoint_optimizer = False
 
         #Overwrite defaults with any provided keyword args
         self.__dict__.update(kwargs)
@@ -420,9 +423,12 @@ class Simulation:
         trajectory."""
 
         checkpoint = {'rnn': deepcopy(self.rnn),
-                      'learn_alg': deepcopy(self.learn_alg),
-                      'optimizer': deepcopy(self.optimizer),
                       'i_t': copy(self.i_t)}
+
+        if self.checkpoint_learn_alg:
+            checkpoint['learn_alg'] = deepcopy(self.learn_alg)
+        if self.checkpoint_optimizer:
+            checkpoint['optimizer'] = deepcopy(self.optimizer)
         if (self.i_t not in self.checkpoints.keys() or
             self.overwrite_checkpoints):
             self.checkpoints[self.i_t] = checkpoint
