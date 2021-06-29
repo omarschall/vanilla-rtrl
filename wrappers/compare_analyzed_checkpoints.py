@@ -12,7 +12,8 @@ default_compare_args = {'wasserstein': False,
                         'node_diff': True,
                         'node_drift': True,
                         'rec_weight': True,
-                        'n_inputs': 6}
+                        'n_inputs': 6,
+                        'n_comp_window': 1}
 
 def compare_analyzed_checkpoints(analysis_job_name,
                                  compare_args=default_compare_args,
@@ -50,7 +51,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     task = saved_run['task']
 
     compare_job_name = 'compare_{}'.format(saved_run_name)
-    log_path = os.path.join(project_dir, 'logs/' + compare_job_name) + '.o.log'
+    log_path = os.path.join(project_dir, 'logs/' + compare_job_name) + '.log'
 
     # Unpack data
     indices, checkpoints = unpack_analysis_results(analysis_dir)
@@ -91,7 +92,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
             with open(log_path, 'a') as f:
                 f.write('Calculating distance row {}\n'.format(i))
 
-        for j in range(i + 1, i + 2):
+        for j in range(i + 1, i + 1 + compare_args['n_comp_window']):
 
             i_index = indices[i]
             j_index = indices[j]
