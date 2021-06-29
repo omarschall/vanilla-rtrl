@@ -79,7 +79,7 @@ def write_job_file(job_name, py_file_name='main.py',
     save_dir = os.path.join(project_dir, 'results', job_name)
 
     job_path = os.path.join(sbatch_dir, job_name + '.s')
-    log_path = os.path.join(project_dir, 'logs', job_name + '.o')
+    log_path = os.path.join(project_dir, 'logs', job_name)
 
     ### --- Define key commands and singularity environments --- ###
 
