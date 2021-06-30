@@ -94,8 +94,11 @@ def compare_analyzed_checkpoints(analysis_job_name,
 
         for j in range(i + 1, i + 1 + compare_args['n_comp_window']):
 
-            i_index = indices[i]
-            j_index = indices[j]
+            try:
+                i_index = indices[i]
+                j_index = indices[j]
+            except IndexError:
+                continue
 
             try:
                 checkpoint_1 = checkpoints['checkpoint_{}'.format(i_index)]
@@ -109,7 +112,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 align_checkpoints(checkpoint_2, checkpoint_1,
                                   n_inputs=compare_args['n_inputs'])
             except ValueError:
-                break
+                continue
 
             if wasserstein:
                 wasserstein_distances[i, j] = wasserstein_distance(checkpoint_1,
@@ -138,7 +141,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,
                                                                        node_diff_penalty=0,
-                                                                       n_inputs=4)
+                                                                       n_inputs=compare_args['n_inputs'])
             if node_diff:
                 node_diff_distances[i, j] = node_diff_distance(checkpoint_1,
                                                                checkpoint_2)
