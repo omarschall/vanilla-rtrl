@@ -195,7 +195,7 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         y = (y - y_min) / (y_max - y_min)
 
         if x_values is not None:
-            x = x_values
+            x = x_values[:len(y)]
         else:
             x = list(range(len(y)))
 
