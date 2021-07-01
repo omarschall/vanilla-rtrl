@@ -6,7 +6,7 @@ from core import Simulation
 from dynamics import *
 from plotting.State_Space_Analysis import State_Space_Analysis
 
-def plot_output_from_checkpoint(checkpoint, data, n_PCs=3, plot_title=None,
+def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                                 figsize=(3, 2), xlim=500, **kwargs):
     """For a given checkpoint in a simulation and data dict, runs a fresh
     test simulation and plots the results in output spcae."""
