@@ -209,3 +209,25 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
 
     return fig
 
+
+def plot_2d_array_of_config_results(configs_array, results_array, key_order,
+                                    log_scale=False):
+    """Given an array of configs (must be 2D) and corresponding results as
+    floats, plots the result in a 2D grid averaging over random seeds."""
+
+    fig = plt.figure()
+
+    plt.imshow(results_array.mean(-1))
+
+    if log_scale:
+        plt.yticks(range(results_array.shape[0]), np.round(np.log10(configs_array[key_order[0]]), 3))
+        plt.xticks(range(results_array.shape[1]), np.round(np.log10(configs_array[key_order[1]]), 3))
+    else:
+        plt.yticks(range(results_array.shape[0]), np.round(configs_array[key_order[0]], 3))
+        plt.xticks(range(results_array.shape[1]), np.round(configs_array[key_order[1]], 3))
+
+    plt.ylabel(key_order[0])
+    plt.xlabel(key_order[1])
+    plt.colorbar()
+
+    return fig

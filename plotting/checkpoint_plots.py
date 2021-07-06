@@ -224,7 +224,7 @@ def plot_input_dependent_task_topology(task, reference_checkpoint=None,
 def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
 
 
-    n_params = checkpoint_lists[0]['rnn'].n_h_params
+    n_params = checkpoint_lists[0][0]['rnn'].n_h_params
 
     fig = plt.figure()
     U = np.linalg.qr(np.random.normal(0, 1, (n_params, n_params)))[0][:2]
