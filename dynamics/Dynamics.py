@@ -18,7 +18,7 @@ def analyze_all_checkpoints(checkpoints, func, test_data, **kwargs):
 
 def analyze_checkpoint(checkpoint, data, N_iters=8000,
                        same_LR_criterion=5000, N=200,
-                       n_PCs=3, context=None,
+                       n_PCs=3, context=None, KE_criterion=None,
                        reference_checkpoint=None,
                        sigma=0,
                        **kwargs):
@@ -45,6 +45,12 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
     A = np.array([d['a_final'] for d in fixed_points])
     A_init = np.array(initial_states)
     KE = np.array([d['KE_final'] for d in fixed_points])
+
+    if KE_criterion is not None:
+        idx = np.where(KE < KE_criterion)
+        A = A[idx]
+        A_init = A_init[idx]
+        KE = KE[idx]
 
     dbscan = DBSCAN(eps=0.5)
     dbscan.fit(A)
