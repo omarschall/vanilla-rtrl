@@ -209,22 +209,77 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
 
     return fig
 
+def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
+                          x_values=None, signal_clips={}):
+    """For a list of dictionaries of 1D time series signals, plots each
+    vertically in a min-max range from 0 to 1.
+
+    Includes option to clip any signal from above for easier visualization,
+    via the signal_clips dictionary."""
+
+    fig = plt.figure(figsize=(10, 2 * len(signal_dicts[0].keys())))
+    n_signals = len(signal_dicts)
+    alpha = 1 - np.exp(1 - n_signals)
+
+    for i_signals, signals in enumerate(signal_dicts):
+
+        keys = signals.keys()
+        if key_restriction is not None:
+            keys = key_restriction
+
+        leg = []
+        for i_key, key in enumerate(keys):
+
+            y = signals[key].copy()
+
+            if key in signal_clips.keys():
+                y = np.clip(y, 0, signal_clips[key])
+
+            y_max = np.amax(y)
+            y_min = np.amin(y)
+
+            y = (y - y_min) / (y_max - y_min)
+
+            if x_values is not None:
+                x = x_values[:len(y)]
+            else:
+                x = list(range(len(y)))
+
+            plt.plot(x, y - 1.2 * i_key, color='C{}'.format(i_key), alpha=alpha)
+            leg.append(key)
+
+        if i_signals == 0:
+            plt.legend(leg)
+            plt.yticks([])
+            if title is not None:
+                plt.title(title)
+
+    return fig
+
 
 def plot_2d_array_of_config_results(configs_array, results_array, key_order,
-                                    log_scale=False):
+                                    log_scale=False, tick_rounding=3, **imshow_kwargs):
     """Given an array of configs (must be 2D) and corresponding results as
     floats, plots the result in a 2D grid averaging over random seeds."""
 
     fig = plt.figure()
 
-    plt.imshow(results_array.mean(-1))
+    plt.imshow(results_array.mean(-1), **imshow_kwargs)
 
     if log_scale:
-        plt.yticks(range(results_array.shape[0]), np.round(np.log10(configs_array[key_order[0]]), 3))
-        plt.xticks(range(results_array.shape[1]), np.round(np.log10(configs_array[key_order[1]]), 3))
+        plt.yticks(range(results_array.shape[0]),
+                   np.round(np.log10(configs_array[key_order[0]]),
+                            tick_rounding))
+        plt.xticks(range(results_array.shape[1]),
+                   np.round(np.log10(configs_array[key_order[1]]),
+                            tick_rounding))
     else:
-        plt.yticks(range(results_array.shape[0]), np.round(configs_array[key_order[0]], 3))
-        plt.xticks(range(results_array.shape[1]), np.round(configs_array[key_order[1]], 3))
+        plt.yticks(range(results_array.shape[0]),
+                   np.round(configs_array[key_order[0]],
+                            tick_rounding))
+        plt.xticks(range(results_array.shape[1]),
+                   np.round(configs_array[key_order[1]],
+                            tick_rounding))
 
     plt.ylabel(key_order[0])
     plt.xlabel(key_order[1])
