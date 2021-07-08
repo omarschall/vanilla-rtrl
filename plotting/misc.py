@@ -288,7 +288,8 @@ def plot_2d_array_of_config_results(configs_array, results_array, key_order,
 
     return fig
 
-def plot_kinetic_energy_histograms(indices, checkpoints, return_fig=False):
+def plot_kinetic_energy_histograms(indices, checkpoints, return_fig=False,
+                                   red_line=-4):
     """For a list of ordered indices and corresponding dict of checkpoints,
     plots the histogram of log kinetic energy for each checkpoint in array."""
 
@@ -321,7 +322,7 @@ def plot_kinetic_energy_histograms(indices, checkpoints, return_fig=False):
             bin_width = edges[1] - edges[0]
 
             ax[i_x, i_y].plot(edges[:-1] + bin_width / 2, hist)
-            ax[i_x, i_y].axvline(x=-4, color='C3', linestyle='--')
+            ax[i_x, i_y].axvline(x=red_line, color='C3', linestyle='--')
             ax[i_x, i_y].set_title(str(i_checkpoint))
         except IndexError:
             continue
