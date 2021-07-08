@@ -1,3 +1,4 @@
+from math import ceil
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import decimate
@@ -286,3 +287,44 @@ def plot_2d_array_of_config_results(configs_array, results_array, key_order,
     plt.colorbar()
 
     return fig
+
+def plot_kinetic_energy_histograms(indices, checkpoints, return_fig=False):
+    """For a list of ordered indices and corresponding dict of checkpoints,
+    plots the histogram of log kinetic energy for each checkpoint in array."""
+
+    all_KEs = []
+    for i_checkpoint in indices:
+        checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
+        all_KEs.append(np.log10(checkpoint['KE']))
+
+    all_KEs = np.concatenate(all_KEs)
+
+    bins = np.linspace(np.amin(all_KEs), np.amax(all_KEs), 30)
+
+    n_rows = ceil(np.sqrt(len(indices)))
+
+    fig, ax = plt.subplots(n_rows, n_rows, figsize=(2 * n_rows,
+                                                    2 * n_rows))
+
+    for i in range(n_rows ** 2):
+
+        i_x = i // n_rows
+        i_y = i % n_rows
+
+        ax[i_x, i_y].set_xticks([])
+        ax[i_x, i_y].set_yticks([])
+
+        try:
+            i_checkpoint = indices[i]
+            checkpoint = checkpoints['checkpoint_{}'.format(i_checkpoint)]
+            hist, edges = np.histogram(np.log10(checkpoint['KE']), bins=bins)
+            bin_width = edges[1] - edges[0]
+
+            ax[i_x, i_y].plot(edges[:-1] + bin_width / 2, hist)
+            ax[i_x, i_y].axvline(x=-4, color='C3', linestyle='--')
+            ax[i_x, i_y].set_title(str(i_checkpoint))
+        except IndexError:
+            continue
+
+    if return_fig:
+        return fig
