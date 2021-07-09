@@ -35,7 +35,7 @@ class Learning_Algorithm:
                 'L2_reg'."""
 
         allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg', 'CL_method',
-                          'maintain_sparsity'}.union(allowed_kwargs_)
+                          'maintain_sparsity', 'sigma'}.union(allowed_kwargs_)
 
         for k in kwargs:
             if k not in allowed_kwargs:
@@ -151,6 +151,14 @@ class Learning_Algorithm:
             grads[i_L2] *= (W != 0)
         return grads
 
+    def add_noise_to_grads(self, grads):
+        """If called, modifies the gradient by adding in gaussian noise with
+        standard deviation specified by self.sigma."""
+
+        for i_grad, shape in enumerate(self.rnn.shapes):
+            grads[i_grad] += np.random.normal(0, self.sigma, shape)
+        return grads
+
     def __call__(self):
         """Calculates the final list of grads for this time step.
 
@@ -188,6 +196,9 @@ class Learning_Algorithm:
 
         if self.maintain_sparsity:
             grads_list = self.apply_sparsity_to_grads(grads_list)
+
+        if self.sigma is not None:
+            grads_list = self.add_noise_to_grads(grads_list)
 
         return grads_list
 
