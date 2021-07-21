@@ -45,7 +45,7 @@ class Learning_Algorithm:
                 common to all child classes of Learning_Algorithm, 'W_FB' and
                 'L2_reg'."""
 
-        allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg',
+        allowed_kwargs = {'W_FB', 'L1_reg', 'L2_reg','clip_norm',
                           'maintain_sparsity'}.union(allowed_kwargs_)
 
         for k in kwargs:

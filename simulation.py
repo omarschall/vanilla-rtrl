@@ -143,7 +143,7 @@ class Simulation:
         self.report_accuracy = False
         self.report_loss = False
         self.comp_algs = []
-        self.report_interval = max(self.total_time_steps//10, 1)
+        self.report_interval = max(self.total_time_steps//20, 1)
         self.update_interval = 1
         self.i_start = 0
         self.i_end = self.total_time_steps
@@ -388,7 +388,7 @@ class Simulation:
                 accuracy = 'Test accuracy: {} \n'.format(acc)
                 summary += accuracy
             if self.report_loss:
-                test_loss = np.mean(test_sim.mons['rnn.loss_'])
+                test_loss = np.sum(test_sim.mons['rnn.loss_'][-interval:])/interval
                 loss_summary = 'Test loss: {} \n'.format(test_loss)
                 summary += loss_summary
 

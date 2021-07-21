@@ -69,7 +69,7 @@ checkpoint_interval = None
 data = task.gen_data(N_train, N_test)
 
 n_in = task.n_in
-n_hidden = 32
+n_hidden = 4
 n_out = task.n_out
 W_in  = np.random.normal(0, np.sqrt(1/(n_in)), (n_hidden, n_in))
 #W_rec = np.linalg.qr(np.random.normal(0, 1, (n_hidden, n_hidden)))[0]
@@ -89,13 +89,41 @@ rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
           loss=softmax_cross_entropy)
 
 
-optimizer = Private_LR_SGD(rnn,init_lr=0.01)
+optimizer = Private_LR_SGD(rnn,init_lr=0.001)
 meta_optimizer = Stochastic_Gradient_Descent(lr=0)
-learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer)
+#learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
+learn_alg = RTRL(rnn)
+meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer,clip_norm= 100)
 
 comp_algs = []
-monitors = ['meta_learn_alg.alpha-norm','meta_learn_alg.F1-norm','meta_learn_alg.F2_alpha-norm']
+monitors = ['rnn.loss_','meta_learn_alg.rec_grads-norm',
+'meta_learn_alg.dwdlam-norm',
+'meta_learn_alg.H-norm',
+'meta_learn_alg.F1-norm',
+'meta_learn_alg.F2-norm',
+'meta_learn_alg.G1-norm',
+'meta_learn_alg.G2-norm',
+'meta_learn_alg.qB_diag-norm',
+'meta_learn_alg.A_diag-norm',]
+# 'meta_learn_alg.eta-norm',
+# 'meta_learn_alg.gamma-norm',
+# 'meta_learn_alg.G1_beta-norm',
+# 'meta_learn_alg.G1',
+# 'meta_learn_alg.beta',
+# 'meta_learn_alg.G2_beta-norm',
+# 'meta_learn_alg.v1-norm',
+# 'meta_learn_alg.v2-norm',
+# 'meta_learn_alg.v3-norm',
+# 'meta_learn_alg.w1-norm',
+# 'meta_learn_alg.w2-norm',
+# 'meta_learn_alg.p0',
+# 'meta_learn_alg.p1',
+# 'meta_learn_alg.p2',
+# 'meta_learn_alg.p3',
+# 'meta_learn_alg.F1_alpha-norm',
+# 'meta_learn_alg.F2_alpha-norm']
+# 'meta_learn_alg.tA-norm',
+# 'meta_learn_alg.tB-norm']
 
 
 sim = Simulation(rnn)
@@ -111,10 +139,29 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
         meta_learn_alg= meta_learn_alg,
         meta_optimizer = meta_optimizer
         )
-# %%   
 
-sim.mons['meta_learn_alg.F1-norm'][:1000]
-# %%  
+# %%
+
+monitors = ['rnn.loss_','meta_learn_alg.rec_grads-norm',
+'meta_learn_alg.dwdlam-norm',
+'meta_learn_alg.H-norm',
+'meta_learn_alg.F1-norm',
+'meta_learn_alg.F2-norm',
+'meta_learn_alg.G1-norm',
+'meta_learn_alg.G2-norm',
+'meta_learn_alg.qB_diag-norm',
+'meta_learn_alg.A_diag-norm',]
+plt.figure(figsize=(10,10))
+for name in monitors:
+    if np.mean(sim.mons[name][:500])>0:
+        plt.plot(sim.mons[name][:500],label=name)
+plt.legend()
+plt.show()
+
+
+
+
+# %% 
 
 if os.environ['HOME'] == '/Users/omarschall' and MODE == 'TRAIN':
 

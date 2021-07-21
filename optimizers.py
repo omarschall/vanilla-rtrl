@@ -227,7 +227,8 @@ class Private_LR_SGD(Optimizer):
             assert lr_shapes == rnn.shapes
             self.lr = lr
         elif type(init_lr) in [int, float]:
-            self.lr = [init_lr * np.ones(s) for s in rnn.shapes]
+
+            self.lr = [init_lr * np.random.rand(s[0],s[1]) if len(s) ==2 else init_lr * np.random.rand(s[0]) for s in rnn.shapes]
         else:
             raise ValueError('init_lr must be list of arrays matching RNN' +
                              'dimension or numeric')
