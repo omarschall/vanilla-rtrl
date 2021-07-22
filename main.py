@@ -98,13 +98,13 @@ meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer,clip_norm= 100)
 comp_algs = []
 monitors = ['rnn.loss_','meta_learn_alg.rec_grads-norm',
 'meta_learn_alg.dwdlam-norm',
-'meta_learn_alg.H-norm',
-'meta_learn_alg.F1-norm',
-'meta_learn_alg.F2-norm',
-'meta_learn_alg.G1-norm',
-'meta_learn_alg.G2-norm',
-'meta_learn_alg.qB_diag-norm',
-'meta_learn_alg.A_diag-norm',]
+'meta_learn_alg.H-norm',]
+# 'meta_learn_alg.F1-norm',
+# 'meta_learn_alg.F2-norm',
+# 'meta_learn_alg.G1-norm',
+# 'meta_learn_alg.G2-norm',
+# 'meta_learn_alg.qB_diag-norm',
+# 'meta_learn_alg.A_diag-norm',]
 # 'meta_learn_alg.eta-norm',
 # 'meta_learn_alg.gamma-norm',
 # 'meta_learn_alg.G1_beta-norm',
@@ -142,19 +142,11 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
 
 # %%
 
-monitors = ['rnn.loss_','meta_learn_alg.rec_grads-norm',
-'meta_learn_alg.dwdlam-norm',
-'meta_learn_alg.H-norm',
-'meta_learn_alg.F1-norm',
-'meta_learn_alg.F2-norm',
-'meta_learn_alg.G1-norm',
-'meta_learn_alg.G2-norm',
-'meta_learn_alg.qB_diag-norm',
-'meta_learn_alg.A_diag-norm',]
+
 plt.figure(figsize=(10,10))
 for name in monitors:
-    if np.mean(sim.mons[name][:500])>0:
-        plt.plot(sim.mons[name][:500],label=name)
+    if np.mean(sim.mons[name][:1000])>0:
+        plt.plot(sim.mons[name][:1000],label=name)
 plt.legend()
 plt.show()
 

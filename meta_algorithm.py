@@ -68,15 +68,15 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
 
 
-    def approximate_H_first_term(self):
-        """Calculate the first term in the Hessian"""
+    # def approximate_H_first_term(self):
+    #     """Calculate the first term in the Hessian"""
 
-        beta1 = np.outer(self.inner_algo.A ,self.inner_algo.A)
-        WB = np.dot(self.rnn.W_out,self.inner_algo.B)
-        alpha1 = WB.T.dot(WB)#np.sum(WB[:, :, None] * WB[:, None, :],axis=0)
-        #alpha_t = np.outer(WB[0,:],WB[0,:]) + np.outer(WB[1,:],WB[1,:])
+    #     beta1 = np.outer(self.inner_algo.A ,self.inner_algo.A)
+    #     WB = np.dot(self.rnn.W_out,self.inner_algo.B)
+    #     alpha1 = WB.T.dot(WB)#np.sum(WB[:, :, None] * WB[:, None, :],axis=0)
+    #     #alpha_t = np.outer(WB[0,:],WB[0,:]) + np.outer(WB[1,:],WB[1,:])
 
-        return alpha1, beta1
+    #     return alpha1, beta1
 
     def approximate_H_second_term(self):
         """Calculate the second term in the Hessian"""
@@ -90,62 +90,62 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         return alpha2,beta2
 
-    def update_learning_vars(self):
+    # def update_learning_vars(self):
         
-        """Get the new values of alpha and beta"""
+    #     """Get the new values of alpha and beta"""
         
-        # get Hessian components
-        self.F1, self.G1 = self.approximate_H_first_term()
-        self.F2, self.G2 = self.approximate_H_second_term()
+    #     # get Hessian components
+    #     self.F1, self.G1 = self.approximate_H_first_term()
+    #     self.F2, self.G2 = self.approximate_H_second_term()
 
-        self.F1_alpha = np.dot(self.F1,self.alpha)
-        self.G1_beta = np.dot(self.G1,self.beta)
-        self.F2_alpha = np.dot(self.F2,self.alpha)
-        self.G2_beta = np.dot(self.G2,self.beta)
+    #     self.F1_alpha = np.dot(self.F1,self.alpha)
+    #     self.G1_beta = np.dot(self.G1,self.beta)
+    #     self.F2_alpha = np.dot(self.F2,self.alpha)
+    #     self.G2_beta = np.dot(self.G2,self.beta)
         
 
-        # third term
-        self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
-        self.A_diag = np.diag(self.inner_algo.A)
+    #     # third term
+    #     self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
+    #     self.A_diag = np.diag(self.inner_algo.A)
 
-        self.nu = self.sample_nu()
+    #     self.nu = self.sample_nu()
         
-        # approximate lambda
-        self.lam_nu = np.random.choice([-1, 1], self.n_h)
-        self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
-        self.gamma = self.lam_nu
-        self.eta = np.dot(self.lam_nu,self.lam)
+    #     # approximate lambda
+    #     self.lam_nu = np.random.choice([-1, 1], self.n_h)
+    #     self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
+    #     self.gamma = self.lam_nu
+    #     self.eta = np.dot(self.lam_nu,self.lam)
 
-        # UORO update
-        self.v0 = self.alpha
-        self.v1 = (self.F1_alpha.T*self.gamma).T
-        self.v2 = (self.F2_alpha.T*self.gamma).T 
-        self.v3 = self.qB_diag
+    #     # UORO update
+    #     self.v0 = self.alpha
+    #     self.v1 = (self.F1_alpha.T*self.gamma).T
+    #     self.v2 = (self.F2_alpha.T*self.gamma).T 
+    #     self.v3 = self.qB_diag
 
-        self.w0 = self.beta
-        self.w1 = (self.G1_beta.T * self.eta).T
-        self.w2 = (self.G2_beta.T * self.eta).T
-        self.w3 = self.A_diag
+    #     self.w0 = self.beta
+    #     self.w1 = (self.G1_beta.T * self.eta).T
+    #     self.w2 = (self.G2_beta.T * self.eta).T
+    #     self.w3 = self.A_diag
 
-        self.p0 = np.sqrt(norm(self.w0)/norm(self.v0))
-        self.p1 = np.sqrt(norm(self.w1)/norm(self.v1))
-        self.p2 = np.sqrt(norm(self.w2)/norm(self.v2))
+    #     self.p0 = np.sqrt(norm(self.w0)/norm(self.v0))
+    #     self.p1 = np.sqrt(norm(self.w1)/norm(self.v1))
+    #     self.p2 = np.sqrt(norm(self.w2)/norm(self.v2))
 
-        self.p3 = np.sqrt(norm(self.w3)/norm(self.v3))
+    #     self.p3 = np.sqrt(norm(self.w3)/norm(self.v3))
 
-        # if p1 == 0:
-        #     set_trace()
+    #     # if p1 == 0:
+    #     #     set_trace()
    
-        self.alpha = self.nu[0] * self.p0 * self.v0 \
-                    + self.nu[1] * self.p1 * self.v1 \
-                    + self.nu[2] * self.p2 * self.v2\
-                    + self.nu[3] * self.p3 * self.v3
+    #     self.alpha = self.nu[0] * self.p0 * self.v0 \
+    #                 + self.nu[1] * self.p1 * self.v1 \
+    #                 + self.nu[2] * self.p2 * self.v2\
+    #                 + self.nu[3] * self.p3 * self.v3
         
         
-        self.beta = self.nu[0] * (1/self.p0) * self.w0 \
-                    + self.nu[1] * (1/self.p1) * self.w1  \
-                    + self.nu[2] * (1/self.p2) * self.w2 \
-                    + self.nu[3] * (1/self.p3) * self.w3
+    #     self.beta = self.nu[0] * (1/self.p0) * self.w0 \
+    #                 + self.nu[1] * (1/self.p1) * self.w1  \
+    #                 + self.nu[2] * (1/self.p2) * self.w2 \
+    #                 + self.nu[3] * (1/self.p3) * self.w3
 
         # if norm(self.alpha) > self.clip_norm:
         #     self.count_A += 1
@@ -158,7 +158,8 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
     def get_rec_grads(self):
         
         """Get the LR gradients in an array of shape [n_h, m]"""
-        self.hard_code_learning_vars()
+        #self.hard_code_learning_vars()
+        #self.rtrl()
 
         g = np.dot(self.inner_algo.rec_grads.reshape(-1),self.dwdlam).reshape((self.n_h,self.m))
         # print(g.shape,norm(g))
@@ -167,28 +168,42 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         return g
     
-    def hard_code_learning_vars(self):
-        # third term
-        self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
-        self.A_diag = np.diag(self.inner_algo.A)
-        third_term = np.kron(self.qB_diag,self.A_diag)
+    # def hard_code_learning_vars(self):
+    #     # third term
+    #     self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
+    #     self.A_diag = np.diag(self.inner_algo.A)
+    #     third_term = np.kron(self.qB_diag,self.A_diag)
 
-        # Hession
-        self.F1, self.G1 = self.approximate_H_first_term()
+    #     # Hession
+    #     self.F1, self.G1 = self.approximate_H_first_term()
+    #     self.F2, self.G2 = self.approximate_H_second_term()
+
+    #     self.H = np.kron(self.F1,self.G1) + np.kron(self.F2,self.G2)
+
+    #     # second term
+    #     self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
+    #     self.lam = self.lam.reshape(-1)
+    #     second_term = (self.lam.T * (np.matmul(self.H,self.dwdlam))).T
+
+    #     self.dwdlam = self.dwdlam - second_term - third_term
+        
+    def update_learning_vars(self):
+        third_term = np.diag(self.inner_algo.q.dot(self.inner_algo.dadw))
+
+        #Hession
+        WB = np.dot(self.rnn.W_out,self.inner_algo.dadw)
+        self.hessian_first = WB.T.dot(WB)
+        #self.hessian_first = self.rnn.W_out.T.dot(self.rnn.W_out).dot(self.inner_algo.dadw).dot(self.inner_algo.dadw)
         self.F2, self.G2 = self.approximate_H_second_term()
-
-        self.H = np.kron(self.F1,self.G1) + np.kron(self.F2,self.G2)
+        self.H = self.hessian_first + np.kron(self.F2,self.G2)
 
         # second term
         self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
         self.lam = self.lam.reshape(-1)
         second_term = (self.lam.T * (np.matmul(self.H,self.dwdlam))).T
-
-        self.dwdlam = self.dwdlam - second_term - third_term
         
 
-
-
+        self.dwdlam = self.dwdlam - second_term - third_term
     
     def __call__(self):
         
