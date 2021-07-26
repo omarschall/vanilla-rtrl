@@ -12,6 +12,7 @@ default_compare_args = {'wasserstein': False,
                         'node_diff': True,
                         'node_drift': True,
                         'rec_weight': True,
+                        'output_weight': True,
                         'n_inputs': 6,
                         'n_comp_window': 1}
 
@@ -36,6 +37,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     node_diff = compare_args['node_diff']
     node_drift = compare_args['node_drift']
     rec_weight = compare_args['rec_weight']
+    output_weight = compare_args['output_weight']
 
     ### --- Get paths, extract and unpack data --- ###
 
@@ -85,6 +87,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         node_drift_distances = np.zeros((n_checkpoints, n_checkpoints))
     if rec_weight:
         rec_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
+    if output_weight:
+        output_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
 
     for i in range(len(indices) - 1):
 
@@ -152,6 +156,9 @@ def compare_analyzed_checkpoints(analysis_job_name,
             if rec_weight:
                 rec_weight_distances[i, j] = rec_weight_distance(checkpoint_1,
                                                                  checkpoint_2)
+            if output_weight:
+                output_weight_distances[i, j] = output_weight_distance(checkpoint_1,
+                                                                      checkpoint_2)
 
     result = {}
 
@@ -175,6 +182,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         result['node_drift_distances'] = node_drift_distances
     if rec_weight:
         result['rec_weight_distances'] = rec_weight_distances
+    if output_weight:
+        result['output_weight_distances'] = output_weight_distances
 
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
     result['i_job'] = i_job
