@@ -24,7 +24,7 @@ class REINFORCE(Learning_Algorithm):
         super().__init__(rnn, allowed_kwargs_, **kwargs)
         # Initialize learning variables
         if self.decay is None:
-            self.decay = 0
+            self.decay = 1
         if self.loss_decay is None:
             self.loss_decay = 0.01
         self.e_trace = 0
