@@ -6,7 +6,7 @@ class Fixed_Point_Transition_Task(Task):
     along with a set of transition matrices as functions of possible inputs."""
 
     def __init__(self, states, T_dict, p_transition=0.05, deterministic=True,
-                 delay=None):
+                 delay=None, tau_decay=0):
         """Initializes an instance of the task by specifying the states
         (points in output space) to be reported, as well as a dictionary
         specifying the transition patterns for each input.
@@ -23,7 +23,9 @@ class Fixed_Point_Transition_Task(Task):
             deterministic (bool): A boolean indicating True if you know
                 T_dict to be deterministic, which simplifies data gen.
             delay (int): An integer indicating the number of time steps to
-                delay the indicated transition."""
+                delay the indicated transition.
+            tau_decay (float): The inverse time constant for exponential
+                decay of the state over time after each transition."""
 
         self.states = states
         self.n_states = len(states)
@@ -31,6 +33,7 @@ class Fixed_Point_Transition_Task(Task):
         self.p_transition = p_transition
         self.deterministic = deterministic
         self.delay = delay
+        self.tau_decay = tau_decay
         self.probe_inputs = [np.eye(self.n_states)[i]
                              for i in range(self.n_states)]
 
@@ -60,12 +63,17 @@ class Fixed_Point_Transition_Task(Task):
 
         #Set up initial state
         I_Y = [np.random.randint(self.n_states)]
-
+        decay_factors = []
         last_T_time = 0
         for i_T_time, T_time in enumerate(T_times):
 
+            delta_T = T_time - last_T_time
+
             #Backfill all the last "same" states since last transition
-            I_Y += ([I_Y[-1]] * (T_time - last_T_time - 1))
+            I_Y += ([I_Y[-1]] * (delta_T - 1))
+
+            #Backfill the decay factors in based on time constant
+            decay_factors.append(np.exp(-self.tau_decay * np.arange(0, delta_T)))
 
             #Access current transition and associated graph
             i_input = I_X[T_time]
@@ -84,9 +92,13 @@ class Fixed_Point_Transition_Task(Task):
 
         #Final state
 
-        I_Y += ([I_Y[-1]] * (len(I_X) - last_T_time - 1))
+        delta_T = len(I_X) - last_T_time
+        I_Y += ([I_Y[-1]] * (delta_T - 1))
+        decay_factors.append(np.exp(-self.tau_decay * np.arange(0, delta_T)))
 
-        Y = np.array([self.states[i_y] for i_y in I_Y])
+        #Convert state indices to actual states, multiply by decay factors
+        decay_factors = np.concatenate(decay_factors)
+        Y = (np.array([self.states[i_y] for i_y in I_Y]).T * decay_factors).T
 
         if self.delay is not None:
             Y = np.roll(Y, shift=self.delay, axis=0)
