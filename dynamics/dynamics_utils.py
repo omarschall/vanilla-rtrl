@@ -149,3 +149,9 @@ def concatenate_simulation_checkpoints(simulations):
             ret[key + i_t_shift] = d[key]
 
     return ret
+
+def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
+                                      n_inputs=6):
+
+    pass
+
