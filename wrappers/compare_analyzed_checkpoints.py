@@ -14,7 +14,7 @@ default_compare_args = {'wasserstein': False,
                         'rec_weight': True,
                         'output_weight': True,
                         'n_inputs': 6,
-                        'n_comp_window': 1}
+                        'n_comp_window': 'full'}
 
 def compare_analyzed_checkpoints(analysis_job_name,
                                  compare_args=default_compare_args,
@@ -25,7 +25,6 @@ def compare_analyzed_checkpoints(analysis_job_name,
     specificied distance functions."""
 
     ### --- Unpack distance flags --- ###
-
 
     wasserstein = compare_args['wasserstein']
     VAE_ = compare_args['VAE_']
@@ -90,13 +89,19 @@ def compare_analyzed_checkpoints(analysis_job_name,
     if output_weight:
         output_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
 
+    #Compare window
+    if compare_args['n_comp_window'] == 'full':
+        n_comp_window = len(indices)
+    else:
+        n_comp_window = compare_args['n_comp_window']
+
     for i in range(len(indices) - 1):
 
         if i % 10 == 0:
             with open(log_path, 'a') as f:
                 f.write('Calculating distance row {}\n'.format(i))
 
-        for j in range(i + 1, i + 1 + compare_args['n_comp_window']):
+        for j in range(i + 1, i + 1 + n_comp_window):
 
             try:
                 i_index = indices[i]
@@ -111,10 +116,12 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 continue
 
             try:
-                align_checkpoints(checkpoint_2, checkpoint_1,
-                                  n_inputs=compare_args['n_inputs'])
-                align_checkpoints(checkpoint_2, checkpoint_1,
-                                  n_inputs=compare_args['n_inputs'])
+                # align_checkpoints(checkpoint_2, checkpoint_1,
+                #                   n_inputs=compare_args['n_inputs'])
+                # align_checkpoints(checkpoint_2, checkpoint_1,
+                #                   n_inputs=compare_args['n_inputs'])
+                align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                  n_inputs=compare_args['n_inputs'])
             except ValueError:
                 continue
 
