@@ -31,5 +31,3 @@ def get_checkpoint_n_unstable_FPs(checkpoint):
     """Gets the number of unstable fixed points."""
 
     return checkpoint['cluster_means'].shape[0] - checkpoint['nodes'].shape[0]
-
-def get_checkpoint_n
