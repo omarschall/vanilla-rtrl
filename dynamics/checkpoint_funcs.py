@@ -22,3 +22,14 @@ def get_checkpoint_weight_mean(checkpoint):
 
     return checkpoint['W_rec'].mean()
 
+def get_checkpoint_n_stable_FPs(checkpoint):
+    """Gets the number of stable checkpoint nodes after topological analysis."""
+
+    return checkpoint['nodes'].shape[0]
+
+def get_checkpoint_n_unstable_FPs(checkpoint):
+    """Gets the number of unstable fixed points."""
+
+    return checkpoint['cluster_means'].shape[0] - checkpoint['nodes'].shape[0]
+
+def get_checkpoint_n
