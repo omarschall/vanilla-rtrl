@@ -327,10 +327,16 @@ def plot_3d_or_4d_array_of_config_results(configs_array, results_array, key_orde
 
             ax.set_yticks(list(range(len(configs_array[key_order[0]]))))
             ax.set_xticks(list(range(len(configs_array[key_order[1]]))))
-            ax.set_yticklabels(np.round(configs_array[key_order[0]],
-                                        tick_rounding))
-            ax.set_xticklabels(np.round(configs_array[key_order[1]],
-                                        tick_rounding))
+            if type(configs_array[key_order[0]][0]) != str:
+                ax.set_yticklabels(np.round(configs_array[key_order[0]],
+                                            tick_rounding))
+            else:
+                ax.set_yticklabels(configs_array[key_order[0]])
+            if type(configs_array[key_order[1]][0]) != str:
+                ax.set_xticklabels(np.round(configs_array[key_order[1]],
+                                            tick_rounding))
+            else:
+                ax.set_xticklabels(configs_array[key_order[1]])
 
             ax.set_ylabel(key_order[0])
             ax.set_xlabel(key_order[1])
