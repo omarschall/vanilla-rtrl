@@ -34,23 +34,12 @@ def align_checkpoints(checkpoint, reference_checkpoint, n_inputs=6):
     ref_nodes = reference_checkpoint['nodes']
     nodes = checkpoint['nodes']
 
-    shape_1 = copy.copy(nodes.shape)
-
     n_nodes = nodes.shape[0]
-    n_ref_nodes = ref_nodes.shape[0]
-    n_shared_max = min(n_nodes, n_ref_nodes)
-
-    # 'cluster means'
-    # 'cluster_eigs'
-    # 'cluster_KEs'
-
     I_x = []
     I_y = []
     D = distance.cdist(ref_nodes, nodes)
     corr_node_distances = []
     while len(I_x) < n_nodes:
-
-        #set_trace()
 
         d = np.argmin(D)
         d_min = np.min(D)
@@ -87,9 +76,6 @@ def align_checkpoints(checkpoint, reference_checkpoint, n_inputs=6):
             checkpoint[key] = checkpoint[key][I]
 
     checkpoint['corr_node_distances'] = [corr_node_distances[i_x] for i_x in np.argsort(I_x)]
-    # if checkpoint['nodes'].shape != shape_1:
-    #     print('hey now', checkpoint['i_t'])
-    #     set_trace()
 
 def linearly_interpolate_checkpoints(sim, start_checkpoint, end_checkpoint,
                                      density):
@@ -153,5 +139,60 @@ def concatenate_simulation_checkpoints(simulations):
 def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
                                       n_inputs=6):
 
-    pass
+    ref_nodes = reference_checkpoint['nodes']
+    nodes = checkpoint['nodes']
 
+    #Get RNNs for each checkpoint
+    rnn = deepcopy(checkpoint['rnn'])
+    ref_rnn = deepcopy((reference_checkpoint['rnn']))
+
+    n_nodes = nodes.shape[0]
+    I_x = []
+    I_y = []
+
+    #Get associated output for each set of nodes, align based on this
+    ref_outputs = [ref_rnn.output.f(ref_rnn.W_out.dot(ref_node) + ref_rnn.b_out)
+                   for ref_node in ref_nodes]
+    ref_outputs = np.vstack(ref_outputs)
+    outputs = [rnn.output.f(rnn.W_out.dot(node) + rnn.b_out) for node in nodes]
+    outputs = np.vstack(outputs)
+
+    D = distance.cdist(ref_outputs, outputs)
+    corr_node_distances = []
+    while len(I_x) < n_nodes:
+
+        d = np.argmin(D)
+        d_min = np.min(D)
+        if d_min == np.inf:
+            break
+        else:
+            corr_node_distances.append(d_min)
+
+        x, y = (d // n_nodes), (d % n_nodes)
+
+        I_x.append(x)
+        I_y.append(y)
+
+        D[x,:] = np.inf
+        D[:,y] = np.inf
+
+    I_ = [I_y[i_x] for i_x in np.argsort(I_x)]
+    I_f = sorted(I_x)
+    I_b = sorted(I_)
+    extra_indices = list(range(n_nodes))
+    [extra_indices.remove(i) for i in I_]
+    I = I_ + extra_indices
+
+    keys = ['adjmat_input_{}'.format(i) for i in range(n_inputs)] + ['nodes']
+
+    for key in keys:
+
+        if 'adjmat' in key:
+            checkpoint[key] = checkpoint[key][I][:,I]
+            checkpoint['backshared_' + key] = checkpoint[key][I_b][:,I_b]
+            reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:,I_f]
+
+        if key == 'nodes':
+            checkpoint[key] = checkpoint[key][I]
+
+    checkpoint['corr_node_distances'] = [corr_node_distances[i_x] for i_x in np.argsort(I_x)]
