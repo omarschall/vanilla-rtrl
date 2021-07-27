@@ -1,7 +1,7 @@
 import numpy as np
 from core import Simulation
 from scipy.spatial import distance
-import copy
+from utils import norm
 from copy import deepcopy
 
 def get_test_sim_data(checkpoint, test_data, sigma=0):
@@ -158,17 +158,20 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     outputs = np.vstack(outputs)
 
     D = distance.cdist(ref_outputs, outputs)
+    corr_node_output_distances = []
     corr_node_distances = []
     while len(I_x) < n_nodes:
 
         d = np.argmin(D)
         d_min = np.min(D)
+
+        x, y = (d // n_nodes), (d % n_nodes)
+
         if d_min == np.inf:
             break
         else:
-            corr_node_distances.append(d_min)
-
-        x, y = (d // n_nodes), (d % n_nodes)
+            corr_node_output_distances.append(d_min)
+            corr_node_distances.append(norm(ref_nodes[x] - nodes[y]))
 
         I_x.append(x)
         I_y.append(y)
@@ -195,4 +198,7 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
         if key == 'nodes':
             checkpoint[key] = checkpoint[key][I]
 
-    checkpoint['corr_node_distances'] = [corr_node_distances[i_x] for i_x in np.argsort(I_x)]
+    checkpoint['corr_node_distances'] = [corr_node_distances[i_x]
+                                         for i_x in np.argsort(I_x)]
+    checkpoint['corr_node_output_distances'] = [corr_node_output_distances[i_x]
+                                                for i_x in np.argsort(I_x)]
