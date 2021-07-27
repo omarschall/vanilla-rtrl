@@ -66,6 +66,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
 
     n_checkpoints = len(indices)
 
+    calculation_check = np.zeros((n_checkpoints, n_checkpoints))
+
     if wasserstein:
         wasserstein_distances = np.zeros((n_checkpoints, n_checkpoints))
     if VAE_:
@@ -167,6 +169,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 output_weight_distances[i, j] = output_weight_distance(checkpoint_1,
                                                                       checkpoint_2)
 
+            calculation_check[i, j] = 1
+
     result = {}
 
     if wasserstein:
@@ -191,6 +195,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
         result['rec_weight_distances'] = rec_weight_distances
     if output_weight:
         result['output_weight_distances'] = output_weight_distances
+    result['calculation_check'] = calculation_check
 
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
     result['i_job'] = i_job
