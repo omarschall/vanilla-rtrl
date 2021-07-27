@@ -7,6 +7,4 @@ parser.add_argument('--name', dest='name')
 
 args = parser.parse_args()
 
-saved_run_root_name = 'analyze_{}'.format(args.name)
-
-cross_compare_analyzed_checkpoints(saved_run_root_name)
+cross_compare_analyzed_checkpoints(args.name)

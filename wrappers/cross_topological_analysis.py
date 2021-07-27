@@ -21,7 +21,7 @@ def cross_topological_analysis(saved_run_root_name,
 
         ### --- Calculate number of total jobs needed for analysis --- ###
 
-        with open(os.path.join('saved_runs', saved_run_names), 'rb') as f:
+        with open(os.path.join('saved_runs', saved_run_name), 'rb') as f:
             saved_run = pickle.load(f)
 
         sim = saved_run['sim']

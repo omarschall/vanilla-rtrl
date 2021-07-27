@@ -42,10 +42,11 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
     results_dir = os.path.join(project_dir, 'results/')
+    saved_runs_dir = os.path.join(project_dir, 'notebooks/', 'saved_runs/')
 
     ### --- Loop through each individual analysis job --- ###
 
-    analysis_job_names = ['analyze_' + sr for sr in os.listdir('saved_runs')
+    analysis_job_names = ['analyze_' + sr for sr in os.listdir(saved_runs_dir)
                           if saved_run_root_name in sr]
     analysis_job_names = sorted(analysis_job_names)
 
@@ -111,7 +112,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     else:
         n_comp_window = compare_args['n_comp_window']
 
-    for i in range(all_indices):
+    for i in range(len(all_indices)):
 
         if i % 10 == 0:
             with open(log_path, 'a') as f:
