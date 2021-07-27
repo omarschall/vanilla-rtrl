@@ -16,10 +16,10 @@ default_compare_args = {'wasserstein': False,
                         'n_inputs': 6,
                         'n_comp_window': 'full'}
 
-def compare_analyzed_checkpoints(analysis_job_names,
-                                 compare_args=default_compare_args,
-                                 username='oem214',
-                                 project_name='learning-dynamics'):
+def cross_compare_analyzed_checkpoints(saved_run_root_name,
+                                       compare_args=default_compare_args,
+                                       username='oem214',
+                                       project_name='learning-dynamics'):
     """For a given analysis job name, takes the analyzed checkpoints and
     computes neighboring distances in a matrix along the off-diagonal for
     specificied distance functions."""
@@ -45,9 +45,14 @@ def compare_analyzed_checkpoints(analysis_job_names,
 
     ### --- Loop through each individual analysis job --- ###
 
-    super_indices = []
+    analysis_job_names = ['analyze_' + sr for sr in os.listdir('saved_runs')
+                          if saved_run_root_name in sr]
+    analysis_job_names = sorted(analysis_job_names)
+
+    all_indices = []
     checkpoints_lists = []
-    for analysis_job_name in analysis_job_names:
+    job_indices = []
+    for i_job, analysis_job_name in enumerate(analysis_job_names):
         analysis_dir = os.path.join(results_dir, analysis_job_name)
 
         saved_run_name = analysis_job_name.split('analyze_')[-1]
@@ -62,8 +67,9 @@ def compare_analyzed_checkpoints(analysis_job_names,
 
         # Unpack data
         indices, checkpoints = unpack_analysis_results(analysis_dir)
-        super_indices += indices
+        all_indices += indices
         checkpoints_lists.append(checkpoints)
+        job_indices += [i_job] * len(indices)
 
     if VAE_:
         big_data = task.gen_data(100, 20000)
@@ -72,7 +78,7 @@ def compare_analyzed_checkpoints(analysis_job_names,
 
     ### --- Initialize dissimilarity matrices --- ###
 
-    n_checkpoints = len(super_indices)
+    n_checkpoints = len(all_indices)
 
     calculation_check = np.zeros((n_checkpoints, n_checkpoints))
 
@@ -101,11 +107,11 @@ def compare_analyzed_checkpoints(analysis_job_names,
 
     #Compare window
     if compare_args['n_comp_window'] == 'full':
-        n_comp_window = len(indices)
+        n_comp_window = len(all_indices)
     else:
         n_comp_window = compare_args['n_comp_window']
 
-    for i in range(len(super_indices)):
+    for i in range(all_indices):
 
         if i % 10 == 0:
             with open(log_path, 'a') as f:
@@ -114,22 +120,21 @@ def compare_analyzed_checkpoints(analysis_job_names,
         for j in range(i + 1, i + 1 + n_comp_window):
 
             try:
-                i_index = indices[i]
-                j_index = indices[j]
+                i_index = all_indices[i]
+                j_index = all_indices[j]
             except IndexError:
                 continue
 
+            checkpoints_1 = checkpoints_lists[job_indices[i]]
+            checkpoints_2 = checkpoints_lists[job_indices[j]]
+
             try:
-                checkpoint_1 = checkpoints['checkpoint_{}'.format(i_index)]
-                checkpoint_2 = checkpoints['checkpoint_{}'.format(j_index)]
+                checkpoint_1 = checkpoints_1['checkpoint_{}'.format(i_index)]
+                checkpoint_2 = checkpoints_2['checkpoint_{}'.format(j_index)]
             except KeyError:
                 continue
 
             try:
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
                 align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
                                                   n_inputs=compare_args['n_inputs'])
             except ValueError:
@@ -203,7 +208,10 @@ def compare_analyzed_checkpoints(analysis_job_names,
         result['rec_weight_distances'] = rec_weight_distances
     if output_weight:
         result['output_weight_distances'] = output_weight_distances
+
     result['calculation_check'] = calculation_check
+    result['all_indices'] = all_indices
+    result['job_indices'] = job_indices
 
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
     result['i_job'] = i_job
