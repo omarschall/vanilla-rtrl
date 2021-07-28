@@ -6,8 +6,8 @@ def cross_topological_analysis(saved_run_root_name,
                                project_name='learning-dynamics',
                                module_name='vanilla-rtrl',
                                username='oem214'):
-    """Wrapper script for taking a saved run by its name, analyzing each
-    checkpoint in isolation, and comparing checkpoints by distance."""
+    """Wrapper script for taking a set of saved runs by root name, analyzing
+    each checkpoint in isolation, and comparing checkpoints by distance."""
 
     analysis_job_ids = []
 

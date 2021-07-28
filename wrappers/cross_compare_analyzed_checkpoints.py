@@ -20,9 +20,8 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                        compare_args=default_compare_args,
                                        username='oem214',
                                        project_name='learning-dynamics'):
-    """For a given analysis job name, takes the analyzed checkpoints and
-    computes neighboring distances in a matrix along the off-diagonal for
-    specificied distance functions."""
+    """For a set of analysis results by root name, takes the analyzed
+    checkpoints and computes neighboring distances in a matrix."""
 
     ### --- Unpack distance flags --- ###
 
