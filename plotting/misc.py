@@ -146,7 +146,8 @@ def plot_signal_xcorr(s1, s2, return_fig=False, finite_diff=True):
     if return_fig:
         return fig
 
-def plot_MDS_from_distance_matrix(distances, return_fig=False):
+def plot_2d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
+                                     alpha=1, markersize=10):
     """For a given set of pariwise distances, plots the elements in a 2-D space
     that maximally preserves specified distances."""
 
@@ -154,16 +155,51 @@ def plot_MDS_from_distance_matrix(distances, return_fig=False):
     proj = mds.fit_transform(distances)
 
     fig = plt.figure()
-    col = 'C0'
-    plt.plot(proj[:1000,0], proj[:1000,1], color=col)
-    plt.plot(proj[0,0], proj[0,1], 'x', color=col)
-    plt.plot(proj[1000,0], proj[1000,1], '.', color=col)
 
+    for i_class in range(len(np.unique(point_classes))):
 
-    col = 'C1'
-    plt.plot(proj[1000:,0], proj[1000:,1], color=col)
-    plt.plot(proj[1000,0], proj[1000,1], 'x', color=col)
-    plt.plot(proj[-1,0], proj[-1,1], '.', color=col)
+        col = 'C{}'.format(i_class)
+        class_idx = np.where(point_classes == i_class)[0]
+        start_idx = np.amin(class_idx)
+        stop_idx = np.amax(class_idx)
+        plt.plot(proj[class_idx, 0], proj[class_idx, 1], color=col, alpha=alpha)
+        plt.plot([proj[start_idx, 0]], [proj[start_idx, 1]], 'x', color=col,
+                 markersize=markersize)
+        plt.plot([proj[stop_idx, 0]], [proj[stop_idx, 1]], '.', color=col,
+                 markersize=markersize)
+
+    if return_fig:
+        return fig
+
+def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
+                                     alpha=1, markersize=10, colors=None):
+    """For a given set of pariwise distances, plots the elements in a 2-D space
+    that maximally preserves specified distances."""
+
+    mds = MDS(n_components=3, dissimilarity='precomputed')
+    proj = mds.fit_transform(distances)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    for i_class in range(len(np.unique(point_classes))):
+
+        if colors is None:
+            col = 'C{}'.format(i_class)
+        else:
+            col = colors[i_class]
+        class_idx = np.where(point_classes == i_class)[0]
+        start_idx = np.amin(class_idx)
+        stop_idx = np.amax(class_idx)
+        ax.plot(proj[class_idx, 0],
+                proj[class_idx, 1],
+                proj[class_idx, 2], color=col, alpha=alpha)
+        ax.plot([proj[start_idx, 0]],
+                [proj[start_idx, 1]],
+                [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
+        ax.plot([proj[stop_idx, 0]],
+                [proj[stop_idx, 1]],
+                [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
 
     if return_fig:
         return fig
