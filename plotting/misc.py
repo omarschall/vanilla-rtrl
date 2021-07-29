@@ -173,7 +173,7 @@ def plot_2d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
 
 def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
                                      alpha=1, markersize=10, colors=None):
-    """For a given set of pariwise distances, plots the elements in a 2-D space
+    """For a given set of pariwise distances, plots the elements in a 3-D space
     that maximally preserves specified distances."""
 
     mds = MDS(n_components=3, dissimilarity='precomputed')
@@ -182,12 +182,17 @@ def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
+    if colors is not None:
+        unique_colors = list(set(colors))
+        color_avgs = {uc: [] for uc in unique_colors}
+
     for i_class in range(len(np.unique(point_classes))):
 
         if colors is None:
             col = 'C{}'.format(i_class)
         else:
             col = colors[i_class]
+
         class_idx = np.where(point_classes == i_class)[0]
         start_idx = np.amin(class_idx)
         stop_idx = np.amax(class_idx)
@@ -200,6 +205,14 @@ def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
         ax.plot([proj[stop_idx, 0]],
                 [proj[stop_idx, 1]],
                 [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
+
+        color_avgs[col].append(proj[class_idx])
+
+    #Plot average within color
+    for key in color_avgs.keys():
+
+        avg = sum(color_avgs[key]) / len(color_avgs[key])
+        ax.plot(avg[:, 0], avg[:, 1], avg[:, 2], color=key)
 
     if return_fig:
         return fig
