@@ -3,18 +3,7 @@ import pickle
 from dynamics import *
 from math import ceil
 
-default_analysis_args = {'sigma_pert': 0.5, 'N': 1200, 'KE_criterion': 0.001,
-                         'N_iters': 10000, 'same_LR_criterion': 9000,
-                         'sigma': 0}
-default_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
-                      'sigma': 0}
-default_input_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
-                            'sigma': 0}
-
-def analyze_training_run(saved_run_name,
-                         analysis_args=default_analysis_args,
-                         graph_args=default_graph_args,
-                         input_graph_args=default_input_graph_args,
+def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
                          username='oem214',
                          project_name='learning-dynamics'):
     """For a given simulation (containing checkpoints), analyzes some subset
@@ -61,14 +50,27 @@ def analyze_training_run(saved_run_name,
             checkpoint = sim.checkpoints[i_checkpoint]
         except KeyError:
             continue
-        analyze_checkpoint(checkpoint, data, verbose=False, parallelize=True,
-                           **analysis_args)
 
-        get_graph_structure(checkpoint, parallelize=True, background_input=0,
-                            **graph_args)
-        get_input_dependent_graph_structure(checkpoint,
-                                            inputs=task.probe_inputs,
-                                            **input_graph_args)
+        if FP_args['find_FPs']:
+            analyze_checkpoint(checkpoint, data, verbose=False,
+                               parallelize=True, **FP_args)
+
+            get_graph_structure(checkpoint, parallelize=True,
+                                background_input=0,  **graph_args)
+            get_input_dependent_graph_structure(checkpoint,
+                                                inputs=task.probe_inputs,
+                                                **graph_args)
+
+        if test_args['save_data']:
+            np.random.seed(0)
+            test_data = task.gen_data(10, test_args['N'])
+            test_sim = Simulation(checkpoint['rnn'])
+            test_sim.run(test_data, mode='test', verbose=False,
+                         monitors=['rnn.a'],
+                         a_initial=np.zeros(checkpoint['rnn'].n_h))
+            checkpoint['test_data'] = test_sim.mons['rnn.a']
+            U, S, V = np.linalg.svd(test_sim.mons['rnn.a'])
+            checkpoint['V'][:, :test_args['n_PCs']]
 
         result['checkpoint_{}'.format(i_checkpoint)] = deepcopy(checkpoint)
 

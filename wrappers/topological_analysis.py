@@ -1,19 +1,15 @@
 import os, pickle
 from math import ceil
 from cluster import write_job_file, submit_job
+from wrappers.get_default_args import get_default_args
 
 def topological_analysis(saved_run_name,
                          project_name='learning-dynamics',
                          module_name='vanilla-rtrl',
                          username='oem214',
-                         **analysis_args,
-                         **compare_args):
+                         **kwargs):
     """Wrapper script for taking a saved run by its name, analyzing each
     checkpoint in isolation, and comparing checkpoints by distance."""
-
-    ### --- Gather and save args for analysis and comparison --- ###
-    analysis_args_dict = {}
-    analysis_args_dict.update(analysis_args)
 
     ### --- Calculate number of total jobs needed for analysis --- ###
 
@@ -31,9 +27,18 @@ def topological_analysis(saved_run_name,
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
     module_dir = os.path.join('/scratch/{}/'.format(username), module_name)
     cluster_main_dir = os.path.join(project_dir, 'cluster_main_scripts/')
+    args_dir = os.path.join(project_dir, 'args')
 
     analyze_main_path = os.path.join(module_dir, 'analyze_main.py')
     compare_main_path = os.path.join(module_dir, 'compare_main.py')
+    args_path = os.path.join(args_dir, saved_run_name)
+
+    ### --- Gather and save args for analysis and comparison --- ###
+    all_args_dict = get_default_args()
+    all_args_dict.update(kwargs)
+
+    with open(args_path, 'wb') as f:
+        pickle.dump(all_args_dict, f)
 
     ### --- Submit analysis job script --- ###
 

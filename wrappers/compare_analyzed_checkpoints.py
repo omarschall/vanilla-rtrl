@@ -2,22 +2,8 @@ import os, pickle
 from cluster import unpack_analysis_results
 from dynamics import *
 
-default_compare_args = {'wasserstein': False,
-                        'VAE_': False,
-                        'PC1': False,
-                        'PC2': False,
-                        'PC3': False,
-                        'SVCCA': False,
-                        'aligned_graph': True,
-                        'node_diff': True,
-                        'node_drift': True,
-                        'rec_weight': True,
-                        'output_weight': True,
-                        'n_inputs': 6,
-                        'n_comp_window': 'full'}
-
 def compare_analyzed_checkpoints(analysis_job_name,
-                                 compare_args=default_compare_args,
+                                 compare_args,
                                  username='oem214',
                                  project_name='learning-dynamics'):
     """For a given analysis job name, takes the analyzed checkpoints and
