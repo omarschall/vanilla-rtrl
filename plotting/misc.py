@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import decimate
 from scipy.ndimage.filters import uniform_filter1d
-from sklearn.manifold import MDS
+from sklearn.manifold import MDS, TSNE
 
 def plot_eigenvalues(*matrices, fig=None, return_fig=False):
     """Plots eigenvalues of a given matrix in the complex plane, as well
@@ -178,6 +178,53 @@ def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
 
     mds = MDS(n_components=3, dissimilarity='precomputed')
     proj = mds.fit_transform(distances)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    if colors is not None:
+        unique_colors = list(set(colors))
+        color_avgs = {uc: [] for uc in unique_colors}
+
+    for i_class in range(len(np.unique(point_classes))):
+
+        if colors is None:
+            col = 'C{}'.format(i_class)
+        else:
+            col = colors[i_class]
+
+        class_idx = np.where(point_classes == i_class)[0]
+        start_idx = np.amin(class_idx)
+        stop_idx = np.amax(class_idx)
+        ax.plot(proj[class_idx, 0],
+                proj[class_idx, 1],
+                proj[class_idx, 2], color=col, alpha=alpha)
+        ax.plot([proj[start_idx, 0]],
+                [proj[start_idx, 1]],
+                [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
+        ax.plot([proj[stop_idx, 0]],
+                [proj[stop_idx, 1]],
+                [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
+
+        color_avgs[col].append(proj[class_idx])
+
+    #Plot average within color
+    for key in color_avgs.keys():
+
+        avg = sum(color_avgs[key]) / len(color_avgs[key])
+        ax.plot(avg[:, 0], avg[:, 1], avg[:, 2], color=key)
+
+    if return_fig:
+        return fig
+
+def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False,
+                                      alpha=1, markersize=10, colors=None,
+                                      **tsne_args):
+    """For a given set of pariwise distances, plots the elements in a 3-D space
+    that maximally preserves specified distances."""
+
+    tsne = TSNE(n_components=3, metric='precomputed', **tsne_args)
+    proj = tsne.fit_transform(distances)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
