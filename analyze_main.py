@@ -9,4 +9,6 @@ args = parser.parse_args()
 
 saved_run_name = args.name
 
+analysis_args =
+
 analyze_training_run(saved_run_name)

@@ -5,9 +5,15 @@ from cluster import write_job_file, submit_job
 def topological_analysis(saved_run_name,
                          project_name='learning-dynamics',
                          module_name='vanilla-rtrl',
-                         username='oem214'):
+                         username='oem214',
+                         **analysis_args,
+                         **compare_args):
     """Wrapper script for taking a saved run by its name, analyzing each
     checkpoint in isolation, and comparing checkpoints by distance."""
+
+    ### --- Gather and save args for analysis and comparison --- ###
+    analysis_args_dict = {}
+    analysis_args_dict.update(analysis_args)
 
     ### --- Calculate number of total jobs needed for analysis --- ###
 
