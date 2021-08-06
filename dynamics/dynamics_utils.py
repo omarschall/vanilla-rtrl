@@ -195,6 +195,9 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
             checkpoint['backshared_' + key] = checkpoint[key][I_b][:,I_b]
             reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:,I_f]
 
+            checkpoint['backembed_' + key] = np.zeros_like(reference_checkpoint[key])
+            checkpoint['backemded_' + key][]
+
         if key == 'nodes':
             checkpoint[key] = checkpoint[key][I]
 
