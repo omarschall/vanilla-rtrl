@@ -8,7 +8,8 @@ parser.add_argument('--name', dest='name')
 args = parser.parse_args()
 
 saved_run_name = args.name
-args_path = os.path.join('/scratch/oem214/learning-dynamics/args/', args.name)
+root_name = args.name.split('_seed')[0]
+args_path = os.path.join('/scratch/oem214/learning-dynamics/args/', root_name)
 
 with open(args_path, 'rb') as f:
     all_args = pickle.load(f)

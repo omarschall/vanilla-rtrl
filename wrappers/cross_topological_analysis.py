@@ -7,6 +7,7 @@ def cross_topological_analysis(saved_run_root_name,
                                project_name='learning-dynamics',
                                module_name='vanilla-rtrl',
                                username='oem214',
+                               ppn=16,
                                **kwargs):
     """Wrapper script for taking a set of saved runs by root name, analyzing
     each checkpoint in isolation, and comparing checkpoints by distance."""
@@ -55,7 +56,7 @@ def cross_topological_analysis(saved_run_root_name,
         analysis_job_name = 'analyze_{}'.format(saved_run_name)
 
         write_job_file(analysis_job_name, py_file_name='analyze_main.py',
-                       py_args='--name {}'.format(saved_run_name), ppn=16)
+                       py_args='--name {}'.format(saved_run_name), ppn=ppn)
         get_ipython().system('cp {} {}'.format(analyze_main_path, cluster_main_dir))
         analysis_job_id = submit_job('../job_scripts/{}.s'.format(analysis_job_name),
                                      n_array=n_jobs,

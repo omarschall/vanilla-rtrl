@@ -120,11 +120,12 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
             except KeyError:
                 continue
 
-            try:
-                align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
-                                                  n_inputs=compare_args['n_inputs'])
-            except ValueError:
-                continue
+            if compare_args['align_checkpoints']:
+                try:
+                    align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                      n_inputs=compare_args['n_inputs'])
+                except ValueError:
+                    continue
 
             if wasserstein:
                 wasserstein_distances[i, j] = wasserstein_distance(checkpoint_1,
@@ -143,12 +144,12 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
             if PC3:
                 PC3_distances[i, j] = PC_distance_3(checkpoint_1,
                                                     checkpoint_2,
-                                                    N_avg=25, N_test=1000,
+                                                    N_avg=None, N_test=1000,
                                                     task=task)
             if SVCCA:
                 SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
                                                        checkpoint_2,
-                                                       data=data, R=3)
+                                                       R=8)
             if aligned_graph:
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,

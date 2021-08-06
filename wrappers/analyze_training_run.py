@@ -52,8 +52,9 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
             continue
 
         if FP_args['find_FPs']:
+            analysis_args = {k: FP_args[k] for k in FP_args if k != 'find_FPs'}
             analyze_checkpoint(checkpoint, data, verbose=False,
-                               parallelize=True, **FP_args)
+                               parallelize=True, **analysis_args)
 
             get_graph_structure(checkpoint, parallelize=True,
                                 background_input=0,  **graph_args)
@@ -70,7 +71,7 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
                          a_initial=np.zeros(checkpoint['rnn'].n_h))
             checkpoint['test_data'] = test_sim.mons['rnn.a']
             U, S, V = np.linalg.svd(test_sim.mons['rnn.a'])
-            checkpoint['V'][:, :test_args['n_PCs']]
+            checkpoint['V'] = V[:, :test_args['n_PCs']]
 
         result['checkpoint_{}'.format(i_checkpoint)] = deepcopy(checkpoint)
 

@@ -43,12 +43,31 @@ def wasserstein_distance(checkpoint_1, checkpoint_2):
 
     return emd(hist1, hist2, distances)
 
-def SVCCA_distance(checkpoint_1, checkpoint_2, data, R=3):
+# def SVCCA_distance(checkpoint_1, checkpoint_2, data, R=3):
+#     """Compute the singular-value canonical correlation analysis distance
+#     between two different networks."""
+#
+#     A_1 = get_test_sim_data(checkpoint_1, data)
+#     A_2 = get_test_sim_data(checkpoint_2, data)
+#
+#     #U_1, S_1, V_1 = np.linalg.svd(A_1)
+#     #U_2, S_2, V_2 = np.linalg.svd(A_2)
+#
+#     cca = CCA(n_components=R, max_iter=1000)
+#     #cca.fit(V_1, V_2)
+#     #cca.fit(A_1.dot(V_1), A_2.dot(V_2))
+#     cca.fit(A_1, A_2)
+#
+#     #return 1 - cca.score(A_1.dot(V_1), A_2.dot(V_2))
+#     #return 1 - cca.score(V_1, V_2)
+#    return 1 - cca.score(A_1, A_2)
+
+def SVCCA_distance(checkpoint_1, checkpoint_2, R=32):
     """Compute the singular-value canonical correlation analysis distance
     between two different networks."""
 
-    A_1 = get_test_sim_data(checkpoint_1, data)
-    A_2 = get_test_sim_data(checkpoint_2, data)
+    A_1 = checkpoint_1['test_data']
+    A_2 = checkpoint_2['test_data']
 
     #U_1, S_1, V_1 = np.linalg.svd(A_1)
     #U_2, S_2, V_2 = np.linalg.svd(A_2)

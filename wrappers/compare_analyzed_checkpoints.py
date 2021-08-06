@@ -103,15 +103,16 @@ def compare_analyzed_checkpoints(analysis_job_name,
             except KeyError:
                 continue
 
-            try:
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
-                align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
-                                                  n_inputs=compare_args['n_inputs'])
-            except ValueError:
-                continue
+            if compare_args['align_checkpoints']:
+                try:
+                    # align_checkpoints(checkpoint_2, checkpoint_1,
+                    #                   n_inputs=compare_args['n_inputs'])
+                    # align_checkpoints(checkpoint_2, checkpoint_1,
+                    #                   n_inputs=compare_args['n_inputs'])
+                    align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                      n_inputs=compare_args['n_inputs'])
+                except ValueError:
+                    continue
 
             if wasserstein:
                 wasserstein_distances[i, j] = wasserstein_distance(checkpoint_1,
@@ -135,7 +136,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
             if SVCCA:
                 SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
                                                        checkpoint_2,
-                                                       data=data, R=3)
+                                                       R=32)
             if aligned_graph:
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,

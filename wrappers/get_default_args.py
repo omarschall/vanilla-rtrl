@@ -20,6 +20,7 @@ def get_default_args():
                             'rec_weight': True,
                             'output_weight': True,
                             'n_inputs': 6,
+                            'align_checkpoints': True,
                             'n_comp_window': 'full'}
 
     all_args = {}
