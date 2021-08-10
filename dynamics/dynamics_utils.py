@@ -138,7 +138,13 @@ def concatenate_simulation_checkpoints(simulations):
 
 def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
                                       n_inputs=6):
+    """Align a pair of checkpoints, i.e. re-index the arbitrary order of fixed
+    points implied by the transition probability matrices.
 
+    The alignment is based on the distances between the fixed points in output
+    space, i.e. when each fixed point is mapped to its output by its own RNN."""
+
+    #Get local access to the stable fixed points from each checkpoint.
     ref_nodes = reference_checkpoint['nodes']
     nodes = checkpoint['nodes']
 
@@ -146,7 +152,10 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     rnn = deepcopy(checkpoint['rnn'])
     ref_rnn = deepcopy((reference_checkpoint['rnn']))
 
+    #Keep track of the *original* indices for each corresponding node pairs
+    #in order
     n_nodes = nodes.shape[0]
+    n_ref_nodes = ref_nodes.shape[0]
     I_x = []
     I_y = []
 
@@ -157,31 +166,52 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     outputs = [rnn.output.f(rnn.W_out.dot(node) + rnn.b_out) for node in nodes]
     outputs = np.vstack(outputs)
 
+    #Collect all pairwise distances between ref and target checkpoint outputs
+    #at each pair of fixed points.
     D = distance.cdist(ref_outputs, outputs)
+
+    #Keep track of the distances for the corresponding fixed point pairs, both
+    #in output and hidden space.
     corr_node_output_distances = []
     corr_node_distances = []
+
+    #Loop through to identify corresponding points until the number of ref
+    #nodes reaches the number of target nodes
     while len(I_x) < n_nodes:
 
+        #Identify the next smallest distance between nodes
         d = np.argmin(D)
         d_min = np.min(D)
-
         x, y = (d // n_nodes), (d % n_nodes)
 
+        #If all nodes have been matched, break
         if d_min == np.inf:
             break
         else:
             corr_node_output_distances.append(d_min)
             corr_node_distances.append(norm(ref_nodes[x] - nodes[y]))
 
+        #Track original indices of ref and target
         I_x.append(x)
         I_y.append(y)
 
+        #Make all distances for both nodes in identified pair infinite so as to
+        #not double-count.
         D[x,:] = np.inf
         D[:,y] = np.inf
 
+    #For each reference index (in original order), list the corresponding
+    #target index in that same order
     I_ = [I_y[i_x] for i_x in np.argsort(I_x)]
+
+    #Get the "forward" indices, i.e. the same order for ref checkpoint (since
+    #order doesn't change for ref checkpoint) but
+    #only those that were matched to a target index
     I_f = sorted(I_x)
-    I_b = sorted(I_)
+
+    #Get the "back" indices, i.e. the indices for target checkpoint ordered
+    #according to the ref index order (not sorted). These are identically I_.
+    I_b = [i for i in I_]
     extra_indices = list(range(n_nodes))
     [extra_indices.remove(i) for i in I_]
     I = I_ + extra_indices
@@ -191,12 +221,18 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     for key in keys:
 
         if 'adjmat' in key:
-            checkpoint[key] = checkpoint[key][I][:,I]
             checkpoint['backshared_' + key] = checkpoint[key][I_b][:,I_b]
             reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:,I_f]
 
-            checkpoint['backembed_' + key] = np.zeros_like(reference_checkpoint[key])
-            checkpoint['backemded_' + key][]
+            if n_nodes < n_ref_nodes:
+                checkpoint['backembed_' + key] = np.zeros_like(reference_checkpoint[key])
+                for i in I_f:
+                    checkpoint['backemded_' + key][i] = reference_checkpoint[key][i]
+            if n_nodes > n_ref_nodes:
+                reference_checkpoint['forwardembed_' + key] = np.zeros_like(checkpoint[key])
+                for i in I_b:
+                    reference_checkpoint['forwardembed_' + key][i] = checkpoint[key][i]
+            checkpoint[key] = checkpoint[key][I][:, I]
 
         if key == 'nodes':
             checkpoint[key] = checkpoint[key][I]
