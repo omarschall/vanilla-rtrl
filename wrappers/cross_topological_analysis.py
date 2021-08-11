@@ -8,6 +8,7 @@ def cross_topological_analysis(saved_run_root_name,
                                module_name='vanilla-rtrl',
                                username='oem214',
                                ppn=16,
+                               n_checkpoints_per_job_=None,
                                **kwargs):
     """Wrapper script for taking a set of saved runs by root name, analyzing
     each checkpoint in isolation, and comparing checkpoints by distance."""
@@ -34,6 +35,7 @@ def cross_topological_analysis(saved_run_root_name,
 
     all_args_dict = get_default_args()
     all_args_dict.update(kwargs)
+    all_args_dict['n_checkpoints_per_job_'] = n_checkpoints_per_job_
 
     with open(args_path, 'wb') as f:
         pickle.dump(all_args_dict, f)
@@ -48,7 +50,10 @@ def cross_topological_analysis(saved_run_root_name,
         sim = saved_run['sim']
         indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
         n_checkpoints = len(indices)
-        n_checkpoints_per_job = ceil(n_checkpoints / 1000)
+        if n_checkpoints_per_job_ is None:
+            n_checkpoints_per_job = ceil(n_checkpoints / 1000)
+        else:
+            n_checkpoints_per_job = n_checkpoints_per_job_
         n_jobs = ceil(n_checkpoints / n_checkpoints_per_job)
 
         ### --- Submit analysis job script --- ###

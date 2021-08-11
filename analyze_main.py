@@ -24,4 +24,5 @@ graph_args = {k.split('graph_')[1]: all_args[k]
 analyze_training_run(saved_run_name,
                      FP_args=FP_args,
                      test_args=test_args,
-                     graph_args=graph_args)
+                     graph_args=graph_args,
+                     n_checkpoints_per_job_=all_args['n_checkpoints_per_job_'])

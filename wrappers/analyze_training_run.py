@@ -4,6 +4,7 @@ from dynamics import *
 from math import ceil
 
 def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
+                         n_checkpoints_per_job_=None,
                          username='oem214',
                          project_name='learning-dynamics'):
     """For a given simulation (containing checkpoints), analyzes some subset
@@ -32,7 +33,10 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
 
     indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
     n_checkpoints = len(indices)
-    n_checkpoints_per_job = ceil(n_checkpoints / 1000)
+    if n_checkpoints_per_job_ is None:
+        n_checkpoints_per_job = ceil(n_checkpoints / 1000)
+    else:
+        n_checkpoints_per_job = n_checkpoints_per_job_
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
     i_start = sim.checkpoint_interval * n_checkpoints_per_job * i_job
     i_end = sim.checkpoint_interval * n_checkpoints_per_job * (i_job + 1)

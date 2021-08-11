@@ -227,7 +227,7 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
             if n_nodes < n_ref_nodes:
                 checkpoint['backembed_' + key] = np.zeros_like(reference_checkpoint[key])
                 for i in I_f:
-                    checkpoint['backemded_' + key][i] = reference_checkpoint[key][i]
+                    checkpoint['backembed_' + key][i] = reference_checkpoint[key][i]
             if n_nodes > n_ref_nodes:
                 reference_checkpoint['forwardembed_' + key] = np.zeros_like(checkpoint[key])
                 for i in I_b:

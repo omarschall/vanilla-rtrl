@@ -34,4 +34,6 @@ def get_default_args():
 
             all_args['{}_{}'.format(meta_key, key)] = arg_dict[key]
 
+    all_args['n_checkpoints_per_job_'] = None
+
     return all_args
