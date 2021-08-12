@@ -74,3 +74,49 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={}):
         signals[key] = np.array(stat_)
 
     return signals
+
+def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
+    """Unpack the results of a full analysis -> compare run. Returns
+    a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
+
+    Args:
+        saved_run_name (str): Original file name of analyzed simulation
+        checkpoint_stats (dict): Dictionary whose entries are
+            functions that take in a checkpoint and return some float."""
+
+    analysis_job_name = 'analyze_{}'.format(saved_run_name)
+    compare_job_name = 'compare_{}'.format(saved_run_name)
+
+    results_dir = '/scratch/oem214/learning-dynamics/results/'
+
+    analysis_result_path = os.path.join(results_dir, analysis_job_name)
+    compare_result_path = os.path.join(results_dir, compare_job_name)
+
+    ### --- Unpack neighbor comparison results --- ###
+
+    with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
+        result = pickle.load(f)
+
+    signals = {}
+
+    for key in result.keys():
+
+        if 'distance' in key:
+            x = np.diag(result[key][:-1, 1:])
+            signals[key] = x.copy()
+
+    ### --- Unpack individual checkpoint results --- ###
+
+    indices, checkpoints = unpack_analysis_results(analysis_result_path)
+
+    for key in checkpoint_stats.keys():
+
+        stat_ = []
+
+        for i_index, index in enumerate(indices):
+            checkpoint = checkpoints['checkpoint_{}'.format(index)]
+            stat_.append(checkpoint_stats[key](checkpoint))
+
+        signals[key] = np.array(stat_)
+
+    return signals

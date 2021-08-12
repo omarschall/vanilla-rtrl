@@ -2,22 +2,8 @@ import os, pickle
 from cluster import unpack_analysis_results
 from dynamics import *
 
-default_compare_args = {'wasserstein': False,
-                        'VAE_': False,
-                        'PC1': False,
-                        'PC2': False,
-                        'PC3': False,
-                        'SVCCA': False,
-                        'aligned_graph': True,
-                        'node_diff': True,
-                        'node_drift': True,
-                        'rec_weight': True,
-                        'output_weight': True,
-                        'n_inputs': 6,
-                        'n_comp_window': 'full'}
-
 def compare_analyzed_checkpoints(analysis_job_name,
-                                 compare_args=default_compare_args,
+                                 compare_args,
                                  username='oem214',
                                  project_name='learning-dynamics'):
     """For a given analysis job name, takes the analyzed checkpoints and
@@ -117,15 +103,16 @@ def compare_analyzed_checkpoints(analysis_job_name,
             except KeyError:
                 continue
 
-            try:
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
-                # align_checkpoints(checkpoint_2, checkpoint_1,
-                #                   n_inputs=compare_args['n_inputs'])
-                align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
-                                                  n_inputs=compare_args['n_inputs'])
-            except ValueError:
-                continue
+            if compare_args['align_checkpoints']:
+                try:
+                    # align_checkpoints(checkpoint_2, checkpoint_1,
+                    #                   n_inputs=compare_args['n_inputs'])
+                    # align_checkpoints(checkpoint_2, checkpoint_1,
+                    #                   n_inputs=compare_args['n_inputs'])
+                    align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                      n_inputs=compare_args['n_inputs'])
+                except ValueError:
+                    continue
 
             if wasserstein:
                 wasserstein_distances[i, j] = wasserstein_distance(checkpoint_1,
@@ -149,7 +136,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
             if SVCCA:
                 SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
                                                        checkpoint_2,
-                                                       data=data, R=3)
+                                                       R=32)
             if aligned_graph:
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,
