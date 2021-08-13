@@ -84,39 +84,58 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
         checkpoint_stats (dict): Dictionary whose entries are
             functions that take in a checkpoint and return some float."""
 
-    analysis_job_name = 'analyze_{}'.format(saved_run_name)
-    compare_job_name = 'compare_{}'.format(saved_run_name)
 
-    results_dir = '/scratch/oem214/learning-dynamics/results/'
+    ### --- Get paths, extract and unpack compare data --- ###
 
-    analysis_result_path = os.path.join(results_dir, analysis_job_name)
+    project_dir = os.path.join('/scratch/{}/'.format('oem214'),
+                               'learning-dynamics')
+    results_dir = os.path.join(project_dir, 'results/')
+    saved_runs_dir = os.path.join(project_dir, 'notebooks/', 'saved_runs/')
+
+    compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
     compare_result_path = os.path.join(results_dir, compare_job_name)
-
-    ### --- Unpack neighbor comparison results --- ###
-
     with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
         result = pickle.load(f)
 
-    signals = {}
+    ### --- Loop through each individual analysis job --- ###
 
-    for key in result.keys():
+    analysis_job_names = ['analyze_' + sr for sr in os.listdir(saved_runs_dir)
+                          if saved_run_root_name in sr]
+    analysis_job_names = sorted(analysis_job_names)
 
-        if 'distance' in key:
-            x = np.diag(result[key][:-1, 1:])
-            signals[key] = x.copy()
+    all_indices = []
+    checkpoints_lists = []
+    job_indices = []
 
-    ### --- Unpack individual checkpoint results --- ###
+    signal_dicts = {}
+    for i_job, analysis_job_name in enumerate(analysis_job_names):
+        analysis_dir = os.path.join(results_dir, analysis_job_name)
 
-    indices, checkpoints = unpack_analysis_results(analysis_result_path)
+        # Unpack data
+        indices, checkpoints = unpack_analysis_results(analysis_dir)
+        all_indices += indices
+        checkpoints_lists.append(checkpoints)
+        job_indices += [i_job] * len(indices)
 
-    for key in checkpoint_stats.keys():
+        signals_ = {}
+        for key in checkpoint_stats.keys():
 
-        stat_ = []
+            stat_ = []
 
-        for i_index, index in enumerate(indices):
-            checkpoint = checkpoints['checkpoint_{}'.format(index)]
-            stat_.append(checkpoint_stats[key](checkpoint))
+            for i_index, index in enumerate(indices):
+                checkpoint = checkpoints['checkpoint_{}'.format(index)]
+                stat_.append(checkpoint_stats[key](checkpoint))
 
-        signals[key] = np.array(stat_)
+            signals_[key] = np.array(stat_)
 
-    return signals
+        for key in result.keys():
+
+            if 'distance' in key:
+                idx = np.where(result['job_indices'] == i_job)
+                sub_distance_mat = result[key][idx, :][:, idx]
+                x = np.diag(sub_distance_mat[:-1, 1:])
+                signals_[key] = x.copy()
+
+        signal_dicts[analysis_job_name] = signals_
+
+    return signal_dicts
