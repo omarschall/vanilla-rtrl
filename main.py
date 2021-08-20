@@ -69,7 +69,7 @@ checkpoint_interval = None
 data = task.gen_data(N_train, N_test)
 
 n_in = task.n_in
-n_hidden = 4
+n_hidden = 8
 n_out = task.n_out
 W_in  = np.random.normal(0, np.sqrt(1/(n_in)), (n_hidden, n_in))
 #W_rec = np.linalg.qr(np.random.normal(0, 1, (n_hidden, n_hidden)))[0]
@@ -90,15 +90,18 @@ rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
 
 
 optimizer = Private_LR_SGD(rnn,init_lr=0.001)
-meta_optimizer = Stochastic_Gradient_Descent(lr=0)
-#learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-learn_alg = RTRL(rnn)
-meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer,clip_norm= 100)
+meta_optimizer = Stochastic_Gradient_Descent(lr=0.000001)
+learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
+#learn_alg = RTRL(rnn)
+meta_learn_alg = Meta_Learning_Algorithm(rnn,learn_alg,optimizer,damp_factor = 0.9, clip_norm= 100)
 
 comp_algs = []
 monitors = ['rnn.loss_','meta_learn_alg.rec_grads-norm',
 'meta_learn_alg.dwdlam-norm',
-'meta_learn_alg.H-norm',]
+'meta_learn_alg.H-norm',
+'rnn.h-norm','meta_learn_alg.inner_algo.A-norm',
+'meta_learn_alg.inner_algo.B-norm',
+'optimizer.lr']
 # 'meta_learn_alg.F1-norm',
 # 'meta_learn_alg.F2-norm',
 # 'meta_learn_alg.G1-norm',
@@ -141,12 +144,22 @@ sim.run(data, learn_alg=learn_alg, optimizer=optimizer,
         )
 
 # %%
+name = 'meta_learn_alg.dwdlam-norm'
+plt.plot(sim.mons[name][:30000],label=name)
+# %%
+name = 'optimizer.lr'
+print(len(sim.mons[name]))
+data = []
+for i in range(30000):
+    data.append(norm(sim.mons[name][i][0]))
+plt.plot(data,label=name)
 
+# %%
 
 plt.figure(figsize=(10,10))
 for name in monitors:
-    if np.mean(sim.mons[name][:1000])>0:
-        plt.plot(sim.mons[name][:1000],label=name)
+    #if np.mean(sim.mons[name])>0:
+    plt.plot(sim.mons[name][:5000],label=name)
 plt.legend()
 plt.show()
 

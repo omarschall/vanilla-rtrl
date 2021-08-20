@@ -35,7 +35,7 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         q (numpy array): The immediate loss derivative of the network state
             dL/da, calculated by propagate_feedback_to_hidden.
         q_prev (numpy array): The q value from the previous time step."""
-    def __init__(self, rnn, inner_algo, optimizer, clip_norm,**kwargs):
+    def __init__(self, rnn, inner_algo, optimizer, damp_factor, clip_norm,**kwargs):
         """Inits an Meta instance by setting the initial dadw matrix to zero."""
 
         self.name = 'Meta' #Algorithm name
@@ -56,6 +56,7 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
         # Calculate dldw (as q in inner loop)
         self.dldw = np.ones((self.n_h,self.m))
         self.clip_norm = clip_norm
+        self.damp_factor = damp_factor
 
         A = np.random.normal(0,1,self.m)
         self.tA = A/norm(A)*4
@@ -68,15 +69,15 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
 
 
-    # def approximate_H_first_term(self):
-    #     """Calculate the first term in the Hessian"""
+    def approximate_H_first_term(self):
+        """Calculate the first term in the Hessian"""
 
-    #     beta1 = np.outer(self.inner_algo.A ,self.inner_algo.A)
-    #     WB = np.dot(self.rnn.W_out,self.inner_algo.B)
-    #     alpha1 = WB.T.dot(WB)#np.sum(WB[:, :, None] * WB[:, None, :],axis=0)
-    #     #alpha_t = np.outer(WB[0,:],WB[0,:]) + np.outer(WB[1,:],WB[1,:])
+        beta1 = np.outer(self.inner_algo.A ,self.inner_algo.A)
+        WB = np.dot(self.rnn.W_out,self.inner_algo.B)
+        alpha1 = WB.T.dot(WB)#np.sum(WB[:, :, None] * WB[:, None, :],axis=0)
+        #alpha_t = np.outer(WB[0,:],WB[0,:]) + np.outer(WB[1,:],WB[1,:])
 
-    #     return alpha1, beta1
+        return alpha1, beta1
 
     def approximate_H_second_term(self):
         """Calculate the second term in the Hessian"""
@@ -158,8 +159,6 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
     def get_rec_grads(self):
         
         """Get the LR gradients in an array of shape [n_h, m]"""
-        #self.hard_code_learning_vars()
-        #self.rtrl()
 
         g = np.dot(self.inner_algo.rec_grads.reshape(-1),self.dwdlam).reshape((self.n_h,self.m))
         # print(g.shape,norm(g))
@@ -168,42 +167,44 @@ class Meta_Learning_Algorithm(Stochastic_Algorithm):
 
         return g
     
-    # def hard_code_learning_vars(self):
-    #     # third term
-    #     self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
-    #     self.A_diag = np.diag(self.inner_algo.A)
-    #     third_term = np.kron(self.qB_diag,self.A_diag)
-
-    #     # Hession
-    #     self.F1, self.G1 = self.approximate_H_first_term()
-    #     self.F2, self.G2 = self.approximate_H_second_term()
-
-    #     self.H = np.kron(self.F1,self.G1) + np.kron(self.F2,self.G2)
-
-    #     # second term
-    #     self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
-    #     self.lam = self.lam.reshape(-1)
-    #     second_term = (self.lam.T * (np.matmul(self.H,self.dwdlam))).T
-
-    #     self.dwdlam = self.dwdlam - second_term - third_term
-        
     def update_learning_vars(self):
-        third_term = np.diag(self.inner_algo.q.dot(self.inner_algo.dadw))
 
-        #Hession
-        WB = np.dot(self.rnn.W_out,self.inner_algo.dadw)
-        self.hessian_first = WB.T.dot(WB)
-        #self.hessian_first = self.rnn.W_out.T.dot(self.rnn.W_out).dot(self.inner_algo.dadw).dot(self.inner_algo.dadw)
+        
+        # third term
+        self.qB_diag = np.diag(self.inner_algo.q.dot(self.inner_algo.B))
+        self.A_diag = np.diag(self.inner_algo.A)
+        third_term = np.kron(self.qB_diag,self.A_diag)
+
+        # Hession
+        self.F1, self.G1 = self.approximate_H_first_term()
         self.F2, self.G2 = self.approximate_H_second_term()
-        self.H = self.hessian_first + np.kron(self.F2,self.G2)
+
+        self.H = np.kron(self.F1,self.G1) + np.kron(self.F2,self.G2)
 
         # second term
         self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
         self.lam = self.lam.reshape(-1)
         second_term = (self.lam.T * (np.matmul(self.H,self.dwdlam))).T
-        
 
-        self.dwdlam = self.dwdlam - second_term - third_term
+        self.dwdlam = self.damp_factor * self.dwdlam - second_term - third_term
+        if norm(self.dwdlam) > 1000000:
+            set_trace()
+    # def update_learning_vars(self):
+    #     third_term = np.diag(self.inner_algo.q.dot(self.inner_algo.dadw))
+
+    #     #Hession
+    #     WB = np.dot(self.rnn.W_out,self.inner_algo.dadw)
+    #     self.hessian_first = WB.T.dot(WB)
+    #     #self.hessian_first = self.rnn.W_out.T.dot(self.rnn.W_out).dot(self.inner_algo.dadw).dot(self.inner_algo.dadw)
+    #     self.F2, self.G2 = self.approximate_H_second_term()
+    #     self.H = self.hessian_first + np.kron(self.F2,self.G2)
+
+    #     # second term
+    #     self.lam = np.hstack(self.optimizer.lr[:2]+[self.optimizer.lr[2].reshape(-1,1)])
+    #     self.lam = self.lam.reshape(-1)
+    #     second_term = (self.lam.T * (np.matmul(self.H,self.dwdlam))).T
+        
+    #     self.dwdlam = 0.9*self.dwdlam - second_term - third_term
     
     def __call__(self):
         
