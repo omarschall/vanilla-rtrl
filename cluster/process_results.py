@@ -96,6 +96,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
     compare_result_path = os.path.join(results_dir, compare_job_name)
     with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
         result = pickle.load(f)
+    result['job_indices'] = np.array(result['job_indices'])
 
     ### --- Loop through each individual analysis job --- ###
 
@@ -131,7 +132,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
         for key in result.keys():
 
             if 'distance' in key:
-                idx = np.where(result['job_indices'] == i_job)
+                idx = np.where(result['job_indices'] == i_job)[0]
                 sub_distance_mat = result[key][idx, :][:, idx]
                 x = np.diag(sub_distance_mat[:-1, 1:])
                 signals_[key] = x.copy()
