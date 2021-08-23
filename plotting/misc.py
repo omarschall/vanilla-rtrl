@@ -319,7 +319,7 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
 
     fig = plt.figure(figsize=(10, 2 * len(signal_dicts[0].keys())))
     n_signals = len(signal_dicts)
-    alpha = 1 - np.exp(1 - n_signals)
+    alpha = np.exp(1 - n_signals / 3)
 
     for i_signals, signals in enumerate(signal_dicts):
 
