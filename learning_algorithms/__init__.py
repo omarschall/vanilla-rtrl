@@ -5,6 +5,7 @@ from .KeRNL import KeRNL
 from .KF_RTRL import KF_RTRL
 from .Learning_Algorithm import Learning_Algorithm
 from .List_of_Gradients import List_of_Gradients
+from .Miconi_REINFORCE import Miconi_REINFORCE
 from .Only_Output_Weights import Only_Output_Weights
 from .Random_Noise_Gradients import Random_Noise_Gradients
 from .REINFORCE import REINFORCE
