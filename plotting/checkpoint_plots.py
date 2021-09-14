@@ -7,12 +7,19 @@ from dynamics import *
 from plotting.State_Space_Analysis import State_Space_Analysis
 
 def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
-                                figsize=(3, 2), xlim=500, **kwargs):
+                                figsize=(3, 2), xlim=500,
+                                time_steps_per_trial=None,
+                                trial_mask=None,
+                                reset_sigma=None,
+                                **kwargs):
     """For a given checkpoint in a simulation and data dict, runs a fresh
     test simulation and plots the results in output spcae."""
 
     rnn = checkpoint['rnn']
-    test_sim = Simulation(rnn)
+    test_sim = Simulation(rnn,
+                          time_steps_per_trial=time_steps_per_trial,
+                          trial_mask=trial_mask,
+                          reset_sigma=reset_sigma)
     test_sim.run(data, mode='test', monitors=['rnn.loss_', 'rnn.y_hat'],
                  verbose=False, **kwargs)
 
