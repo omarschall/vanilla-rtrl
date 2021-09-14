@@ -243,7 +243,10 @@ class Simulation:
             self.i_trial = self.i_t//self.time_steps_per_trial
             if self.reset_sigma is not None:
                 self.rnn.reset_network(sigma=self.reset_sigma)
-                self.learn_alg.reset_learning()
+                try:
+                    self.learn_alg.reset_learning()
+                except AttributeError:
+                    pass
 
     def forward_pass(self, x, y):
         """Runs network forward, computes immediate losses and errors."""
