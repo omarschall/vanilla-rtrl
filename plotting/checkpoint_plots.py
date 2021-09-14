@@ -30,7 +30,7 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
         plt.plot(data['test']['Y'][:, i] - i * 2, 'C0')
         plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * 2, 'C3')
     if time_steps_per_trial is not None:
-        for i in range(0, data[['test']['X'].shape[0]], time_steps_per_trial):
+        for i in range(0, data['test']['X'].shape[0], time_steps_per_trial):
             plt.axvline(x=i, color='k', linestyle='--')
     plt.xlim([0, xlim])
     plt.yticks([])
