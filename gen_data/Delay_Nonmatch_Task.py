@@ -16,7 +16,7 @@ class Delay_Nonmatch_Task(Task):
     the option of resetting the network and/or learning algorithm states between
     trials."""
 
-    def __init__(self, t_stim_1, stim_duration=3,
+    def __init__(self, t_stim_1=1, stim_duration=3,
                  delay_duration=10, report_duration=3,
                  off_report_loss_factor=0.1):
         """Initializes an instance by specifying, within a trial, the time step
