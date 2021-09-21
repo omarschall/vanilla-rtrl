@@ -57,3 +57,8 @@ class REINFORCE(Learning_Algorithm):
         """Combine the eligibility trace and the reward to get an estimate
         of the gradient"""
         return (self.loss - self.loss_avg) * self.e_trace
+
+    def reset_learning(self):
+        """Reset the eligibility traces to 0."""
+
+        self.e_trace *= 0
