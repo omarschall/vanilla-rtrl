@@ -31,8 +31,11 @@ class Task:
 
         data = {'train': {}, 'test': {}}
 
-        data['train']['X'], data['train']['Y'] = self.gen_dataset(N_train)
-        data['test']['X'], data['test']['Y'] = self.gen_dataset(N_test)
+        for mode in ['train', 'test']:
+            X, Y, trial_type = self.gen_dataset(N_train)
+            data[mode]['X'] = X
+            data[mode]['Y'] = Y
+            data[mode]['trial_type'] = trial_type
 
         return data
 
