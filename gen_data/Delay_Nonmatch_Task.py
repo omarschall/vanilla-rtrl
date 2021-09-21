@@ -44,7 +44,7 @@ class Delay_Nonmatch_Task(Task):
                                      + 2 * delay_duration
                                      + report_duration)
         self.t_stim_2 = t_stim_1 + stim_duration + delay_duration
-        self.t_report = self.t_stim_2 + delay_duration
+        self.t_report = self.t_stim_2 + stim_duration + delay_duration
         self.off_report_loss_factor = off_report_loss_factor
 
         #Make mask for preferential learning within task
