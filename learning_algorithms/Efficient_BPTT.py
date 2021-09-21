@@ -69,7 +69,7 @@ class Efficient_BPTT(Learning_Algorithm):
                 a_hat = self.a_hat_history.pop(0)
 
                 # Use to get gradients w.r.t. weights from credit assignment
-                D = self.rnn.activation.f_prime(h)
+                D = self.rnn.alpha * self.rnn.activation.f_prime(h)
                 rec_grads += np.multiply.outer(c * D, a_hat)
 
                 if i_BPTT == self.T_truncation - 1:  # Skip if at end

@@ -41,10 +41,11 @@ class REINFORCE(Learning_Algorithm):
                                      self.rnn.x,
                                      np.array([1])])
         # postsynaptic variables/parameters
-        self.D = self.rnn.activation.f_prime(self.rnn.h) * self.rnn.noise
+        self.D = self.rnn.alpha * self.rnn.activation.f_prime(self.rnn.h)
+        self.D_noise = self.D * self.rnn.noise
 
         # matrix of pre/post activations
-        self.e_immediate = np.outer(self.D, self.a_hat) / self.sigma ** 2
+        self.e_immediate = np.outer(self.D_noise, self.a_hat) / self.sigma ** 2
         self.e_trace = ((1 - self.decay) * self.e_trace +
                         self.decay * self.e_immediate)
         self.loss_prev = self.loss
@@ -56,3 +57,8 @@ class REINFORCE(Learning_Algorithm):
         """Combine the eligibility trace and the reward to get an estimate
         of the gradient"""
         return (self.loss - self.loss_avg) * self.e_trace
+
+    def reset_learning(self):
+        """Reset the eligibility traces to 0."""
+
+        self.e_trace *= 0

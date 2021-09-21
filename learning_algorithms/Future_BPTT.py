@@ -72,7 +72,7 @@ class Future_BPTT(Learning_Algorithm):
             a_hat = self.a_hat_history.pop(-1)
 
             #Implement Eq. (1)
-            D = self.rnn.activation.f_prime(h)
+            D = self.rnn.alpha * self.rnn.activation.f_prime(h)
             rec_grads = np.multiply.outer(c * D, a_hat)
 
         else:

@@ -65,7 +65,8 @@ class KF_RTRL(Stochastic_Algorithm):
         self.a_hat = np.concatenate([self.rnn.a_prev,
                                      self.rnn.x,
                                      np.array([1])])
-        self.D = np.diag(self.rnn.activation.f_prime(self.rnn.h))
+        self.D = self.rnn.alpha * self.rnn.activation.f_prime(self.rnn.h)
+        self.D = np.diag(self.D)
         self.rnn.get_a_jacobian()
         self.B_forwards = self.rnn.a_J.dot(self.B)
 

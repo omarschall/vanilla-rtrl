@@ -392,8 +392,8 @@ def plot_2d_array_of_config_results(configs_array, results_array, key_order,
 
 def plot_3d_or_4d_array_of_config_results(configs_array, results_array, key_order,
                                           tick_rounding=3, **imshow_kwargs):
-    """Given an array of configs (must be 2D) and corresponding results as
-    floats, plots the result in a 2D grid averaging over random seeds."""
+    """Given an array of configs (must be 3-4D) and corresponding results as
+    floats, plots the result in a grid averaging over random seeds."""
 
     d_grid = len(results_array.shape) - 3
 
@@ -451,6 +451,78 @@ def plot_3d_or_4d_array_of_config_results(configs_array, results_array, key_orde
             ax.set_title(title)
 
     #plt.colorbar()
+
+    return fig
+
+def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
+                                           key_order, sim_dict, data,
+                                           task_dict=None, N_task_data=None,
+                                           xlim=500):
+    """Given an array of configs (must be 2D) and corresponding results as
+    floats, plots the result in a 2D grid averaging over random seeds."""
+
+    d_grid = len(results_array.shape) - 1
+
+    if d_grid == 1:
+        n_x = 1
+        n_y = results_array.shape[0]
+    elif d_grid == 2:
+        n_x, n_y = results_array.shape[:2]
+    else:
+        raise ValueError('Configs must be 1 or 2 dimensional')
+
+    fig, axes = plt.subplots(n_x, n_y, figsize=(n_y * 5, n_x * 5))
+
+    for i_x in range(n_x):
+        for i_y in range(n_y):
+
+            for i_seed in range(len(configs_array['i_seed'])):
+
+                if d_grid == 1:
+                    ax = axes[i_y]
+                    sim_dict_key = (str(configs_array[key_order[0]][i_y])
+                                    + '_{}'.format(i_seed))
+                if d_grid == 2:
+                    ax = axes[i_x, i_y]
+                    sim_dict_key = (str(configs_array[key_order[0]][i_x])
+                                    + '_'
+                                    + str(configs_array[key_order[1]][i_y])
+                                    + '_{}'.format(i_seed))
+
+                if task_dict is not None:
+                    task = task_dict[sim_dict_key]
+                    np.random.seed(0)
+                    data = task.gen_data(0, N_task_data)
+
+                sim = sim_dict[sim_dict_key]
+                rnn = sim.rnn
+                test_sim = sim.get_test_sim()
+                test_sim.run(data, mode='test', monitors=['rnn.loss_', 'rnn.y_hat'],
+                             verbose=False)
+
+                for i in range(rnn.n_out):
+                    ax.plot(data['test']['X'][:, i] - i * 2, (str(0.6)))
+                    ax.plot(data['test']['Y'][:, i] - i * 2, 'C0')
+                    ax.plot(test_sim.mons['rnn.y_hat'][:, i] - i * 2, 'C3', alpha=0.7)
+                if sim.time_steps_per_trial is not None:
+                    for i in range(0, data['test']['X'].shape[0], sim.time_steps_per_trial):
+                        ax.axvline(x=i, color='k', linestyle='--')
+                ax.set_xlim([0, xlim])
+                ax.set_yticks([])
+                ax.set_xlabel('time steps')
+
+                if d_grid == 1:
+                    y_param = key_order[0]
+                    title = y_param + '= {}'.format(configs_array[y_param][i_y])
+                if d_grid == 2:
+                    x_param = key_order[0]
+                    y_param = key_order[1]
+                    title = '{} = {}, {} = {}'.format(x_param,
+                                                      configs_array[x_param][i_x],
+                                                      y_param,
+                                                      configs_array[y_param][i_y])
+
+                ax.set_title(title)
 
     return fig
 

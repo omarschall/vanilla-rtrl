@@ -48,7 +48,7 @@ class RTRL(Learning_Algorithm):
         self.a_hat = np.concatenate([self.rnn.a_prev,
                                      self.rnn.x,
                                      np.array([1])])
-        D = np.diag(self.rnn.activation.f_prime(self.rnn.h))
+        D = self.rnn.alpha * np.diag(self.rnn.activation.f_prime(self.rnn.h))
         self.papw = np.kron(self.a_hat, D) #Calculate M_immediate
         self.rnn.get_a_jacobian() #Get updated network Jacobian
 

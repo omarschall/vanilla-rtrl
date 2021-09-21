@@ -21,7 +21,8 @@ class Miconi_REINFORCE(Learning_Algorithm):
                 the activations."""
 
         self.name = 'Miconi_REINFORCE'
-        allowed_kwargs_ = {'decay', 'loss_decay', 'h_avg_decay'}
+        allowed_kwargs_ = {'decay', 'loss_decay', 'h_avg_decay',
+                           'tau_e_trace'}
         super().__init__(rnn, allowed_kwargs_, **kwargs)
         # Initialize learning variables
         if self.decay is None:
@@ -31,6 +32,7 @@ class Miconi_REINFORCE(Learning_Algorithm):
         if self.h_avg_decay is None:
             self.h_avg_decay = 0.03
         self.h_avg = np.zeros(self.n_h)
+        self.tau_e_trace = 0.05
         self.e_trace = 0
         self.loss_avg = 0
         self.loss_prev = 0
@@ -55,7 +57,9 @@ class Miconi_REINFORCE(Learning_Algorithm):
 
         # matrix of pre/post activations
         self.e_immediate = np.outer(self.D, self.a_hat)
-        self.e_trace = self.e_trace + self.e_immediate**3
+        #self.e_trace = ((1 - self.tau_e_trace) * self.e_trace\
+        #                + self.tau_e_trace * self.e_immediate**3)
+        self.e_trace = self.e_trace + self.e_immediate ** 3
         self.loss_prev = self.loss
         self.loss = self.rnn.loss_
         self.loss_avg = ((1 - self.loss_decay) * self.loss_avg +
@@ -72,3 +76,8 @@ class Miconi_REINFORCE(Learning_Algorithm):
         """Combine the eligibility trace and the reward to get an estimate
         of the gradient"""
         return (self.loss - self.loss_avg) * self.e_trace
+
+    def reset_learning(self):
+        """Reset the eligibility traces to 0."""
+
+        self.e_trace *= 0

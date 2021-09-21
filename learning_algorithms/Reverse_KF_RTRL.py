@@ -66,7 +66,7 @@ class Reverse_KF_RTRL(Stochastic_Algorithm):
         self.a_hat = np.concatenate([self.rnn.a_prev,
                                      self.rnn.x,
                                      np.array([1])])
-        self.D = self.rnn.activation.f_prime(self.rnn.h)
+        self.D = self.rnn.alpha * self.rnn.activation.f_prime(self.rnn.h)
         #Compact form of M_immediate
         self.papw = np.multiply.outer(self.D, self.a_hat)
         self.rnn.get_a_jacobian() #Get updated network Jacobian
