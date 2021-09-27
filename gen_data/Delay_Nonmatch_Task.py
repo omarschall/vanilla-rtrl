@@ -58,6 +58,7 @@ class Delay_Nonmatch_Task(Task):
 
         X = []
         Y = []
+        trial_type = []
 
         #Trial type 1 AA
         x_1 = np.zeros((self.time_steps_per_trial, 2))
@@ -93,12 +94,15 @@ class Delay_Nonmatch_Task(Task):
         N_trials = N // self.time_steps_per_trial
         for i in range(N_trials):
 
-            trial_type = np.random.choice([0, 1, 2, 3])
-            X.append(x_trials[trial_type])
-            Y.append(y_trials[trial_type])
+            trial_type_ = np.random.choice([0, 1, 2, 3])
+            trial_type_array = np.ones(self.time_steps_per_trial) * trial_type_
+            trial_type.append(trial_type_array.astype(np.int))
+            X.append(x_trials[trial_type_])
+            Y.append(y_trials[trial_type_])
 
         if N_trials > 0:
             X = np.concatenate(X, axis=0)
             Y = np.concatenate(Y, axis=0)
+            trial_type = np.concatenate(trial_type, axis=0)
 
-        return X, Y
+        return X, Y, trial_type

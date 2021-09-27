@@ -83,4 +83,4 @@ class Flip_Flop_Task(Task):
         X = X * self.x_dim_mask
         Y = Y * self.y_dim_mask
 
-        return X, Y
+        return X, Y, None

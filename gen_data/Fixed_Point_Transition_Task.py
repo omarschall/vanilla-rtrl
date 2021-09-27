@@ -103,4 +103,4 @@ class Fixed_Point_Transition_Task(Task):
         if self.delay is not None:
             Y = np.roll(Y, shift=self.delay, axis=0)
 
-        return X, Y
+        return X, Y, None

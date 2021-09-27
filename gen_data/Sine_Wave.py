@@ -95,4 +95,4 @@ class Sine_Wave(Task):
 
         X[:, 0] = -np.log(X[:, 0])
 
-        return X, Y
+        return X, Y, None
