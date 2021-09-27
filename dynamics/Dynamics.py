@@ -97,11 +97,11 @@ def Vanilla_PCA(checkpoint, test_data, n_PCs=3, sigma=0):
     """Return first n_PCs PC axes of the test """
 
     test_a = get_test_sim_data(checkpoint, test_data, sigma=sigma)
-    U, S, V = np.linalg.svd(test_a)
+    U, S, VT = np.linalg.svd(test_a)
 
     checkpoint['participation_coef'] = np.square(S.sum()) / np.square(S).sum()
 
-    transform = partial(np.dot, b=V[:,:n_PCs])
+    transform = partial(np.dot, b=VT[:n_PCs])
 
     return transform
 
