@@ -129,7 +129,8 @@ class Simulation:
         self.monitors = monitors
         self.x_inputs = data[mode]['X']
         self.y_labels = data[mode]['Y']
-        self.trial_type = data[mode]['trial_type']
+        if 'trial_type' in data[mode].keys():
+            self.trial_type = data[mode]['trial_type']
         if 'task_marker' in data[mode].keys():
             self.task_marker = data[mode]['task_marker']
         self.total_time_steps = self.x_inputs.shape[0]
@@ -242,7 +243,10 @@ class Simulation:
         self.i_t_trial = self.i_t%self.time_steps_per_trial
         if self.i_t_trial == 0:
             self.i_trial = self.i_t//self.time_steps_per_trial
-            self.rnn.trial_type = self.trial_type[self.i_t]
+            try:
+                self.rnn.trial_type = self.trial_type[self.i_t]
+            except AttributeError:
+                pass
             if self.reset_sigma is not None:
                 self.rnn.reset_network(sigma=self.reset_sigma)
                 try:
@@ -444,6 +448,7 @@ class Simulation:
 
         sim = Simulation(deepcopy(self.rnn),
                          time_steps_per_trial=self.time_steps_per_trial,
+                         trial_mask=self.trial_mask,
                          reset_sigma=self.reset_sigma,
                          i_job=self.i_job,
                          save_dir=self.save_dir)

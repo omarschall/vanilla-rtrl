@@ -22,7 +22,7 @@ class Miconi_REINFORCE(Learning_Algorithm):
 
         self.name = 'Miconi_REINFORCE'
         allowed_kwargs_ = {'decay', 'loss_decay', 'h_avg_decay',
-                           'tau_e_trace'}
+                           'tau_e_trace', 'reset_h_avg'}
         super().__init__(rnn, allowed_kwargs_, **kwargs)
         # Initialize learning variables
         if self.decay is None:
@@ -31,6 +31,8 @@ class Miconi_REINFORCE(Learning_Algorithm):
             self.loss_decay = 0.01
         if self.h_avg_decay is None:
             self.h_avg_decay = 0.03
+        if self.reset_h_avg is None:
+            self.reset_h_avg = True
         self.h_avg = np.zeros(self.n_h)
         self.tau_e_trace = 0.05
         self.e_trace = 0
@@ -50,6 +52,7 @@ class Miconi_REINFORCE(Learning_Algorithm):
         self.a_hat = np.concatenate([self.rnn.a_prev,
                                      self.rnn.x,
                                      np.array([1])])
+
         self.h_avg = (1 - self.h_avg_decay) * self.h_avg + self.h_avg_decay * self.rnn.h
 
         # postsynaptic variables/parameters
@@ -83,3 +86,5 @@ class Miconi_REINFORCE(Learning_Algorithm):
         """Reset the eligibility traces to 0."""
 
         self.e_trace *= 0
+        if self.reset_h_avg:
+            self.h_avg *= 0
