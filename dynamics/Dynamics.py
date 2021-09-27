@@ -101,7 +101,7 @@ def Vanilla_PCA(checkpoint, test_data, n_PCs=3, sigma=0):
 
     checkpoint['participation_coef'] = np.square(S.sum()) / np.square(S).sum()
 
-    transform = partial(np.dot, b=VT[:n_PCs])
+    transform = partial(np.dot, b=VT.T[:,:n_PCs])
 
     return transform
 
