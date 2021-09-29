@@ -14,6 +14,7 @@ def get_default_args():
                             'PC2': False,
                             'PC3': False,
                             'SVCCA': False,
+                            'CKA': False,
                             'aligned_graph': True,
                             'node_diff': True,
                             'node_drift': True,
