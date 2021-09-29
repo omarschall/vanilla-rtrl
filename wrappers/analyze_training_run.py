@@ -75,7 +75,7 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
                          a_initial=np.zeros(checkpoint['rnn'].n_h))
             checkpoint['test_data'] = test_sim.mons['rnn.a']
             U, S, V = np.linalg.svd(test_sim.mons['rnn.a'])
-            checkpoint['V'] = V[:, :test_args['n_PCs']]
+            checkpoint['V'] = V.T[:, :test_args['n_PCs']]
 
         result['checkpoint_{}'.format(i_checkpoint)] = deepcopy(checkpoint)
 

@@ -17,6 +17,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     PC2 = compare_args['PC2']
     PC3 = compare_args['PC3']
     SVCCA = compare_args['SVCCA']
+    CKA = compare_args['CKA']
     aligned_graph = compare_args['aligned_graph']
     node_diff = compare_args['node_diff']
     node_drift = compare_args['node_drift']
@@ -80,6 +81,8 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         PC3_distances = np.zeros((n_checkpoints, n_checkpoints))
     if SVCCA:
         SVCCA_distances = np.zeros((n_checkpoints, n_checkpoints))
+    if CKA:
+        CKA_distances = np.zeros((n_checkpoints, n_checkpoints))
     if aligned_graph:
         aligned_graph_distances = np.zeros((n_checkpoints, n_checkpoints))
     if node_diff:
@@ -150,6 +153,10 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                 SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
                                                        checkpoint_2,
                                                        R=8)
+
+            if CKA:
+                CKA_distances[i, j] = CKA_distance(checkpoint_1, checkpoint_2)
+
             if aligned_graph:
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,
@@ -185,6 +192,8 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         result['PC3_distances'] = PC3_distances
     if SVCCA:
         result['SVCCA_distances'] = SVCCA_distances
+    if CKA:
+        result['CKA_distances'] = CKA_distances
     if aligned_graph:
         result['aligned_graph_distances'] = aligned_graph_distances
     if node_diff:
