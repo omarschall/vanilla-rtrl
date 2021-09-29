@@ -93,7 +93,7 @@ def CKA_distance(checkpoint_1, checkpoint_2, data, centered=False):
         A_1 = A_1 - np.mean(A_1, axis=0)
         A_2 = A_2 - np.mean(A_2, axis=0)
 
-    return 1 - (norm(A_1.T.dot(A_2)) / (norm(A_1.T.dot(A_1)) * norm(A_2.T.dot(A_2))))
+    return 1 - (norm(A_1.T.dot(A_2))**2 / (norm(A_1.T.dot(A_1)) * norm(A_2.T.dot(A_2))))
     #return 1 - (norm(A_1.dot(A_2.T)) / (norm(A_1.dot(A_1.T)) * norm(A_2.dot(A_2.T))))
 
 
