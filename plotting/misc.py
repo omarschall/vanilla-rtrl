@@ -266,7 +266,7 @@ def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False
 
 
 def plot_signals(signals, key_restriction=None, title=None, x_values=None,
-                 signal_clips={}):
+                 signal_clips={}, colors=None, legend=True):
     """For a dictionary of 1D time series signals, plots each vertically
     in a min-max range from 0 to 1.
 
@@ -276,6 +276,9 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
     keys = signals.keys()
     if key_restriction is not None:
         keys = key_restriction
+
+    if colors is None:
+        colors = ['C{}'.format(i) for i in range(len(keys))]
 
     fig = plt.figure(figsize=(10, 2 * len(keys)))
     leg = []
@@ -299,10 +302,11 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         else:
             x = list(range(len(y)))
 
-        plt.plot(x, y - 1.2 * i_key, color='C{}'.format(i_key))
+        plt.plot(x, y - 1.2 * i_key, color=colors[i_key])
         leg.append(key)
 
-    plt.legend(leg)
+    if legend:
+        plt.legend(leg)
     plt.yticks([])
     if title is not None:
         plt.title(title)
@@ -310,7 +314,7 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
     return fig
 
 def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
-                          x_values=None, signal_clips={}):
+                          x_values=None, signal_clips={}, alpha=1):
     """For a list of dictionaries of 1D time series signals, plots each
     vertically in a min-max range from 0 to 1.
 
@@ -319,7 +323,6 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
 
     fig = plt.figure(figsize=(10, 2 * len(signal_dicts[0].keys())))
     n_signals = len(signal_dicts)
-    alpha = np.exp(1 - n_signals / 3)
 
     for i_signals, signals in enumerate(signal_dicts):
 

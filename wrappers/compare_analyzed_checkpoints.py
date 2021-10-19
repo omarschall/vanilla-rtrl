@@ -18,6 +18,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     PC2 = compare_args['PC2']
     PC3 = compare_args['PC3']
     SVCCA = compare_args['SVCCA']
+    CKA = compare_args['CKA']
     aligned_graph = compare_args['aligned_graph']
     node_diff = compare_args['node_diff']
     node_drift = compare_args['node_drift']
@@ -45,7 +46,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
 
     if VAE_:
         big_data = task.gen_data(100, 20000)
-    if SVCCA:
+    if SVCCA or CKA:
         data = task.gen_data(100, 10000)
 
     ### --- Initialize dissimilarity matrices --- ###
@@ -66,6 +67,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         PC3_distances = np.zeros((n_checkpoints, n_checkpoints))
     if SVCCA:
         SVCCA_distances = np.zeros((n_checkpoints, n_checkpoints))
+    if CKA:
+        CKA_distances = np.zeros((n_checkpoints, n_checkpoints))
     if aligned_graph:
         aligned_graph_distances = np.zeros((n_checkpoints, n_checkpoints))
     if node_diff:
@@ -131,12 +134,15 @@ def compare_analyzed_checkpoints(analysis_job_name,
             if PC3:
                 PC3_distances[i, j] = PC_distance_3(checkpoint_1,
                                                     checkpoint_2,
-                                                    N_avg=25, N_test=1000,
+                                                    N_avg=None, N_test=1000,
                                                     task=task)
             if SVCCA:
                 SVCCA_distances[i, j] = SVCCA_distance(checkpoint_1,
                                                        checkpoint_2,
                                                        R=32)
+            if CKA:
+                CKA_distances[i, j] = CKA_distance(checkpoint_1, checkpoint_2)
+
             if aligned_graph:
                 aligned_graph_distances[i, j] = aligned_graph_distance(checkpoint_1,
                                                                        checkpoint_2,
@@ -172,6 +178,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         result['PC3_distances'] = PC3_distances
     if SVCCA:
         result['SVCCA_distances'] = SVCCA_distances
+    if CKA:
+        result['CKA_distances'] = CKA_distances
     if aligned_graph:
         result['aligned_graph_distances'] = aligned_graph_distances
     if node_diff:

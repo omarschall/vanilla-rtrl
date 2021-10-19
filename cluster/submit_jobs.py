@@ -57,7 +57,7 @@ def write_job_file(job_name, py_file_name='main.py',
                    py_args='',
                    project_name='learning-dynamics',
                    username='oem214',
-                   nodes=1, ppn=1, mem=16, n_hours=24):
+                   nodes=1, ppn=1, mem=16, n_hours=8):
     """Create a job file for running a standard single-main-script job.
 
     Args:
@@ -111,6 +111,7 @@ def write_job_file(job_name, py_file_name='main.py',
             + 'module purge\n'
             + 'SAVEDIR={}\n'.format(save_dir)
             + 'export SAVEDIR\n'
+            #+ 'export OMP_NUM_THREADS=1\n'
             + 'cd {}\n'.format(main_dir)
             + '{} exec '.format(singularity_exe_path)
             + '--overlay {} {} '.format(overlay, singularity_path)

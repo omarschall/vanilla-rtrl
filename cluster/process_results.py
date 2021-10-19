@@ -29,7 +29,8 @@ def unpack_analysis_results(data_path):
     return indices, checkpoints
 
 
-def unpack_compare_result(saved_run_name, checkpoint_stats={}):
+def unpack_compare_result(saved_run_name, checkpoint_stats={},
+                          results_dir='/scratch/oem214/learning-dynamics/results/'):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -40,8 +41,6 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={}):
 
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
     compare_job_name = 'compare_{}'.format(saved_run_name)
-
-    results_dir = '/scratch/oem214/learning-dynamics/results/'
 
     analysis_result_path = os.path.join(results_dir, analysis_job_name)
     compare_result_path = os.path.join(results_dir, compare_job_name)

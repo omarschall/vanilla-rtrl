@@ -43,7 +43,8 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
 def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
                                   i_input=None, plotting_noise=0.05,
                                   return_fig=False, n_inputs=None,
-                                  color_scheme='dotted'):
+                                  color_scheme='dotted',
+                                  colors=None,):
 
     n_nodes = checkpoint['nodes'].shape[0]
 
@@ -64,11 +65,13 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
         plt.plot(node[0] + 0.18 * np.cos(theta), node[1] + 0.18 * np.sin(theta),
                  color=('0.6'))
 
-
     if n_inputs is None:
         n_in = 6
     else:
         n_in = n_inputs
+
+    if colors is None:
+        colors = ['C{}'.format(i) for i in range(n_in)]
 
     n_half = n_in // 2
 
@@ -116,16 +119,16 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
 
             plt.plot([start[0], end[0]],
                       [start[1], end[1]],
-                      color='C{}'.format(i_color), alpha=weight,
+                      color=colors[i_color], alpha=weight,
                       linestyle=linestyle)
 
             plt.plot([start[0]],
                       [start[1]], 'x',
-                      color='C{}'.format(i_color), alpha=weight)
+                      color=colors[i_color], alpha=weight)
 
             plt.plot([end[0]],
                       [end[1]], '.',
-                      color='C{}'.format(i_color), alpha=weight)
+                      color=colors[i_color], alpha=weight)
 
             # plt.arrow(start[0], start[1], end[0] - start[0], end[1] - start[1],
             #           color='C{}'.format(i_color), alpha=weight,

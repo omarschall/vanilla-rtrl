@@ -81,11 +81,15 @@ def SVCCA_distance(checkpoint_1, checkpoint_2, R=32):
     #return 1 - cca.score(V_1, V_2)
     return 1 - cca.score(A_1, A_2)
 
-def CKA_distance(checkpoint_1, checkpoint_2, data, centered=False):
+def CKA_distance(checkpoint_1, checkpoint_2, data=None, centered=True):
     """Compute CKA distance between two checkpoints"""
 
-    A_1 = get_test_sim_data(checkpoint_1, data)
-    A_2 = get_test_sim_data(checkpoint_2, data)
+    try:
+        A_1 = checkpoint_1['test_data']
+        A_2 = checkpoint_2['test_data']
+    except KeyError:
+        A_1 = get_test_sim_data(checkpoint_1, data)
+        A_2 = get_test_sim_data(checkpoint_2, data)
 
     N = A_1.shape[0]
 
@@ -93,8 +97,7 @@ def CKA_distance(checkpoint_1, checkpoint_2, data, centered=False):
         A_1 = A_1 - np.mean(A_1, axis=0)
         A_2 = A_2 - np.mean(A_2, axis=0)
 
-    return 1 - (norm(A_1.T.dot(A_2)) / (norm(A_1.T.dot(A_1)) * norm(A_2.T.dot(A_2))))
-    #return 1 - (norm(A_1.dot(A_2.T)) / (norm(A_1.dot(A_1.T)) * norm(A_2.dot(A_2.T))))
+    return 1 - (norm(A_1.T.dot(A_2))**2 / (norm(A_1.T.dot(A_1)) * norm(A_2.T.dot(A_2))))
 
 
 def rec_weight_distance(checkpoint_1, checkpoint_2):

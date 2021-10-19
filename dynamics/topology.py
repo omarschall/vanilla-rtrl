@@ -5,6 +5,7 @@ import multiprocessing as mp
 from functools import partial
 from itertools import product
 from copy import deepcopy
+import os
 from scipy.spatial import distance
 
 def find_KE_minima(checkpoint, test_data, N=1000, verbose_=False,
@@ -40,8 +41,16 @@ def find_KE_minima(checkpoint, test_data, N=1000, verbose_=False,
     if parallelize:
 
         func_ = partial(find_KE_minimum, **kwargs)
+        # Limit use of different threads
+        os.environ['OMP_NUM_THREADS'] = '1'
+        os.environ['MKL_NUM_THREADS'] = '1'
+        os.environ['OPENBLAS_NUM_THREADS'] = '1'
         with mp.Pool(min(mp.cpu_count(), n_cpus)) as pool:
-                results = pool.map(func_, RNNs)
+            # Limit use of different threads
+            os.environ['OMP_NUM_THREADS'] = '1'
+            os.environ['MKL_NUM_THREADS'] = '1'
+            os.environ['OPENBLAS_NUM_THREADS'] = '1'
+            results = pool.map(func_, RNNs)
 
     if not parallelize:
 
@@ -78,6 +87,11 @@ def find_KE_minimum(rnn, LR=1e-2, N_iters=1000000,
     return_whole_optimization is True, then it also returns trajectory of a
     values, norms, and LR_drop times at a frequency specified by
     return_period."""
+
+    #Limit use of different threads
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_NUM_THREADS'] = '1'
+    os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
     #Initialize counters
     i_LR_drop = 0
