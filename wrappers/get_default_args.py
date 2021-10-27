@@ -20,6 +20,7 @@ def get_default_args():
                             'node_drift': True,
                             'rec_weight': True,
                             'output_weight': True,
+                            'weight_change_alignment': False,
                             'n_inputs': 6,
                             'align_checkpoints': True,
                             'n_comp_window': 'full'}

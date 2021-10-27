@@ -257,3 +257,17 @@ def node_diff_distance(checkpoint_1, checkpoint_2):
     n_2 = checkpoint_2['nodes'].shape[0]
 
     return np.abs(n_1 - n_2) / max(n_1, n_2)
+
+def weight_change_alignment_distance(checkpoint_1, checkpoint_2):
+    """Returns the angular alignment between weight updates relative to each
+    checkpoint's most recent weight update.
+
+    NOTE: To work, you must have "checkpoint_optimizer" flag set to True when
+    running simulation object."""
+
+    opt_1 = checkpoint_1['optimizer']
+    opt_2 = checkpoint_1['optimizer']
+    dW_1 = np.concatenate([v.flatten() for v in opt_1.vel])
+    dW_2 = np.concatenate([v.flatten() for v in opt_2.vel])
+
+    return normalized_dot_product(dW_1, dW_2)
