@@ -24,6 +24,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     node_drift = compare_args['node_drift']
     rec_weight = compare_args['rec_weight']
     output_weight = compare_args['output_weight']
+    weight_change_alignment = compare_args['weight_change_alignment']
 
     ### --- Get paths, extract and unpack data --- ###
 
@@ -79,6 +80,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         rec_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
     if output_weight:
         output_weight_distances = np.zeros((n_checkpoints, n_checkpoints))
+    if weight_change_alignment:
+        weight_change_alignment_distances = np.zeros((n_checkpoints, n_checkpoints))
 
     #Compare window
     if compare_args['n_comp_window'] == 'full':
@@ -162,6 +165,10 @@ def compare_analyzed_checkpoints(analysis_job_name,
                 output_weight_distances[i, j] = output_weight_distance(checkpoint_1,
                                                                       checkpoint_2)
 
+            if weight_change_alignment:
+                weight_change_alignment_distances[i, j] = weight_change_alignment_distance(checkpoint_1,
+                                                                                           checkpoint_2)
+
             calculation_check[i, j] = 1
 
     result = {}
@@ -190,6 +197,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
         result['rec_weight_distances'] = rec_weight_distances
     if output_weight:
         result['output_weight_distances'] = output_weight_distances
+    if weight_change_alignment:
+        result['weight_change_alignment_distances'] = weight_change_alignment_distances
     result['calculation_check'] = calculation_check
 
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
