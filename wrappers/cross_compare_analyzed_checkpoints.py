@@ -130,6 +130,8 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                 try:
                     align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
                                                       n_inputs=compare_args['n_inputs'])
+                    align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                      n_inputs=compare_args['n_inputs'])
                 except ValueError:
                     continue
 
