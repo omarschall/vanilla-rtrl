@@ -31,22 +31,28 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
 
     ### --- Determine which checkpoints to analyze for this job id --- ###
 
-    indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
+    if type(sim.checkpoint_interval) is int:
+        indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
+    elif type(sim.checkpoint_interval) is list:
+        indices = sim.checkpoint_interval
     n_checkpoints = len(indices)
     if n_checkpoints_per_job_ is None:
         n_checkpoints_per_job = ceil(n_checkpoints / 1000)
     else:
         n_checkpoints_per_job = n_checkpoints_per_job_
     i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
-    i_start = sim.checkpoint_interval * n_checkpoints_per_job * i_job
-    i_end = sim.checkpoint_interval * n_checkpoints_per_job * (i_job + 1)
+    i_index_start = n_checkpoints_per_job * i_job
+    i_index_end = n_checkpoints_per_job * (i_job + 1)
 
     ### --- Analyze each checkpoint --- ###
 
     result = {}
     data = task.gen_data(100, 30000)
 
-    for i_checkpoint in range(i_start, i_end, sim.checkpoint_interval):
+    for i_index in range(i_index_start, i_index_end):
+
+        i_checkpoint = indices[i_index]
+
         with open(log_path, 'a') as f:
             f.write('Analyzing chekpoint {}\n'.format(i_checkpoint))
 
