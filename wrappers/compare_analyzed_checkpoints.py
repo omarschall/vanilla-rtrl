@@ -117,6 +117,8 @@ def compare_analyzed_checkpoints(analysis_job_name,
                     #                   n_inputs=compare_args['n_inputs'])
                     align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
                                                       n_inputs=compare_args['n_inputs'])
+                    align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                                      n_inputs=compare_args['n_inputs'])
                 except ValueError:
                     continue
 
