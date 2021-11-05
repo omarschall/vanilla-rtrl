@@ -41,12 +41,28 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
     return fig
 
 def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
+                                  graph_key='adjmat',
                                   i_input=None, plotting_noise=0.05,
                                   return_fig=False, n_inputs=None,
                                   color_scheme='dotted',
                                   colors=None,):
 
-    n_nodes = checkpoint['nodes'].shape[0]
+    if n_inputs is None:
+        n_in = 6
+    else:
+        n_in = n_inputs
+
+    if colors is None:
+        colors = ['C{}'.format(i) for i in range(n_in)]
+
+    n_half = n_in // 2
+
+    if i_input is not None:
+        keys = ['{}_input_{}'.format(graph_key, i_input)]
+    else:
+        keys = ['{}_input_{}'.format(graph_key, i) for i in range(n_in)]
+
+    n_nodes = checkpoint[keys[0]].shape[0]
 
     if reference_checkpoint is not None:
         total_nodes = max(reference_checkpoint['nodes'].shape[0], n_nodes)
@@ -65,28 +81,12 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
         plt.plot(node[0] + 0.18 * np.cos(theta), node[1] + 0.18 * np.sin(theta),
                  color=('0.6'))
 
-    if n_inputs is None:
-        n_in = 6
-    else:
-        n_in = n_inputs
-
-    if colors is None:
-        colors = ['C{}'.format(i) for i in range(n_in)]
-
-    n_half = n_in // 2
-
-    #keys = [k for k in checkpoint.keys() if 'adjmat' in k]
-
-    if i_input is not None:
-        keys = ['adjmat_input_{}'.format(i_input)]
-    else:
-        keys = ['adjmat_input_{}'.format(i) for i in range(n_in)]
     np.random.seed(0)
     leg = []
     for key in keys:
 
         graph = checkpoint[key]
-        i_input_ = int(key.split('_')[2])
+        i_input_ = int(key.split('_')[-1])
 
         if color_scheme == 'dotted':
             i_color = i_input_ % 3
