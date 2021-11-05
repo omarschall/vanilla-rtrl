@@ -221,18 +221,18 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     for key in keys:
 
         if 'adjmat' in key:
-            checkpoint['backshared_' + key] = checkpoint[key][I_b][:,I_b]
-            reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:,I_f]
+            checkpoint['backshared_' + key] = checkpoint[key][I_b][:, I_b]
+            reference_checkpoint['forwardshared_' + key] = reference_checkpoint[key][I_f][:, I_f]
+            checkpoint[key] = checkpoint[key][I][:, I]
 
             if n_nodes < n_ref_nodes:
                 checkpoint['backembed_' + key] = np.zeros_like(reference_checkpoint[key])
-                for i in I_f:
-                    checkpoint['backembed_' + key][i] = reference_checkpoint[key][i]
+                for i, i_f in enumerate(I_f):
+                    checkpoint['backembed_' + key][i_f][I_f] = checkpoint[key][i]
             if n_nodes > n_ref_nodes:
                 reference_checkpoint['forwardembed_' + key] = np.zeros_like(checkpoint[key])
-                for i in I_b:
-                    reference_checkpoint['forwardembed_' + key][i] = checkpoint[key][i]
-            checkpoint[key] = checkpoint[key][I][:, I]
+                for i, i_f in enumerate(I_f):
+                    reference_checkpoint['forwardembed_' + key][i_f][I_f] = reference_checkpoint[key][i]
 
         if key == 'nodes':
             checkpoint[key] = checkpoint[key][I]
