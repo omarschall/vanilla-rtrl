@@ -324,6 +324,7 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
     fig = plt.figure(figsize=(10, 2 * len(signal_dicts[0].keys())))
     n_signals = len(signal_dicts)
 
+    signals_for_avg = {k: [] for k in signal_dicts[0].keys()}
     for i_signals, signals in enumerate(signal_dicts):
 
         keys = signals.keys()
@@ -351,6 +352,7 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
             else:
                 x = list(range(len(y)))
 
+            signals_for_avg[key].append(y)
             plt.plot(x, y - 1.2 * i_key, color='C{}'.format(i_key), alpha=alpha)
             leg.append(key)
 
@@ -359,6 +361,16 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
             plt.yticks([])
             if title is not None:
                 plt.title(title)
+
+    #Plot averages
+    for i_key, key in enumerate(signals_for_avg):
+        y_avg = np.array(signals_for_avg[key]).mean(0)
+
+        if x_values is not None:
+            x = x_values[:len(y)]
+        else:
+            x = list(range(len(y)))
+        plt.plot(x, y_avg - 1.2 * i_key, color='C{}'.format(i_key), alpha=1)
 
     return fig
 
