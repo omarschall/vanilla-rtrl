@@ -266,7 +266,7 @@ def weight_change_alignment_distance(checkpoint_1, checkpoint_2):
     running simulation object."""
 
     opt_1 = checkpoint_1['optimizer']
-    opt_2 = checkpoint_1['optimizer']
+    opt_2 = checkpoint_2['optimizer']
     dW_1 = np.concatenate([v.flatten() for v in opt_1.vel])
     dW_2 = np.concatenate([v.flatten() for v in opt_2.vel])
 
