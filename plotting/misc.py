@@ -367,9 +367,9 @@ def plot_multiple_signals(signal_dicts, key_restriction=None, title=None,
         y_avg = np.array(signals_for_avg[key]).mean(0)
 
         if x_values is not None:
-            x = x_values[:len(y)]
+            x = x_values[:len(y_avg)]
         else:
-            x = list(range(len(y)))
+            x = list(range(len(y_avg)))
         plt.plot(x, y_avg - 1.2 * i_key, color='C{}'.format(i_key), alpha=1)
 
     return fig
