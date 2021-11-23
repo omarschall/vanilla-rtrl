@@ -8,7 +8,7 @@ Learning_Algorithm.py, RFLO.py, Efficient_BPTT: update GRU parts, and work for G
 # Key problems
 1. recurrent update: GRU has its own update gate, so I wonder if we still need self.alpha, but I keep them both for now.
 2. propagation: From my test result, I think updates for get_a_jacobian() in GRU.py and Learning algorithms may have some mistakes. You may examine these parts if you have time.
-3. overflow problem: I firstly implemented Efficient_BPTT, and it caused considerable overflow problems when lr = 0.001. I use clip_norm to fix the problem.
+3. overflow problem: I firstly implemented Efficient_BPTT, and it caused considerable overflow problems when lr = 0.01. I use clip_norm to fix the problem.
 # Test cases
 1. model: RNN, learn_alg = RFLO(rnn, alpha=1, L2_reg=0.0001, L1_reg=0.0001),optimizer = SGD_Momentum(lr=0.01, mu=0.6)
 Works as usual. Proves the integration works well.
@@ -16,12 +16,6 @@ Works as usual. Proves the integration works well.
 loss: 0.205. Used clip_norm.
 3. model: GRU, learn_alg = RFLO(rnn, alpha=1, L2_reg=0.0001, L1_reg=0.0001),optimizer = SGD_Momentum(lr=0.01, mu=0.6)
 loss: 0.036.
-
-
-
-
-
-
 
 # vanilla-rtrl
 Real-time recurrent learning and approximations in traditional setting
