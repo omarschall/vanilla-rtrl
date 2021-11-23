@@ -1,7 +1,10 @@
 import numpy as np
+from functions import *
+
+
 
 class GRU:
-    """A gated recurrent neural network.
+    """A vanilla recurrent neural network.
 
     Obeys the forward equation (in TeX)
 
@@ -59,34 +62,40 @@ class GRU:
         a_J (numpy array): Array of shape (n_h, n_h) representing the Jacobian
             of the network at current time, based on the equation (in TeX)
             J_{ij} = \alpha\phi'(h_i) W_{rec,ij} + (1 - \alpha)\delta_{ij}."""
-
-    def __init__(self, W_in, W_rec, W_out, b_rec, b_out,
+    def __init__(self, Wz_in, Wr_in, Wh_in, Wz_rec, Wr_rec, Wh_rec, W_out, bz_rec, br_rec, bh_rec, b_out,
                  activation, alpha, output, loss):
-        """Initializes an RNN by specifying its initial parameter values;
-        its activation, output, and loss functions; and alpha."""
 
-        #Initial parameter values
-        self.W_in = W_in
-        self.W_rec = W_rec
+        # !!!: I add a new property for both GRU and RNN models so as to identify the model type
+        self.type = "gru"
+        self.Wz_in = Wz_in
+        self.Wz_rec = Wz_rec
+        self.Wr_in = Wr_in
+        self.Wr_rec = Wr_rec
+        self.Wh_in = Wh_in
+        self.Wh_rec = Wh_rec
         self.W_out = W_out
-        self.b_rec = b_rec
+
+        self.bz_rec = bz_rec
+        self.br_rec = br_rec
+        self.bh_rec = bh_rec
         self.b_out = b_out
 
         #Network dimensions
-        self.n_in = W_in.shape[1]
-        self.n_h = W_in.shape[0]
+        self.n_in = Wz_in.shape[1]
+        self.n_h = Wz_in.shape[0]
         self.n_out = W_out.shape[0]
 
         #Check dimension consistency.
-        assert self.n_h == W_rec.shape[0]
-        assert self.n_h == W_rec.shape[1]
-        assert self.n_h == W_in.shape[0]
+        assert self.n_h == Wz_rec.shape[0]
+        assert self.n_h == Wz_rec.shape[1]
+        assert self.n_h == Wz_in.shape[0]
         assert self.n_h == W_out.shape[1]
-        assert self.n_h == b_rec.shape[0]
+        assert self.n_h == bz_rec.shape[0]
         assert self.n_out == b_out.shape[0]
 
-        #Define shapes and params lists for convenience later.
-        self.params = [self.W_rec, self.W_in, self.b_rec,
+        self.params = [self.Wz_rec, self.Wz_in, self.bz_rec,
+                       self.Wr_rec, self.Wr_in, self.br_rec,
+                       self.Wh_rec, self.Wh_in, self.bh_rec,
                        self.W_out, self.b_out]
         self.shapes = [w.shape for w in self.params]
 
@@ -97,15 +106,17 @@ class GRU:
         self.loss = loss
 
         #Number of parameters
+        '''
         self.n_h_params = (self.W_rec.size +
                            self.W_in.size +
                            self.b_rec.size)
         self.n_params = (self.n_h_params +
                          self.W_out.size +
                          self.b_out.size)
+        '''
 
         #Params for L2 regularization
-        self.L2_indices = [0, 1, 3] #W_rec, W_in, W_out
+        self.L2_indices = [0, 1, 3, 4, 6, 7, 9]
 
         #Initial state values
         self.reset_network()
@@ -129,6 +140,8 @@ class GRU:
             self.h = kwargs['h']
         else: #Random reset by sigma if not.
             self.h = np.random.normal(0, sigma, self.n_h)
+            self.zz = np.random.normal(0, sigma, self.n_h)
+            self.r = np.random.normal(0, sigma, self.n_h)
 
         self.a = self.activation.f(self.h) #Specify activations by \phi.
 
@@ -136,6 +149,12 @@ class GRU:
             self.a = kwargs['a']
 
         self.z = self.W_out.dot(self.a) + self.b_out #Specify outputs from a
+
+    def z_out(self):
+        """Update outputs using current state of the network."""
+
+        self.z_prev = np.copy(self.z)
+        self.z = self.W_out.dot(self.a) + self.b_out
 
     def next_state(self, x, a=None, update=True, sigma=0):
         """Advances the network forward by one time step.
@@ -163,9 +182,22 @@ class GRU:
             self.x = x
             self.h_prev = np.copy(self.h)
             self.a_prev = np.copy(self.a)
+            self.zz_prev = np.copy(self.zz)
+            self.r_prev = np.copy(self.r)
 
-            self.h = (self.W_rec.dot(self.a) + self.W_in.dot(self.x) +
-                      self.b_rec) #Calculate new pre-activations
+            # !!!: I use zz instead of z because self.z is used for output
+            # !!!: You can see the process of GRU here
+            # !!!: In my understanding this sigmoid here is not flexible for change?
+            # !!!: So I import functions and use it here
+            self.zz = sigmoid.f(self.Wz_rec.dot(self.a) + self.Wz_in.dot(self.x) +
+                      self.bz_rec)
+            self.r = sigmoid.f(self.Wr_rec.dot(self.a) + self.Wr_in.dot(self.x) +
+                      self.br_rec)
+            self.h_ = self.activation.f(self.Wh_rec.dot(self.a*self.r) + self.Wh_in.dot(self.x) +
+                      self.bh_rec)
+            self.h = self.zz*self.a + (1-self.zz)*self.h_
+            # !!!: Here I don't know if I still need self.alpha for recurrent update
+            # !!!: when I have self.zz, so I keep them both for now.
             if sigma>0: #Add noise to h if sigma is more than 0.
                 self.noise = sigma * np.random.normal(0, self.alpha, self.n_h)
                 #self.h += self.noise
@@ -173,20 +205,18 @@ class GRU:
                 self.noise = 0
             #Implement recurrent update equation
             self.a = ((1 - self.alpha)*self.a +
-                      self.alpha*self.activation.f(self.h)) + self.noise
+                      self.alpha*self.h) + self.noise
         else: #Otherwise calculate would-be next state from provided input a.
-            h = self.W_rec.dot(a) + self.W_in.dot(x) + self.b_rec
-            ret = (1 - self.alpha)*a + self.alpha * self.activation.f(h)
+            z = sigmoid.f(self.Wz_rec.dot(a) + self.Wz_in.dot(x) + self.bz_rec)
+            r = sigmoid.f(self.Wr_rec.dot(a) + self.Wr_in.dot(x) + self.br_rec)
+            h_ = self.activation.f(self.Wh_rec.dot(a*r) + self.Wh_in.dot(x) + self.bh_rec) #Calculate new pre-activations
+            h = z*a + (1-z)*h_
+            ret = (1 - self.alpha)*a + self.alpha * h
             if sigma > 0:
                 noise = np.random.normal(0, sigma, self.n_h)
                 ret += noise
             return ret
 
-    def z_out(self):
-        """Update outputs using current state of the network."""
-
-        self.z_prev = np.copy(self.z)
-        self.z = self.W_out.dot(self.a) + self.b_out
 
     def get_a_jacobian(self, update=True, **kwargs):
         """Calculates the Jacobian of the network.
@@ -210,29 +240,46 @@ class GRU:
         #Use kwargs instead of defaults if provided
         if 'h' in kwargs.keys():
             h = kwargs['h']
+            zz = kwargs['zz']
+            r = kwargs['r']
         else:
             h = np.copy(self.h)
+            zz = np.copy(self.zz)
+            r = np.copy(self.r)
         if 'W_rec' in kwargs.keys():
-            W_rec = kwargs['W_rec']
+            Wz_rec = kwargs['W_rec']
         else:
-            W_rec = np.copy(self.W_rec)
+            Wz_rec = np.copy(self.Wz_rec)
+            Wr_rec = np.copy(self.Wr_rec)
+            Wh_rec = np.copy(self.Wh_rec)
 
         #Calculate Jacobian
-        D = np.diag(self.activation.f_prime(h)) #Nonlinearity derivative
-        a_J = self.alpha * D.dot(W_rec) + (1 - self.alpha) * np.eye(self.n_h)
+        Dh = np.diag(self.activation.f_prime(h))
+        Dzz = np.diag(self.activation.f_prime(h)*sigmoid.f_prime(zz))
+        Dr =np.diag(self.activation.f_prime(h) * sigmoid.f_prime(zz) * sigmoid.f_prime(r))
+        D = np.concatenate([Dzz,Dr,Dh])
+        WW = np.concatenate([Wz_rec,Wr_rec,Wh_rec],axis=1)
 
+        # !!!: Here I concatenate the derivative as a whole for later use
+        a_J = self.alpha * D.dot(WW) + (1 - self.alpha) * np.eye(3*self.n_h)
         if update: #Update if update is True
             self.a_J = np.copy(a_J)
         else: #Otherwise return
             return a_J
 
+    # !!!: I have very quick and intuitive implementations for functions below
+    # !!!: and they are not tested yet.
     def get_network_speed(self, a=None):
         """Calculates and returns the (squared) 'speed' of the network given
         its current state and parameters. Option to specify a state value."""
 
         if a is None:
             a = self.a
-        delta_a = self.activation.f(self.W_rec.dot(a) + self.b_rec) - a
+        z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
+        r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
+        h_ = self.activation.f(self.Wh_rec.dot(a * r) + self.bh_rec)
+        h = z*a + (1-z)*h_
+        delta_a = h - a
 
         return (self.alpha**2 / 2) * np.square(delta_a).sum()
 
@@ -243,11 +290,13 @@ class GRU:
         if a is None:
             a = self.a
 
-        h = self.W_rec.dot(a) + self.b_rec
-        phi = self.activation.f(h)
-        D = self.activation.f_prime(h)
+        z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
+        r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
+        h_ = self.Wh_rec.dot(a * r) + self.bh_rec
+        phi = z*a + (1-z)*self.activation.f(h_)
+        D = self.activation.f_prime(h_)
         delta_a = phi - a
-        delta_w = (D * self.W_rec.T).T - np.eye(self.n_h)
+        delta_w = (D * self.Wh_rec.T).T - np.eye(self.n_h)
         ret = delta_a.dot(delta_w)
 
         return (self.alpha**2) * ret
@@ -258,9 +307,12 @@ class GRU:
 
         if a is None:
             a = self.a
-        h = self.W_rec.dot(a) + self.b_rec
-        phi = self.activation.f(h)
-        D = self.activation.f_prime(h)
+
+        z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
+        r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
+        h_ = self.Wh_rec.dot(a * r) + self.bh_rec
+        phi = z*a + (1-z)*self.activation.f(h_)
+        D = self.activation.f_prime(h_)
         delta_a = phi - a
 
         x = np.zeros_like(self.x)

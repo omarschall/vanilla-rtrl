@@ -1,5 +1,6 @@
 from learning_algorithms.Learning_Algorithm import Learning_Algorithm
 import numpy as np
+from functions import *
 
 class RFLO(Learning_Algorithm):
     """Implements the Random-Feedback Local Online learning algorithm (RFLO)
@@ -37,7 +38,10 @@ class RFLO(Learning_Algorithm):
 
         self.alpha = alpha
         if self.B is None:
-            self.B = np.zeros((self.n_h, self.m))
+            if self.rnn.type == 'rnn':
+                self.B = np.zeros((self.n_h, self.m))
+            elif self.rnn.type == 'gru':
+                self.B = np.zeros((3*self.n_h, self.m))
 
     def update_learning_vars(self):
         """Updates B by one time step of temporal filtration via the invesre
@@ -47,11 +51,21 @@ class RFLO(Learning_Algorithm):
         self.a_hat = np.concatenate([self.rnn.a_prev,
                                      self.rnn.x,
                                      np.array([1])])
-        self.D = self.rnn.activation.f_prime(self.rnn.h)
-        self.M_immediate = self.alpha * np.multiply.outer(self.D, self.a_hat)
+        if self.rnn.type == 'gru':
+            D = self.rnn.activation.f_prime(self.rnn.h)
+            Dzz = self.alpha * self.rnn.activation.f_prime(self.rnn.h) * sigmoid.f_prime(self.rnn.zz)
+            Dr = self.alpha * self.rnn.activation.f_prime(self.rnn.h) * sigmoid.f_prime(self.rnn.zz) * sigmoid.f_prime(
+                self.rnn.r)
+            self.M_immediate = self.alpha * np.multiply.outer(np.concatenate([Dzz, Dr, D]), self.a_hat)
+            #Update eligibility traces
+            self.B = (1 - self.alpha) * self.B + self.M_immediate
+        elif self.rnn.type == 'rnn':
+            self.D = self.rnn.activation.f_prime(self.rnn.h)
+            self.M_immediate = self.alpha * np.multiply.outer(self.D, self.a_hat)
 
-        #Update eligibility traces
-        self.B = (1 - self.alpha) * self.B + self.M_immediate
+            # Update eligibility traces
+            self.B = (1 - self.alpha) * self.B + self.M_immediate
+
 
     def get_rec_grads(self):
         """Implements Eq. (2) from above."""

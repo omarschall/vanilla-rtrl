@@ -64,7 +64,7 @@ class RNN:
                  activation, alpha, output, loss):
         """Initializes an RNN by specifying its initial parameter values;
         its activation, output, and loss functions; and alpha."""
-
+        self.type = "rnn"
         #Initial parameter values
         self.W_in = W_in
         self.W_rec = W_rec

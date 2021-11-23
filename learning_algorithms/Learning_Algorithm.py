@@ -1,6 +1,7 @@
 import numpy as np
 from utils import split_weight_matrix, norm
 
+
 class Learning_Algorithm:
     """Parent class for all learning algorithms.
 
@@ -56,8 +57,10 @@ class Learning_Algorithm:
         self.n_h = self.rnn.n_h
         self.n_out = self.rnn.n_out
         self.m = self.n_h + self.n_in + 1
-        self.q = np.zeros(self.n_h)
-
+        if self.rnn.type == 'rnn':
+            self.q = np.zeros(self.n_h)
+        elif self.rnn.type == 'gru':
+            self.q = np.zeros(3*self.n_h)
     def get_outer_grads(self):
         """Calculates the derivative of the loss with respect to the output
         parameters rnn.W_out and rnn.b_out.
@@ -89,10 +92,26 @@ class Learning_Algorithm:
 
         self.q_prev = np.copy(self.q)
 
-        if self.W_FB is None:
-            self.q = self.rnn.error.dot(self.rnn.W_out)
-        else:
-            self.q = self.rnn.error.dot(self.W_FB)
+        #self.q = np.zeros(3*self.n_h)
+        if self.rnn.type == 'rnn':
+            if self.W_FB is None:
+                self.q = self.rnn.error.dot(self.rnn.W_out)
+            else:
+                self.q = self.rnn.error.dot(self.W_FB)
+        elif self.rnn.type == 'gru':
+            if self.W_FB is None:
+                qh = self.rnn.error.dot(self.rnn.W_out)
+                qz = self.rnn.error.dot(self.rnn.W_out)*(self.rnn.a_prev-self.rnn.h_)
+                qr = self.rnn.error.dot(self.rnn.W_out)*(self.rnn.activation.f_prime(
+                    self.rnn.Wh_rec.dot(self.rnn.a*self.rnn.r)).dot(self.rnn.Wh_rec))
+                self.q = np.concatenate([qz,qr,qh])
+            else:
+                qh = self.rnn.error.dot(self.W_FB)
+                qz = self.rnn.error.dot(self.W_FB)*(self.rnn.a_prev-self.rnn.h_)
+                qr = self.rnn.error.dot(self.W_FB)*(self.rnn.activation.f_prime(
+                    self.rnn.Wh_rec.dot(self.rnn.a*self.rnn.r)).dot(self.rnn.Wh_rec))
+                self.q = np.concatenate([qz,qr,qh])
+                self.q = self.rnn.error.dot(self.W_FB)
 
     def L2_regularization(self, grads):
         """Adds L2 regularization to the gradient.
@@ -179,8 +198,18 @@ class Learning_Algorithm:
         self.outer_grads = self.get_outer_grads()
         self.propagate_feedback_to_hidden()
         self.rec_grads = self.get_rec_grads()
-        rec_grads_list = split_weight_matrix(self.rec_grads,
-                                             [self.n_h, self.n_in, 1])
+        if self.rnn.type == 'gru':
+            original_rec_grads_list = split_weight_matrix(self.rec_grads,
+                                                 [self.n_h, self.n_in, 1])
+            rec_grads_list = []
+            for i in range(3):
+                rec_grads_list.append(np.split(original_rec_grads_list[0], 3)[i])
+                rec_grads_list.append(np.split(original_rec_grads_list[1], 3)[i])
+                rec_grads_list.append(np.split(original_rec_grads_list[2], 3)[i])
+        elif self.rnn.type == 'rnn':
+            rec_grads_list = split_weight_matrix(self.rec_grads,
+                                                          [self.n_h, self.n_in, 1])
+
         outer_grads_list = split_weight_matrix(self.outer_grads,
                                                [self.n_h, 1])
         grads_list = rec_grads_list + outer_grads_list

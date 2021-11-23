@@ -298,11 +298,17 @@ class Simulation:
         ### --- Pass gradients to optimizer --- ###
 
         #Only update on schedule (default update_interval=1)
+
         if self.i_t%self.update_interval == 0:
             #Get updated parameters
             rnn.params = self.optimizer.get_updated_params(rnn.params,
                                                            self.grads_list)
-            rnn.W_rec, rnn.W_in, rnn.b_rec, rnn.W_out, rnn.b_out = rnn.params
+            if rnn.type == 'gru':
+                rnn.Wz_rec, rnn.Wz_in, rnn.bz_rec, rnn.Wr_rec, rnn.Wr_in, rnn.br_rec, \
+                rnn.Wh_rec, rnn.Wh_in, rnn.bh_rec, rnn.W_out, rnn.b_out = rnn.params
+            elif rnn.type == 'rnn':
+                rnn.W_rec, rnn.W_in, rnn.b_rec, rnn.W_out, rnn.b_out = rnn.params
+
 
     def end_time_step(self, data):
         """Cleans up after each time step in the time loop."""
