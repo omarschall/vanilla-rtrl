@@ -74,7 +74,8 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
 
     return signals
 
-def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
+def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
+                                relative_weight_change=True):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -117,16 +118,25 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={}):
         checkpoints_lists.append(checkpoints)
         job_indices += [i_job] * len(indices)
 
+        if relative_weight_change:
+            W_init = checkpoints['checkpoint_0']['rnn'].W_rec
+        else:
+            W_init = None
+
         signals_ = {}
         for key in checkpoint_stats.keys():
 
-            stat_ = []
+            stats_ = []
 
             for i_index, index in enumerate(indices):
                 checkpoint = checkpoints['checkpoint_{}'.format(index)]
-                stat_.append(checkpoint_stats[key](checkpoint))
+                try:
+                    stat_ = checkpoint_stats[key](checkpoint, W_init=W_init)
+                except TypeError:
+                    stat_ = checkpoint_stats[key](checkpoint)
+                stats_.append(stat_)
 
-            signals_[key] = np.array(stat_)
+            signals_[key] = np.array(stats_)
 
         for key in result.keys():
 
