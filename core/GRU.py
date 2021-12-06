@@ -1,6 +1,7 @@
 import numpy as np
 from functions import *
 
+np.seterr(all='raise')
 
 
 class GRU:
@@ -62,6 +63,7 @@ class GRU:
         a_J (numpy array): Array of shape (n_h, n_h) representing the Jacobian
             of the network at current time, based on the equation (in TeX)
             J_{ij} = \alpha\phi'(h_i) W_{rec,ij} + (1 - \alpha)\delta_{ij}."""
+
     def __init__(self, Wz_in, Wr_in, Wh_in, Wz_rec, Wr_rec, Wh_rec, W_out, bz_rec, br_rec, bh_rec, b_out,
                  activation, alpha, output, loss):
 
@@ -80,12 +82,12 @@ class GRU:
         self.bh_rec = bh_rec
         self.b_out = b_out
 
-        #Network dimensions
+        # Network dimensions
         self.n_in = Wz_in.shape[1]
         self.n_h = Wz_in.shape[0]
         self.n_out = W_out.shape[0]
 
-        #Check dimension consistency.
+        # Check dimension consistency.
         assert self.n_h == Wz_rec.shape[0]
         assert self.n_h == Wz_rec.shape[1]
         assert self.n_h == Wz_in.shape[0]
@@ -98,14 +100,13 @@ class GRU:
                        self.Wh_rec, self.Wh_in, self.bh_rec,
                        self.W_out, self.b_out]
         self.shapes = [w.shape for w in self.params]
-
-        #Activation and loss functions
+        # Activation and loss functions
         self.alpha = alpha
         self.activation = activation
         self.output = output
         self.loss = loss
 
-        #Number of parameters
+        # Number of parameters
         '''
         self.n_h_params = (self.W_rec.size +
                            self.W_in.size +
@@ -115,10 +116,10 @@ class GRU:
                          self.b_out.size)
         '''
 
-        #Params for L2 regularization
+        # Params for L2 regularization
         self.L2_indices = [0, 1, 3, 4, 6, 7, 9]
 
-        #Initial state values
+        # Initial state values
         self.reset_network()
 
     def reset_network(self, sigma=1, **kwargs):
@@ -136,19 +137,20 @@ class GRU:
                 must be of shape (self.n_h). If not specified, determined
                 by h."""
 
-        if 'h' in kwargs.keys(): #Manual reset if specified.
+        if 'h' in kwargs.keys():  # Manual reset if specified.
             self.h = kwargs['h']
-        else: #Random reset by sigma if not.
+        else:  # Random reset by sigma if not.
             self.h = np.random.normal(0, sigma, self.n_h)
+            self.h_ = np.random.normal(0, sigma, self.n_h)
             self.zz = np.random.normal(0, sigma, self.n_h)
             self.r = np.random.normal(0, sigma, self.n_h)
 
-        self.a = self.activation.f(self.h) #Specify activations by \phi.
+        self.a = self.activation.f(self.h)  # Specify activations by \phi.
 
-        if 'a' in kwargs.keys(): #Override with manual activations if given.
+        if 'a' in kwargs.keys():  # Override with manual activations if given.
             self.a = kwargs['a']
 
-        self.z = self.W_out.dot(self.a) + self.b_out #Specify outputs from a
+        self.z = self.W_out.dot(self.a) + self.b_out  # Specify outputs from a
 
     def z_out(self):
         """Update outputs using current state of the network."""
@@ -178,7 +180,7 @@ class GRU:
             Updates self.x, self.h, self.a, and self.*_prev, or returns the
             would-be update from given previous state a."""
 
-        if update: #Update network if update is True
+        if update:  # Update network if update is True
             self.x = x
             self.h_prev = np.copy(self.h)
             self.a_prev = np.copy(self.a)
@@ -189,34 +191,31 @@ class GRU:
             # !!!: You can see the process of GRU here
             # !!!: In my understanding this sigmoid here is not flexible for change?
             # !!!: So I import functions and use it here
-            self.zz = sigmoid.f(self.Wz_rec.dot(self.a) + self.Wz_in.dot(self.x) +
-                      self.bz_rec)
-            self.r = sigmoid.f(self.Wr_rec.dot(self.a) + self.Wr_in.dot(self.x) +
-                      self.br_rec)
-            self.h_ = self.activation.f(self.Wh_rec.dot(self.a*self.r) + self.Wh_in.dot(self.x) +
-                      self.bh_rec)
-            self.h = self.zz*self.a + (1-self.zz)*self.h_
+            self.zz = self.Wz_rec.dot(self.a) + self.Wz_in.dot(self.x) + self.bz_rec
+            self.r = self.Wr_rec.dot(self.a) + self.Wr_in.dot(self.x) + self.br_rec
+            self.h_ = self.Wh_rec.dot(self.a * sigmoid.f(self.r)) + self.Wh_in.dot(self.x) + self.bh_rec
+            self.h = (1 - sigmoid.f(self.zz)) * self.a + sigmoid.f(self.zz) * self.activation.f(self.h_)
             # !!!: Here I don't know if I still need self.alpha for recurrent update
             # !!!: when I have self.zz, so I keep them both for now.
-            if sigma>0: #Add noise to h if sigma is more than 0.
+            if sigma > 0:  # Add noise to h if sigma is more than 0.
                 self.noise = sigma * np.random.normal(0, self.alpha, self.n_h)
-                #self.h += self.noise
+                # self.h += self.noise
             else:
                 self.noise = 0
-            #Implement recurrent update equation
-            self.a = ((1 - self.alpha)*self.a +
-                      self.alpha*self.h) + self.noise
-        else: #Otherwise calculate would-be next state from provided input a.
+            # Implement recurrent update equation
+            self.a = ((1 - self.alpha) * self.a +
+                      self.alpha * self.h) + self.noise
+        else:  # Otherwise calculate would-be next state from provided input a.
             z = sigmoid.f(self.Wz_rec.dot(a) + self.Wz_in.dot(x) + self.bz_rec)
             r = sigmoid.f(self.Wr_rec.dot(a) + self.Wr_in.dot(x) + self.br_rec)
-            h_ = self.activation.f(self.Wh_rec.dot(a*r) + self.Wh_in.dot(x) + self.bh_rec) #Calculate new pre-activations
-            h = z*a + (1-z)*h_
-            ret = (1 - self.alpha)*a + self.alpha * h
+            h_ = self.activation.f(
+                self.Wh_rec.dot(a * r) + self.Wh_in.dot(x) + self.bh_rec)  # Calculate new pre-activations
+            h = z * a + (1 - z) * h_
+            ret = (1 - self.alpha) * a + self.alpha * h
             if sigma > 0:
                 noise = np.random.normal(0, sigma, self.n_h)
                 ret += noise
             return ret
-
 
     def get_a_jacobian(self, update=True, **kwargs):
         """Calculates the Jacobian of the network.
@@ -237,13 +236,16 @@ class GRU:
                 what values of the recurrent weights to use in calculating
                 the Jacobian."""
 
-        #Use kwargs instead of defaults if provided
+        # Use kwargs instead of defaults if provided
         if 'h' in kwargs.keys():
             h = kwargs['h']
+            h_ = kwargs['h_']
+            a_prev = kwargs['a_prev']
             zz = kwargs['zz']
             r = kwargs['r']
         else:
             h = np.copy(self.h)
+            h_ = np.copy(self.h_)
             zz = np.copy(self.zz)
             r = np.copy(self.r)
         if 'W_rec' in kwargs.keys():
@@ -253,18 +255,19 @@ class GRU:
             Wr_rec = np.copy(self.Wr_rec)
             Wh_rec = np.copy(self.Wh_rec)
 
-        #Calculate Jacobian
-        Dh = np.diag(self.activation.f_prime(h))
-        Dzz = np.diag(self.activation.f_prime(h)*sigmoid.f_prime(zz))
-        Dr =np.diag(self.activation.f_prime(h) * sigmoid.f_prime(zz) * sigmoid.f_prime(r))
-        D = np.concatenate([Dzz,Dr,Dh])
-        WW = np.concatenate([Wz_rec,Wr_rec,Wh_rec],axis=1)
+        # Calculate Jacobian
+
+        Dzz = np.diag(sigmoid.f_prime(zz)).dot(Wz_rec)
+        Dr = np.diag(sigmoid.f(r)).dot(Wr_rec)
+        Dh = np.diag((1 - sigmoid.f(zz))) + Dzz.dot(self.activation.f(h_) - a_prev) + \
+             sigmoid.f(zz) * self.activation.f_prime(h_) * Wh_rec.dot(np.diag(sigmoid.f(r) + sigmoid.f_prime(r) * Wr_rec.dot(a_prev)))
+        D = np.concatenate([Dzz, Dr, Dh])
 
         # !!!: Here I concatenate the derivative as a whole for later use
-        a_J = self.alpha * D.dot(WW) + (1 - self.alpha) * np.eye(3*self.n_h)
-        if update: #Update if update is True
+        a_J = self.alpha * Dh
+        if update:  # Update if update is True
             self.a_J = np.copy(a_J)
-        else: #Otherwise return
+        else:  # Otherwise return
             return a_J
 
     # !!!: I have very quick and intuitive implementations for functions below
@@ -278,10 +281,10 @@ class GRU:
         z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
         r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
         h_ = self.activation.f(self.Wh_rec.dot(a * r) + self.bh_rec)
-        h = z*a + (1-z)*h_
+        h = z * a + (1 - z) * h_
         delta_a = h - a
 
-        return (self.alpha**2 / 2) * np.square(delta_a).sum()
+        return (self.alpha ** 2 / 2) * np.square(delta_a).sum()
 
     def get_network_speed_gradient(self, a=None):
         """Calculates and returns the gradient of the (squared) network speed
@@ -293,13 +296,13 @@ class GRU:
         z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
         r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
         h_ = self.Wh_rec.dot(a * r) + self.bh_rec
-        phi = z*a + (1-z)*self.activation.f(h_)
+        phi = z * a + (1 - z) * self.activation.f(h_)
         D = self.activation.f_prime(h_)
         delta_a = phi - a
         delta_w = (D * self.Wh_rec.T).T - np.eye(self.n_h)
         ret = delta_a.dot(delta_w)
 
-        return (self.alpha**2) * ret
+        return (self.alpha ** 2) * ret
 
     def get_network_speed_gradient_wrt_weights(self, a=None):
         """Calculates and returns the gradient of the (squared) network speed
@@ -311,11 +314,11 @@ class GRU:
         z = sigmoid.f(self.Wz_rec.dot(a) + self.bz_rec)
         r = sigmoid.f(self.Wr_rec.dot(a) + self.br_rec)
         h_ = self.Wh_rec.dot(a * r) + self.bh_rec
-        phi = z*a + (1-z)*self.activation.f(h_)
+        phi = z * a + (1 - z) * self.activation.f(h_)
         D = self.activation.f_prime(h_)
         delta_a = phi - a
 
         x = np.zeros_like(self.x)
         a_hat = np.concatenate([a, x, np.array([1])])
 
-        return (self.alpha**2) * (np.outer(D, a_hat).T * delta_a).T
+        return (self.alpha ** 2) * (np.outer(D, a_hat).T * delta_a).T

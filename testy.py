@@ -71,14 +71,14 @@ rnn = RNN(W_in, W_rec, W_out, b_rec, b_out,
 
 #activation: tanh
 #relu less stable, less lr for stablization
-#learn_alg = Efficient_BPTT(rnn, T_truncation=6)
+learn_alg = Efficient_BPTT(rnn, T_truncation=6)
 #learn_alg = DNI(rnn, sg_optimizer)
 #learn_alg = KF_RTRL(rnn, L2_reg=0.0001, L1_reg=0.0001)
-learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
+#learn_alg = RFLO(rnn, alpha=alpha, L2_reg=0.0001, L1_reg=0.0001)
 
 #mu= to what extent old gradient will be used.
 #add clip_norm = True for gru
-optimizer = SGD_Momentum(lr=0.01, mu=0.6)
+optimizer = SGD_Momentum(lr=0.001, mu=0.6)
 #optimizer = Stochastic_Gradient_Descent(lr=params['sg_lr'])
 
 

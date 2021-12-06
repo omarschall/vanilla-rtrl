@@ -100,18 +100,20 @@ class Learning_Algorithm:
                 self.q = self.rnn.error.dot(self.W_FB)
         elif self.rnn.type == 'gru':
             if self.W_FB is None:
+                '''
                 qh = self.rnn.error.dot(self.rnn.W_out)
                 qz = self.rnn.error.dot(self.rnn.W_out)*(self.rnn.a_prev-self.rnn.h_)
-                qr = self.rnn.error.dot(self.rnn.W_out)*(self.rnn.activation.f_prime(
-                    self.rnn.Wh_rec.dot(self.rnn.a*self.rnn.r)).dot(self.rnn.Wh_rec))
+                qr = self.rnn.error.dot(self.rnn.W_out).dot(self.rnn.zz) * (self.rnn.activation.f_prime(
+                    self.rnn.h_).dot(self.rnn.Wh_rec)) * self.rnn.a_prev
                 self.q = np.concatenate([qz,qr,qh])
+                '''
+                self.q = self.rnn.error.dot(self.rnn.W_out)
             else:
                 qh = self.rnn.error.dot(self.W_FB)
                 qz = self.rnn.error.dot(self.W_FB)*(self.rnn.a_prev-self.rnn.h_)
                 qr = self.rnn.error.dot(self.W_FB)*(self.rnn.activation.f_prime(
                     self.rnn.Wh_rec.dot(self.rnn.a*self.rnn.r)).dot(self.rnn.Wh_rec))
                 self.q = np.concatenate([qz,qr,qh])
-                self.q = self.rnn.error.dot(self.W_FB)
 
     def L2_regularization(self, grads):
         """Adds L2 regularization to the gradient.

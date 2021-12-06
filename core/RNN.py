@@ -219,6 +219,10 @@ class RNN:
 
         #Calculate Jacobian
         D = np.diag(self.activation.f_prime(h)) #Nonlinearity derivative
+        print(D.shape)
+        print(W_rec.shape)
+        print(np.eye(self.n_h).shape)
+        assert 1 == 0
         a_J = self.alpha * D.dot(W_rec) + (1 - self.alpha) * np.eye(self.n_h)
 
         if update: #Update if update is True

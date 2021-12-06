@@ -28,6 +28,9 @@ class Efficient_BPTT(Learning_Algorithm):
         if self.rnn.type == "gru":
             self.a_hat_history = []
             self.h_history = []
+            self.Wh_rec_history = []
+            self.h_hat_history = []
+            self.a_prev_history = []
             self.zz_history = []
             self.r_history = []
             self.q_history = []
@@ -47,6 +50,9 @@ class Efficient_BPTT(Learning_Algorithm):
                                                      ]))
         if self.rnn.type == "gru":
             self.h_history.insert(0, self.rnn.h)
+            self.Wh_rec_history.insert(0,self.rnn.Wh_rec)
+            self.h_hat_history.insert(0, self.rnn.h_)
+            self.a_prev_history.insert(0, self.rnn.a_prev)
             self.zz_history.insert(0, self.rnn.zz)
             self.r_history.insert(0, self.rnn.r)
             self.propagate_feedback_to_hidden()
@@ -88,21 +94,28 @@ class Efficient_BPTT(Learning_Algorithm):
 
                 if self.rnn.type == "gru":
                     h = self.h_history.pop(0)
+                    h_ = self.h_hat_history.pop(0)
                     zz = self.zz_history.pop(0)
                     r = self.r_history.pop(0)
+                    Wh_rec = self.Wh_rec_history.pop(0)
                     a_hat = self.a_hat_history.pop(0)
+                    a_prev = self.a_prev_history.pop(0)
                     # Use to get gradients w.r.t. weights from credit assignment
-                    D = self.rnn.alpha * self.rnn.activation.f_prime(h)
-                    Dzz = self.rnn.alpha * self.rnn.activation.f_prime(h)*sigmoid.f_prime(zz)
-                    Dr = self.rnn.alpha * self.rnn.activation.f_prime(h)* sigmoid.f_prime(zz) * sigmoid.f_prime(r)
-                    rec_grads += np.multiply.outer(c * np.concatenate([Dzz,Dr,D]), a_hat)
+                    D_h = self.rnn.alpha * sigmoid.f(zz) * self.rnn.activation.f_prime(h_)
+                    Dzz = self.rnn.alpha * self.rnn.activation.f_prime(h_) * sigmoid.f_prime(zz) * (
+                            self.rnn.activation.f(h_)-a_prev)
+                    Dr = self.rnn.alpha * sigmoid.f(zz) * Wh_rec.dot(a_prev) *  self.rnn.activation.f_prime(h_) * (sigmoid.f_prime(r))
+                    temp = np.multiply.outer(np.concatenate([c, c, c]) * np.concatenate([Dzz,Dr,D_h]), a_hat)
+                    temp[2*self.n_h:, :self.n_h] = temp[2*self.n_h:, :self.n_h]*sigmoid.f(r)
+                    rec_grads += temp
                     if i_BPTT == self.T_truncation - 1:  # Skip if at end
                         continue
 
                     # Use future-facing relation to backpropagate by one time step.
                     q = self.q_history.pop(0)
-                    J = self.rnn.get_a_jacobian(h=h, zz=zz, r=r, update=False)
+                    J = self.rnn.get_a_jacobian(h=h, zz=zz, r=r,h_=h_,a_prev=a_prev, update=False)
                     c = q + c.dot(J)
+
                 elif self.rnn.type == "rnn":
                     h = self.h_history.pop(0)
                     a_hat = self.a_hat_history.pop(0)
