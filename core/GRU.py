@@ -258,10 +258,8 @@ class GRU:
         # Calculate Jacobian
 
         Dzz = np.diag(sigmoid.f_prime(zz)).dot(Wz_rec)
-        Dr = np.diag(sigmoid.f(r)).dot(Wr_rec)
         Dh = np.diag((1 - sigmoid.f(zz))) + Dzz.dot(self.activation.f(h_) - a_prev) + \
              sigmoid.f(zz) * self.activation.f_prime(h_) * Wh_rec.dot(np.diag(sigmoid.f(r) + sigmoid.f_prime(r) * Wr_rec.dot(a_prev)))
-        D = np.concatenate([Dzz, Dr, Dh])
 
         # !!!: Here I concatenate the derivative as a whole for later use
         a_J = self.alpha * Dh
