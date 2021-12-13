@@ -110,3 +110,43 @@ def get_loss_from_checkpoints(sim, task, N_test):
     losses = np.array(losses)
 
     return losses
+
+
+def Flip_Flop_Ceni_Livi_solution(s, w_in, n):
+    """Generates parameters for an RNN hand-tuned to solve the flip-flop task
+    as shown in Ceni and Livi (2019).
+
+    Args:
+        s (float): must be between 0 and 2.15
+        w_in (float): must be positive
+        n (int): dimensionality of the Flip-Flop problem being solved.
+    Returns:
+        W_in (np.array): input weights
+        W_rec (np.array): recurrent weights
+        W_out (np.array): output weights
+        b_rec (np.array): recurrent biases
+        b_out (np.array): output biases"""
+
+    W_in = []
+    W_out = []
+    for i in range(n):
+        # Construct W_in component
+        W_in_ = np.zeros((2, n))
+        W_in_[1, i] = 1
+        W_in.append(W_in_)
+
+        # Construct W_out component
+        W_out_ = np.zeros((n, 2))
+        W_out_[i, 0] = 1
+        W_out.append(W_out_)
+
+    W_in = w_in * np.vstack(W_in)
+    W_out = np.hstack(W_out)
+
+    B = np.array([[1.1, 4], [-s, 4]])
+    W_rec = np.kron(np.eye(n), B)
+
+    b_rec = np.zeros(2 * n)
+    b_out = np.zeros(n)
+
+    return W_in, W_rec, W_out, b_rec, b_out
