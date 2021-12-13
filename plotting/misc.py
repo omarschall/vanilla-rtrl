@@ -472,7 +472,7 @@ def plot_3d_or_4d_array_of_config_results(configs_array, results_array, key_orde
 def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                                            key_order, sim_dict, data,
                                            task_dict=None, N_task_data=None,
-                                           xlim=500):
+                                           xlim=500, trace_spacing=2):
     """Given an array of configs (must be 2D) and corresponding results as
     floats, plots the result in a 2D grid averaging over random seeds."""
 
@@ -516,9 +516,9 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                              verbose=False)
 
                 for i in range(rnn.n_out):
-                    ax.plot(data['test']['X'][:, i] - i * 2, (str(0.6)))
-                    ax.plot(data['test']['Y'][:, i] - i * 2, 'C0')
-                    ax.plot(test_sim.mons['rnn.y_hat'][:, i] - i * 2, 'C3', alpha=0.7)
+                    ax.plot(data['test']['X'][:, i] - i * trace_spacing, (str(0.6)))
+                    ax.plot(data['test']['Y'][:, i] - i * trace_spacing, 'C0')
+                    ax.plot(test_sim.mons['rnn.y_hat'][:, i] - i * trace_spacing, 'C3', alpha=0.7)
                 if sim.time_steps_per_trial is not None:
                     for i in range(0, data['test']['X'].shape[0], sim.time_steps_per_trial):
                         ax.axvline(x=i, color='k', linestyle='--')
