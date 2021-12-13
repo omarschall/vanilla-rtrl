@@ -91,14 +91,14 @@ class Test_Network(unittest.TestCase):
     def test_get_network_speed(self):
 
         self.rnn.reset_network(a=np.ones(self.rnn.n_h))
-        correct_answer = 0.36 * np.square(np.tanh(2) - 1) * 8
+        correct_answer = 0.18 * np.square(np.tanh(2) - 1) * 8
         assert_allclose(self.rnn.get_network_speed(), correct_answer)
 
     def test_get_network_speed_gradient(self):
 
         self.rnn.reset_network(a=np.ones(self.rnn.n_h))
-        x = tanh.f_prime(2) * (np.tanh(2) - 1)
-        correct_answer = np.ones(8) * 1.2 * x
+        x = (tanh.f_prime(2) - 1) * (np.tanh(2) - 1)
+        correct_answer = np.ones(8) * 0.36 * x
         assert_allclose(self.rnn.get_network_speed_gradient(), correct_answer)
 
 if __name__=='__main__':

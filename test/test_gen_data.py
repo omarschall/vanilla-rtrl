@@ -105,16 +105,19 @@ class Test_Gen_Data(unittest.TestCase):
 
     def test_sequential_mnist(self):
 
-        task = Sequential_MNIST(28)
-        data = task.gen_data(100, 0)
+        try:
+            task = Sequential_MNIST(28)
+            data = task.gen_data(100, 0)
 
-        self.assertTrue(len(data['train']['X']) == 84)
-        for i in range(27):
-            self.assertTrue(np.isclose(data['train']['Y'][i,:],
-                                       data['train']['Y'][i+1,:]).all())
-        for i in range(28, 55):
-            self.assertTrue(np.isclose(data['train']['Y'][i,:],
-                                       data['train']['Y'][i+1,:]).all())
+            self.assertTrue(len(data['train']['X']) == 84)
+            for i in range(27):
+                self.assertTrue(np.isclose(data['train']['Y'][i,:],
+                                           data['train']['Y'][i+1,:]).all())
+            for i in range(28, 55):
+                self.assertTrue(np.isclose(data['train']['Y'][i,:],
+                                           data['train']['Y'][i+1,:]).all())
+        except FileNotFoundError:
+            pass
 
     def test_flip_flop(self):
 
@@ -127,7 +130,11 @@ class Test_Gen_Data(unittest.TestCase):
         self.assertTrue((data['train']['Y'][1:] ==
                          data['train']['X'][1:]).all())
 
+    def test_discrete_integration(self):
 
+        pass
+        #task = Discrete_Integration_Task(p_bit=0.05, p_reset=0.005)
+        #data = task.gen_data(40, 0)
 
 
 if __name__=='__main__':
