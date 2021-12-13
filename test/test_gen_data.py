@@ -132,10 +132,11 @@ class Test_Gen_Data(unittest.TestCase):
 
     def test_discrete_integration(self):
 
-        pass
-        #task = Discrete_Integration_Task(p_bit=0.05, p_reset=0.005)
-        #data = task.gen_data(40, 0)
+        task = Discrete_Integration_Task(p_bit=0.5, p_reset=0)
+        data = task.gen_data(20, 0)
 
+        self.assertTrue(np.isclose(np.sign(np.cumsum(data['train']['X'][:,0])),
+                                   data['train']['Y'][:,0]).all())
 
 if __name__=='__main__':
     unittest.main()
