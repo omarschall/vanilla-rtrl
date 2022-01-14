@@ -4,7 +4,8 @@ from gen_data.Task import Task
 class Discrete_Integration_Task(Task):
     """Class for the 1-dimensional discrete integration task."""
 
-    def __init__(self, p_bit=0.05, p_reset=0.005, tau_task=1):
+    def __init__(self, p_bit=0.05, p_reset=0.005, tau_task=1,
+                 reset_mode='random'):
         """Later
 
         Args:
@@ -19,6 +20,10 @@ class Discrete_Integration_Task(Task):
         self.p_bit = p_bit
         self.p_reset = p_reset
         self.tau_task = tau_task
+        self.reset_mode = reset_mode
+        self.probe_inputs = [np.array([1, 0]),
+                             np.array([-1, 0]),
+                             np.array([0, 1])]
 
     def gen_dataset(self, N):
 
@@ -27,7 +32,13 @@ class Discrete_Integration_Task(Task):
         probability = [self.p_bit / 2, 1 - self.p_bit, self.p_bit / 2]
         choices = [-1, 0, 1]
         x_bits = np.random.choice(choices, size=N, p=probability)
-        x_resets = np.random.binomial(1, self.p_reset, size=N)
+
+        if self.reset_mode == 'random':
+            x_resets = np.random.binomial(1, self.p_reset, size=N)
+        if self.reset_mode == 'regular':
+            x_resets = np.zeros_like(x_bits)
+            period = int(1 / self.p_reset)
+            x_resets[::period] = 1
 
         X = np.array([x_bits, x_resets]).T
         Y = np.zeros_like(X)
