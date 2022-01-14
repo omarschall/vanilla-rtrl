@@ -59,7 +59,8 @@ class Multi_Task:
 
             total_data['X'] = np.concatenate([total_data['X'], X], axis=0)
             total_data['Y'] = np.concatenate([total_data['Y'], Y], axis=0)
-            total_data['trial_type'] = np.concatenate([total_data['trial_type'], Y], axis=0)
+            if trial_type is not None:
+                total_data['trial_type'] = np.concatenate([total_data['trial_type'], trial_type], axis=0)
 
             task_marker.append(np.ones(N) * i_task)
 
