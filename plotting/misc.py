@@ -1,4 +1,5 @@
 from math import ceil
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import decimate
@@ -596,3 +597,8 @@ def plot_task_data(data, mode='train', time_points=100, curve_spacing=1.2):
     for i_y in range(y_dim):
         Y = data[mode]['Y'][:time_points, i_y]
         plt.plot(Y - curve_spacing * (i_y + x_dim), color='C3')
+
+def color_fader(color_1, color_2, mix=0):
+    color_1 = np.array(mpl.colors.to_rgb(color_1))
+    color_2 = np.array(mpl.colors.to_rgb(color_2))
+    return mpl.colors.to_hex((1 - mix) * color_1 + mix * color_2)
