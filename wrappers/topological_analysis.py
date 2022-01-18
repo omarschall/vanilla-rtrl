@@ -71,3 +71,5 @@ def topological_analysis(saved_run_name,
                n_array=1,
                py_file_name='compare_main.py',
                id_dependency=analysis_job_id)
+
+def submit_compare_job(dependency, cross=False)
