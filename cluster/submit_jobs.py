@@ -6,6 +6,7 @@ def submit_job(job_file_path, n_array,
                py_file_name=None,
                id_dependency=None,
                project_name='learning-dynamics',
+               results_subdir='misc',
                module_name='vanilla-rtrl',
                username='oem214'):
     """Submit an array job in reference to a particular job file, with a
@@ -15,7 +16,7 @@ def submit_job(job_file_path, n_array,
 
     job_name = job_file_path.split('/')[-1].split('.')[0]
     project_dir = os.path.join('/scratch/', username, project_name)
-    results_dir = os.path.join(project_dir, 'results', job_name)
+    results_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
     code_dir = os.path.join(results_dir, 'code')
     main_dir = os.path.join(project_dir, 'cluster_main_scripts')
     if py_file_name is None:
@@ -56,6 +57,7 @@ def submit_job(job_file_path, n_array,
 def write_job_file(job_name, py_file_name='main.py',
                    py_args='',
                    project_name='learning-dynamics',
+                   results_subdir='misc',
                    username='oem214',
                    nodes=1, ppn=1, mem=16, n_hours=8):
     """Create a job file for running a standard single-main-script job.
@@ -76,7 +78,7 @@ def write_job_file(job_name, py_file_name='main.py',
     project_dir = os.path.join('/scratch/', username, project_name)
     sbatch_dir = os.path.join(project_dir, 'job_scripts')
     main_dir = os.path.join(project_dir, 'cluster_main_scripts')
-    save_dir = os.path.join(project_dir, 'results', job_name)
+    save_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
 
     job_path = os.path.join(sbatch_dir, job_name + '.s')
     log_path = os.path.join(project_dir, 'logs', job_name)
@@ -140,12 +142,13 @@ def write_job_file(job_name, py_file_name='main.py',
 
 def unpack_processed_data(job_file_path,
                           project_name='learning-dynamics',
+                          results_subdir='misc',
                           username='oem214'):
     """Unpack processed data from an array job."""
 
     job_name = job_file_path.split('/')[-1].split('.')[0]
     project_dir = os.path.join('/scratch/', username, project_name)
-    data_dir = os.path.join(project_dir, 'results', job_name)
+    data_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
     dir_list = sorted([s for s in os.listdir(data_dir) if 'result' in s])
 
     max_seed = 0

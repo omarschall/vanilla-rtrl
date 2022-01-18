@@ -5,6 +5,7 @@ from dynamics import *
 def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                        compare_args,
                                        username='oem214',
+                                       notebook_dir=None,
                                        project_name='learning-dynamics'):
     """For a set of analysis results by root name, takes the analyzed
     checkpoints and computes neighboring distances in a matrix."""
@@ -29,7 +30,11 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
     results_dir = os.path.join(project_dir, 'results/')
-    saved_runs_dir = os.path.join(project_dir, 'notebooks/', 'saved_runs/')
+    if notebook_dir is None:
+        saved_runs_dir = os.path.join(project_dir, 'notebooks', 'saved_runs')
+    else:
+        saved_runs_dir = os.path.join(notebook_dir, 'saved_runs')
+
 
     ### --- Loop through each individual analysis job --- ###
 
@@ -44,8 +49,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         analysis_dir = os.path.join(results_dir, analysis_job_name)
 
         saved_run_name = analysis_job_name.split('analyze_')[-1]
-        saved_run_path = os.path.join(project_dir, 'notebooks', 'saved_runs',
-                                      saved_run_name)
+        saved_run_path = os.path.join(saved_runs_dir, saved_run_name)
         with open(saved_run_path, 'rb') as f:
             saved_run = pickle.load(f)
         task = saved_run['task']

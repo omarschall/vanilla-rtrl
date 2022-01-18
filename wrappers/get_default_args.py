@@ -1,3 +1,5 @@
+import os
+
 def get_default_args():
     """Produce and return a dictionary with the default args for the topological
     analysis pipeline."""
@@ -37,5 +39,6 @@ def get_default_args():
             all_args['{}_{}'.format(meta_key, key)] = arg_dict[key]
 
     all_args['n_checkpoints_per_job_'] = None
+    all_args['notebook_dir'] = os.getcwd()
 
     return all_args
