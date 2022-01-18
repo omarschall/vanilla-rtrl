@@ -5,7 +5,7 @@ from netcomp.distance import netsimile
 from pyemd import emd
 from sklearn.cross_decomposition import CCA
 from utils import norm, normalized_dot_product
-from dynamics.VAE import test_vae
+#from dynamics.VAE import test_vae
 
 def wasserstein_distance(checkpoint_1, checkpoint_2):
     """Calculates the Wassterstein ("Earth Mover's") distance between the
@@ -209,12 +209,12 @@ def PC_distance_3(checkpoint_1, checkpoint_2, N_avg=None, N_test=2000,
 
 
 
-def VAE_distance(checkpoint_1, checkpoint_2, big_data):
-    """Returns the reconstruction error of trajectories sampled from the RNN
-    of checkpoint_2 by the VAE trained on the RNN of checkpoint_1."""
-
-    return test_vae(model_checkpoint=checkpoint_1, data=big_data,
-                    test_checkpoint=checkpoint_2)
+# def VAE_distance(checkpoint_1, checkpoint_2, big_data):
+#     """Returns the reconstruction error of trajectories sampled from the RNN
+#     of checkpoint_2 by the VAE trained on the RNN of checkpoint_1."""
+#
+#     return test_vae(model_checkpoint=checkpoint_1, data=big_data,
+#                     test_checkpoint=checkpoint_2)
 
 def aligned_graph_distance(checkpoint_1, checkpoint_2, node_diff_penalty=1,
                            n_inputs=6):
