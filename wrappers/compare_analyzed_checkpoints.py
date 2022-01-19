@@ -30,7 +30,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
     ### --- Get paths, extract and unpack data --- ###
 
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
-    results_dir = os.path.join(project_dir, 'results/')
+    results_dir = os.path.split(os.environ['SAVEDIR'])[0]
     analysis_dir = os.path.join(results_dir, analysis_job_name)
 
     saved_run_name = analysis_job_name.split('analyze_')[-1]

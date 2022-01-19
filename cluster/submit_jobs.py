@@ -36,7 +36,7 @@ def submit_job(job_file_path, n_array,
     ### --- Copy state of module to code dir --- ###
 
     module_dir = os.path.join('/scratch/', username, module_name)
-    get_ipython().system('rsync -aav {} {}'.format(module_dir, code_dir))
+    get_ipython().system('rsync -aav --exclude __pycache__ {} {}'.format(module_dir, code_dir))
     get_ipython().system('scp {} {}'.format(main_path, code_dir))
 
     ### --- Include dependencies on previous jobs --- ###
