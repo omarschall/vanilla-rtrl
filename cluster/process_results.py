@@ -45,8 +45,7 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
     compare_job_name = 'compare_{}'.format(saved_run_name)
 
     project_dir = os.path.join('/scratch/', username, project_name)
-    results_dir = os.path.join(project_dir, 'results',
-                               results_subdir, saved_run_name)
+    results_dir = os.path.join(project_dir, 'results', results_subdir)
     analysis_result_path = os.path.join(results_dir, analysis_job_name)
     compare_result_path = os.path.join(results_dir, compare_job_name)
 
@@ -95,7 +94,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     ### --- Get paths, extract and unpack compare data --- ###
 
-    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
+    project_dir = os.path.join('/scratch/', username, project_name)
     results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
     saved_runs_dir = 'saved_runs'
 
