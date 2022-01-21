@@ -18,4 +18,5 @@ compare_args = {k.split('compare_')[1]: all_args[k]
                 for k in all_args.keys() if 'compare_' in k}
 
 compare_analyzed_checkpoints(analysis_job_name,
-                             compare_args=compare_args)
+                             compare_args=compare_args,
+                             notebook_dir=all_args['notebook_dir'])

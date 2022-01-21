@@ -6,6 +6,7 @@ from wrappers.get_default_args import get_default_args
 def cross_topological_analysis(saved_run_root_name,
                                project_name='learning-dynamics',
                                module_name='vanilla-rtrl',
+                               results_subdir='misc',
                                username='oem214',
                                ppn=16,
                                n_checkpoints_per_job_=None,
@@ -36,6 +37,7 @@ def cross_topological_analysis(saved_run_root_name,
     all_args_dict = get_default_args()
     all_args_dict.update(kwargs)
     all_args_dict['n_checkpoints_per_job_'] = n_checkpoints_per_job_
+    all_args_dict['results_subdir'] = results_subdir
 
     with open(args_path, 'wb') as f:
         pickle.dump(all_args_dict, f)

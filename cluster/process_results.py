@@ -30,7 +30,9 @@ def unpack_analysis_results(data_path):
 
 
 def unpack_compare_result(saved_run_name, checkpoint_stats={},
-                          results_dir='/scratch/oem214/learning-dynamics/results/'):
+                          project_name='learning-dynamics',
+                          results_subdir='misc',
+                          username='oem214'):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -42,6 +44,8 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
     compare_job_name = 'compare_{}'.format(saved_run_name)
 
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_dir = os.path.join(project_dir, 'results', results_subdir)
     analysis_result_path = os.path.join(results_dir, analysis_job_name)
     compare_result_path = os.path.join(results_dir, compare_job_name)
 
@@ -75,7 +79,10 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
     return signals
 
 def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
-                                relative_weight_change=True):
+                                relative_weight_change=True,
+                                project_name='learning-dynamics',
+                                results_subdir='misc',
+                                username='oem214'):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -87,13 +94,12 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     ### --- Get paths, extract and unpack compare data --- ###
 
-    project_dir = os.path.join('/scratch/{}/'.format('oem214'),
-                               'learning-dynamics')
-    results_dir = os.path.join(project_dir, 'results/')
-    saved_runs_dir = os.path.join(project_dir, 'notebooks/', 'saved_runs/')
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
+    saved_runs_dir = 'saved_runs'
 
     compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
-    compare_result_path = os.path.join(results_dir, compare_job_name)
+    compare_result_path = os.path.join(results_subdir_abs, compare_job_name)
     with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
         result = pickle.load(f)
     result['job_indices'] = np.array(result['job_indices'])
@@ -110,7 +116,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     signal_dicts = {}
     for i_job, analysis_job_name in enumerate(analysis_job_names):
-        analysis_dir = os.path.join(results_dir, analysis_job_name)
+        analysis_dir = os.path.join(results_subdir_abs, analysis_job_name)
 
         # Unpack data
         indices, checkpoints = unpack_analysis_results(analysis_dir)

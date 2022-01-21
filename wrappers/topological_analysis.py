@@ -6,6 +6,7 @@ from wrappers.get_default_args import get_default_args
 def topological_analysis(saved_run_name,
                          project_name='learning-dynamics',
                          module_name='vanilla-rtrl',
+                         results_subdir='misc',
                          username='oem214',
                          ppn=16,
                          n_checkpoints_per_job_=None,
@@ -45,6 +46,7 @@ def topological_analysis(saved_run_name,
     all_args_dict = get_default_args()
     all_args_dict.update(kwargs)
     all_args_dict['n_checkpoints_per_job_'] = n_checkpoints_per_job_
+    all_args_dict['results_subdir'] = results_subdir
 
     with open(args_path, 'wb') as f:
         pickle.dump(all_args_dict, f)
@@ -54,10 +56,12 @@ def topological_analysis(saved_run_name,
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
 
     write_job_file(analysis_job_name, py_file_name='analyze_main.py',
+                   results_subdir=results_subdir,
                    py_args='--name {}'.format(saved_run_name), ppn=ppn)
     get_ipython().system('cp {} {}'.format(analyze_main_path, cluster_main_dir))
     analysis_job_id = submit_job('../job_scripts/{}.s'.format(analysis_job_name),
                                  n_array=n_jobs,
+                                 results_subdir=results_subdir,
                                  py_file_name='analyze_main.py')
 
     ### -- Submit compare job script when done
@@ -65,9 +69,11 @@ def topological_analysis(saved_run_name,
     compare_job_name = 'compare_{}'.format(saved_run_name)
 
     write_job_file(compare_job_name, py_file_name='compare_main.py',
+                   results_subdir=results_subdir,
                    py_args='--name {}'.format(saved_run_name))
     get_ipython().system('cp {} {}'.format(compare_main_path, cluster_main_dir))
     submit_job('../job_scripts/{}.s'.format(compare_job_name),
                n_array=1,
+               results_subdir=results_subdir,
                py_file_name='compare_main.py',
                id_dependency=analysis_job_id)

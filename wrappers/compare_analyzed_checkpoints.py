@@ -5,6 +5,7 @@ from dynamics import *
 def compare_analyzed_checkpoints(analysis_job_name,
                                  compare_args,
                                  username='oem214',
+                                 notebook_dir=None,
                                  project_name='learning-dynamics'):
     """For a given analysis job name, takes the analyzed checkpoints and
     computes neighboring distances in a matrix along the off-diagonal for
@@ -29,12 +30,15 @@ def compare_analyzed_checkpoints(analysis_job_name,
     ### --- Get paths, extract and unpack data --- ###
 
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
-    results_dir = os.path.join(project_dir, 'results/')
+    results_dir = os.path.split(os.environ['SAVEDIR'])[0]
     analysis_dir = os.path.join(results_dir, analysis_job_name)
 
     saved_run_name = analysis_job_name.split('analyze_')[-1]
-    saved_run_path = os.path.join(project_dir, 'notebooks', 'saved_runs',
-                                  saved_run_name)
+    if notebook_dir is None:
+        saved_runs_dir = os.path.join(project_dir, 'notebooks', 'saved_runs')
+    else:
+        saved_runs_dir = os.path.join(notebook_dir, 'saved_runs')
+    saved_run_path = os.path.join(saved_runs_dir, saved_run_name)
     with open(saved_run_path, 'rb') as f:
         saved_run = pickle.load(f)
     task = saved_run['task']
