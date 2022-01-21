@@ -67,6 +67,7 @@ def cross_topological_analysis(saved_run_root_name,
         get_ipython().system('cp {} {}'.format(analyze_main_path, cluster_main_dir))
         analysis_job_id = submit_job('../job_scripts/{}.s'.format(analysis_job_name),
                                      n_array=n_jobs,
+                                     results_subdir=results_subdir,
                                      py_file_name='analyze_main.py')
         analysis_job_ids.append(analysis_job_id)
 
@@ -82,5 +83,6 @@ def cross_topological_analysis(saved_run_root_name,
     get_ipython().system('cp {} {}'.format(compare_main_path, cluster_main_dir))
     submit_job('../job_scripts/{}.s'.format(compare_job_name),
                n_array=1,
+               results_subdir=results_subdir,
                py_file_name='cross_compare_main.py',
                id_dependency=analysis_id_dependency)
