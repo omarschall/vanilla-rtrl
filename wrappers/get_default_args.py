@@ -6,7 +6,8 @@ def get_default_args():
 
     default_FP_args = {'find_FPs': True, 'sigma_pert': 0.5, 'N': 1200,
                        'KE_criterion': 0.001, 'N_iters': 10000,
-                       'same_LR_criterion': 9000, 'sigma': 0}
+                       'same_LR_criterion': 9000, 'sigma': 0,
+                       'DB_eps': 0.5}
     default_test_args = {'N': 10000, 'n_PCs': 3, 'save_data': False}
     default_graph_args = {'N': 100, 'time_steps': 50, 'epsilon': 0.01,
                           'sigma': 0}

@@ -21,6 +21,7 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
                        n_PCs=3, context=None, KE_criterion=None,
                        reference_checkpoint=None,
                        sigma=0,
+                       DB_eps=0.5,
                        **kwargs):
 
     print('Analyzing checkpoint {}...'.format(checkpoint['i_t']))
@@ -52,7 +53,7 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
         A_init = A_init[idx]
         KE = KE[idx]
 
-    dbscan = DBSCAN(eps=0.5)
+    dbscan = DBSCAN(eps=DB_eps)
     dbscan.fit(A)
     dbscan.labels_
 
