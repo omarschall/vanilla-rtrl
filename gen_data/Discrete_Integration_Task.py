@@ -5,7 +5,7 @@ class Discrete_Integration_Task(Task):
     """Class for the 1-dimensional discrete integration task."""
 
     def __init__(self, p_bit=0.05, p_reset=0.005, tau_task=1,
-                 reset_mode='random'):
+                 reset_mode='random', report_count=False):
         """Later
 
         Args:
@@ -21,6 +21,7 @@ class Discrete_Integration_Task(Task):
         self.p_reset = p_reset
         self.tau_task = tau_task
         self.reset_mode = reset_mode
+        self.report_count = report_count
         self.probe_inputs = [np.array([1, 0]),
                              np.array([-1, 0]),
                              np.array([0, 1])]
@@ -49,7 +50,11 @@ class Discrete_Integration_Task(Task):
         for i_t_reset, t_reset in enumerate(t_resets):
 
             x_interval = x_bits[t_reset_prev:t_reset]
-            Y[t_reset_prev:t_reset, 0] = np.sign(np.cumsum(x_interval))
+            counts = np.cumsum(x_interval)
+            if self.report_count:
+                Y[t_reset_prev:t_reset, 0] = counts
+            else:
+                Y[t_reset_prev:t_reset, 0] = np.sign(counts)
 
             t_reset_prev = t_reset
 
