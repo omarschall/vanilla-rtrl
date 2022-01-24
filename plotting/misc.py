@@ -5,6 +5,7 @@ import numpy as np
 from scipy.signal import decimate
 from scipy.ndimage.filters import uniform_filter1d
 from sklearn.manifold import MDS, TSNE
+from utils import get_param_values_from_list_of_config_strings
 
 def plot_eigenvalues(*matrices, fig=None, return_fig=False):
     """Plots eigenvalues of a given matrix in the complex plane, as well
@@ -602,3 +603,51 @@ def color_fader(color_1, color_2, mix=0):
     color_1 = np.array(mpl.colors.to_rgb(color_1))
     color_2 = np.array(mpl.colors.to_rgb(color_2))
     return mpl.colors.to_hex((1 - mix) * color_1 + mix * color_2)
+
+def plot_array_of_signals(signal_dicts, root_name,
+                          signal_keys=[], x_values=None, return_fig=False,
+                          alpha=1):
+
+    param_values = get_param_values_from_list_of_config_strings(signal_dicts,
+                                                                root_name=root_name)
+
+    value_keys = [k for k in param_values.keys() if k != 'seed']
+    if len(value_keys) > 2:
+        raise ValueError('Must be no more than 2 parameter variations')
+    if len(value_keys) == 1:
+        #Add dummy parameter
+        param_values['dummy'] = [0]
+        value_keys.append('dummy')
+
+    n_x = len(param_values[value_keys[0]])
+    n_y = len(param_values[value_keys[1]])
+    fig, ax = plt.subplots(n_x, n_y)
+
+    for i_x in range(n_x):
+        for i_y in range(n_y):
+            for i_seed in param_values['seed']:
+
+                file_name = root_name + '_seed={}'.format(i_seed)
+                for k in param_values.keys():
+                    file_name += '_{}={}'.format(k, str(param_values[k]).replace('.', ','))
+
+                for key in signal_keys():
+
+                    y = signal_dicts[file_name][key]
+
+                    if x_values is not None:
+                        x = x_values[:len(y)]
+                    else:
+                        x = list(range(len(y)))
+
+                    ax[i_x, i_y].plot(x, y, alpha=alpha)
+
+            if i_x == 0:
+                ax[i_x, i_y].set_title('{} = {}'.format(value_keys[1],
+                                                        param_values[value_keys[1]]))
+            if i_y == 0:
+                ax[i_x, i_y].set_ylabel('{} = {}'.format(value_keys[1],
+                                                        param_values[value_keys[0]]))
+
+    if return_fig:
+        return fig

@@ -29,7 +29,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     ### --- Get paths, extract and unpack data --- ###
 
     project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
-    results_dir = os.path.join(project_dir, 'results/')
+    results_dir = os.path.split(os.environ['SAVEDIR'])[0]
     if notebook_dir is None:
         saved_runs_dir = os.path.join(project_dir, 'notebooks', 'saved_runs')
     else:
