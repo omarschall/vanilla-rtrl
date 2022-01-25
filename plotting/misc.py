@@ -606,12 +606,16 @@ def color_fader(color_1, color_2, mix=0):
 
 def plot_array_of_signals(signal_dicts, root_name,
                           signal_keys=[], x_values=None, return_fig=False,
-                          alpha=1):
+                          alpha=1, fig_width=3.4252, fig_length=4,
+                          swap_order=False):
 
-    param_values = get_param_values_from_list_of_config_strings(signal_dicts,
-                                                                root_name=root_name)
+    param_values, key_order = get_param_values_from_list_of_config_strings(signal_dicts,
+                                                                           root_name=root_name)
 
-    value_keys = [k for k in param_values.keys() if k != 'seed']
+    value_keys = [k for k in key_order if k != 'seed']
+    if swap_order:
+        value_keys = value_keys[::-1]
+
     if len(value_keys) > 2:
         raise ValueError('Must be no more than 2 parameter variations')
     if len(value_keys) == 1:
@@ -621,17 +625,22 @@ def plot_array_of_signals(signal_dicts, root_name,
 
     n_x = len(param_values[value_keys[0]])
     n_y = len(param_values[value_keys[1]])
-    fig, ax = plt.subplots(n_x, n_y)
+
+    fig, ax = plt.subplots(n_x, n_y, figsize=(fig_width, fig_length))
 
     for i_x in range(n_x):
         for i_y in range(n_y):
             for i_seed in param_values['seed']:
 
-                file_name = root_name + '_seed={}'.format(i_seed)
-                for k in param_values.keys():
-                    file_name += '_{}={}'.format(k, str(param_values[k]).replace('.', ','))
+                file_name = 'analyze_' + root_name + '_seed={}'.format(i_seed)
+                if not swap_order:
+                    file_name += '_{}={}'.format(value_keys[0], str(param_values[value_keys[0]][i_x]).replace('.', ','))
+                    file_name += '_{}={}'.format(value_keys[1], str(param_values[value_keys[1]][i_y]).replace('.', ','))
+                if swap_order:
+                    file_name += '_{}={}'.format(value_keys[1], str(param_values[value_keys[1]][i_y]).replace('.', ','))
+                    file_name += '_{}={}'.format(value_keys[0], str(param_values[value_keys[0]][i_x]).replace('.', ','))
 
-                for key in signal_keys():
+                for i_key, key in enumerate(signal_keys):
 
                     y = signal_dicts[file_name][key]
 
@@ -640,14 +649,14 @@ def plot_array_of_signals(signal_dicts, root_name,
                     else:
                         x = list(range(len(y)))
 
-                    ax[i_x, i_y].plot(x, y, alpha=alpha)
+                    ax[i_x, i_y].plot(x, y, color='C{}'.format(i_key), alpha=alpha)
 
             if i_x == 0:
                 ax[i_x, i_y].set_title('{} = {}'.format(value_keys[1],
-                                                        param_values[value_keys[1]]))
+                                                        param_values[value_keys[1]][i_y]))
             if i_y == 0:
-                ax[i_x, i_y].set_ylabel('{} = {}'.format(value_keys[1],
-                                                        param_values[value_keys[0]]))
+                ax[i_x, i_y].set_ylabel('{} = {}'.format(value_keys[0],
+                                                         param_values[value_keys[0]][i_x]))
 
     if return_fig:
         return fig

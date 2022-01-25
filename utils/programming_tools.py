@@ -47,14 +47,19 @@ def get_param_values_from_list_of_config_strings(key_iterable, root_name):
         root_name (str): The root name of the array of simulations
 
     Returns:
-        A dictionary of parameter names corresponding to sorted lists of the
-        possible values they may take on."""
+        param_values (dict): A dictionary of parameter names corresponding to
+            sorted lists of the possible values they may take on.
+        key_order (list): An ordered list of keys for parameters (including
+            seed)."""
 
     param_values = {}
-    for k in key_iterable:
+    for i_k, k in enumerate(key_iterable):
 
         config_str = k.split('analyze_' + root_name)[-1]
         key_value_pairs = [s.split('=') for s in config_str.split('_')][1:]
+
+        if i_k == 0:
+            key_order = [kvp[0] for kvp in key_value_pairs]
 
         for kvp in key_value_pairs:
             try:
@@ -70,4 +75,4 @@ def get_param_values_from_list_of_config_strings(key_iterable, root_name):
     for k in param_values.keys():
         param_values[k] = sorted(list(param_values[k]))
 
-    return param_values
+    return param_values, key_order
