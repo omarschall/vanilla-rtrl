@@ -26,6 +26,8 @@ def unpack_analysis_results(data_path):
     indices = sorted([int(k.split('_')[-1]) for k in
                       checkpoints.keys() if 'checkpoint' in k])
 
+    indices = np.array(indices)
+
     return indices, checkpoints
 
 
