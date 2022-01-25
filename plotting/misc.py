@@ -268,7 +268,8 @@ def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False
 
 
 def plot_signals(signals, key_restriction=None, title=None, x_values=None,
-                 signal_clips={}, colors=None, legend=True):
+                 signal_clips={}, colors=None, legend=True,
+                 stage_assignments=None):
     """For a dictionary of 1D time series signals, plots each vertically
     in a min-max range from 0 to 1.
 
@@ -306,6 +307,13 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
 
         plt.plot(x, y - 1.2 * i_key, color=colors[i_key])
         leg.append(key)
+
+    if stage_assignments is not None:
+        ylim = -1.2 * (len(keys) -1)
+        for i in range(4):
+            x_stage = np.where(stage_assignments == i + 1)
+            plt.fill_between(x=x_stage, y1=0, y2=ylim, color='C{}'.format(i),
+                             alpha=0.3)
 
     if legend:
         plt.legend(leg)
