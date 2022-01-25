@@ -1,7 +1,7 @@
-from numpy import np
+import numpy as np
 
 def assign_time_points_to_stages(signal_dict, performance_criterion,
-                                 topological_crtierion, window_duration=10):
+                                 topological_criterion, window_duration=10):
     """Takes a dictionary of signals, which must include 'test_loss' and
     'aligned_graph_distances', and returns an array of stage assignments.
 
@@ -40,7 +40,7 @@ def assign_time_points_to_stages(signal_dict, performance_criterion,
     padded_metric = np.concatenate([np.zeros(window_duration - 1), top_metric])
     convolved_metric = np.convolve(padded_metric, kernel, mode='valid')
 
-    constant_topology = convolved_metric < topological_crtierion
+    constant_topology = convolved_metric < topological_criterion
 
     ### --- Assign time points to stages --- ###
 
