@@ -303,7 +303,7 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         if x_values is not None:
             x = x_values[:len(y)]
         else:
-            x = list(range(len(y)))
+            x = np.array(range(len(y)))
 
         plt.plot(x, y - 1.2 * i_key, color=colors[i_key])
         leg.append(key)
@@ -311,7 +311,7 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
     if stage_assignments is not None:
         ylim = -1.2 * (len(keys) -1)
         for i in range(4):
-            x_stage = np.where(stage_assignments == i + 1)
+            x_stage = x[stage_assignments == i + 1]
             plt.fill_between(x=x_stage, y1=0, y2=ylim, color='C{}'.format(i),
                              alpha=0.3)
 

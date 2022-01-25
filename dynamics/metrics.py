@@ -32,7 +32,7 @@ def assign_time_points_to_stages(signal_dict, performance_criterion,
     reflected_loss = np.concatenate([loss[window_duration-1:0:-1], loss])
     convolved_loss = np.convolve(reflected_loss, kernel, mode='valid')
 
-    good_performance = convolved_loss < performance_criterion
+    good_performance = (convolved_loss < performance_criterion)[:-1]
 
     ### --- Zero-pad top. metric for causal convolution --- ###
 
@@ -54,6 +54,8 @@ def assign_time_points_to_stages(signal_dict, performance_criterion,
                                               good_performance))] = 3
     stage_assignments[np.where(np.logical_and(constant_topology,
                                               good_performance))] = 4
+
+    stage_assignments = stage_assignments.astype(np.int)
 
     return stage_assignments
 
