@@ -673,3 +673,28 @@ def plot_array_of_signals(signal_dicts, root_name,
 
     if return_fig:
         return fig
+
+def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
+                              fig_width=3.4252, fig_length=4,
+                              return_fig=True):
+    """Plots histograms of stage assignment time points for different RNN
+    training runs.
+
+    Optional argument for colors, a list which must have same length as
+    list_of_stage_assignments with a color for each run."""
+
+    fig = plt.figure(figsize=(fig_width, fig_length))
+
+    for i_sa, stage_assignments in enumerate(list_of_stage_assignments):
+        bins, counts = np.histogram(stage_assignments,
+                                    bins=[0.5, 1.5, 2.5, 3.5, 4.5])
+
+        if colors is not None:
+            col = colors[i_sa]
+        else:
+            col = 'C0'
+
+        plt.plot(list(range(4)), counts, alpha=0.6, color=col)
+
+    if return_fig:
+        return fig
