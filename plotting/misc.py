@@ -676,7 +676,7 @@ def plot_array_of_signals(signal_dicts, root_name,
 
 def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
                               fig_width=3.4252, fig_length=4,
-                              return_fig=True):
+                              return_fig=False):
     """Plots histograms of stage assignment time points for different RNN
     training runs.
 
@@ -686,7 +686,7 @@ def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
     fig = plt.figure(figsize=(fig_width, fig_length))
 
     for i_sa, stage_assignments in enumerate(list_of_stage_assignments):
-        bins, counts = np.histogram(stage_assignments,
+        counts, bins = np.histogram(stage_assignments,
                                     bins=[0.5, 1.5, 2.5, 3.5, 4.5])
 
         if colors is not None:
