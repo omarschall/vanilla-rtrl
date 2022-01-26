@@ -309,11 +309,16 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         leg.append(key)
 
     if stage_assignments is not None:
+        if x_values is not None:
+            x = x_values[:len(stage_assignments)]
+        else:
+            x = np.array(range(len(stage_assignments)))
         ylim = -1.2 * (len(keys) -1)
         for i in range(4):
-            x_stage = x[stage_assignments == i + 1]
-            plt.fill_between(x=x_stage, y1=0, y2=ylim, color='C{}'.format(i),
-                             alpha=0.3)
+            #x_stage = x[stage_assignments == i + 1]
+            where_ = stage_assignments == i + 1
+            plt.fill_between(x=x, y1=1, y2=ylim, color='C{}'.format(i),
+                             alpha=0.3, where=where_)
 
     if legend:
         plt.legend(leg)
