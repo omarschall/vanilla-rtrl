@@ -49,9 +49,20 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
 
     if KE_criterion is not None:
         idx = np.where(KE < KE_criterion)
-        A = A[idx]
-        A_init = A_init[idx]
-        KE = KE[idx]
+        A_KE_crit_pass = A[idx]
+        A_init_KE_crit_pass = A_init[idx]
+        KE_crit_pass = KE[idx]
+
+        while A_KE_crit_pass.size == 0:
+            KE_criterion *= 3
+            idx = np.where(KE < KE_criterion)
+            A_KE_crit_pass = A[idx]
+            A_init_KE_crit_pass = A_init[idx]
+            KE_crit_pass = KE[idx]
+
+        A = A_KE_crit_pass
+        A_init = A_init_KE_crit_pass
+        KE = KE_crit_pass
 
     dbscan = DBSCAN(eps=DB_eps)
     dbscan.fit(A)
@@ -81,6 +92,7 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
     #Save results
     checkpoint['fixed_points'] = A
     checkpoint['KE'] = KE
+    checkpoint['KE_criterion'] = KE_criterion
     checkpoint['cluster_means'] = cluster_means
     checkpoint['cluster_labels'] = dbscan.labels_
     checkpoint['V'] = V
