@@ -16,6 +16,10 @@ class Multi_Task:
                 which task is to be performed."""
 
         self.tasks = {i: tasks[i] for i in range(len(tasks))}
+        try:
+            self.probe_inputs = tasks[-1].probe_inputs
+        except AttributeError:
+            pass
         self.context_input = context_input
         self.n_tasks = len(self.tasks)
 
@@ -89,5 +93,8 @@ class Multi_Task:
                 task_id = (np.ones(N_test) * i_task).astype(np.int)
                 context = np.eye(self.n_tasks)[task_id]
                 data[key]['X'] = np.hstack([data[key]['X'], context])
+
+            if i_task == len(self.tasks.keys()) - 1:
+                data['test'] = data[key]
 
         return data

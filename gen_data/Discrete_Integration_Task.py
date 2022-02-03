@@ -66,7 +66,7 @@ class Discrete_Integration_Task(Task):
 
         return X, Y, None
 
-    def get_dataset_2(self, N):
+    def gen_dataset_2(self, N):
 
         period = int(1 / self.p_reset)
         N_trials = N // period
@@ -75,10 +75,12 @@ class Discrete_Integration_Task(Task):
         Y = []
 
         for i_trial in range(N_trials):
-            final_net_count = np.random.uniform([-self.max_count,
-                                                 self.max_count])
+            final_net_count = np.random.randint(low=-self.max_count,
+                                                high=self.max_count + 1)
             min_positive = np.maximum(0, final_net_count)
-            max_positive = 0.5 * floor(self.max_total_inputs + final_net_count)
+            #from pdb import set_trace
+            #set_trace()
+            max_positive = floor(0.5 * (self.max_total_inputs + final_net_count))
             final_positive_count = np.random.randint(low=min_positive,
                                                      high=max_positive + 1)
             final_negative_count = final_positive_count - final_net_count
@@ -108,14 +110,18 @@ class Discrete_Integration_Task(Task):
 
             Y.append(y_trial)
 
-        X = np.concatenate(X, axis=0)
-        Y = np.concatenate(Y, axis=0)
+        try:
+            X = np.concatenate(X, axis=0)
+            Y = np.concatenate(Y, axis=0)
+        except ValueError:
+            X = None
+            Y = None
 
         return X, Y, None
 
     def gen_dataset(self, N):
 
-        if self.uniform_count_stats:
-            return self.get_dataset_1(N)
+        if not self.uniform_count_stats:
+            return self.gen_dataset_1(N)
         else:
             return self.gen_dataset_2(N)
