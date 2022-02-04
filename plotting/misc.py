@@ -698,3 +698,29 @@ def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
 
     if return_fig:
         return fig
+
+def plot_bar_time_spent_in_stages(list_of_stage_assignments, color='C0',
+                                  fig_width=3.4252, fig_length=4,
+                                  return_fig=False):
+    """Plots histograms of stage assignment time points for different RNN
+    training runs.
+
+    Optional argument for colors, a list which must have same length as
+    list_of_stage_assignments with a color for each run."""
+
+    fig = plt.figure(figsize=(fig_width, fig_length))
+
+    bins = np.array([0.5, 1.5, 2.5, 3.5, 4.5])
+    stage_assignments_hists = [np.histogram(sa, bins=bins)[0]
+                               for sa in list_of_stage_assignments]
+    stage_assignments_hists = np.array(stage_assignments_hists)
+
+    mu = stage_assignments_hists.mean(0)
+    error = stage_assignments_hists.std(0) / np.sqrt(stage_assignments_hists.shape[0] - 1)
+
+    plt.bar(bins[:-1] + 0.5, mu, color=color,
+            align='center', alpha=0.5)
+    plt.errorbar(bins[:-1] + 0.5, mu, yerr=error, color=color)
+
+    if return_fig:
+        return fig
