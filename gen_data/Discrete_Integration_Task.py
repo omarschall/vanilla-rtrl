@@ -8,7 +8,7 @@ class Discrete_Integration_Task(Task):
     def __init__(self, p_bit=0.05, p_reset=0.005, tau_task=1,
                  reset_mode='random', report_count=False,
                  uniform_count_stats=False, max_count=5,
-                 max_total_inputs=12):
+                 max_total_inputs=12, delay=5):
         """Later
 
         Args:
@@ -31,6 +31,7 @@ class Discrete_Integration_Task(Task):
         self.uniform_count_stats = uniform_count_stats
         self.max_count = max_count
         self.max_total_inputs = max_total_inputs
+        self.delay = delay
 
     def gen_dataset_1(self, N):
 
@@ -69,7 +70,7 @@ class Discrete_Integration_Task(Task):
     def gen_dataset_2(self, N):
 
         period = int(1 / self.p_reset)
-        N_trials = N // period
+        N_trials = N // (period + self.delay)
 
         X = []
         Y = []
@@ -86,7 +87,7 @@ class Discrete_Integration_Task(Task):
             final_negative_count = final_positive_count - final_net_count
 
             #Randomly put these positive and negative counts into boxes
-            x_trial = np.zeros((period, 2))
+            x_trial = np.zeros((period + self.delay, 2))
             time_indices = list(range(period))
             positive_input_indices = np.random.choice(time_indices,
                                                       size=final_positive_count,
@@ -103,10 +104,11 @@ class Discrete_Integration_Task(Task):
 
             X.append(x_trial)
 
-            y_trial = np.zeros((period, 2))
+            y_trial = np.zeros((period + self.delay, 2))
             y_trial[:, 0] = np.cumsum(x_trial[:, 0])
             if not self.report_count:
                 y_trial[:, 0] = np.sign(y_trial[:, 0])
+
 
             Y.append(y_trial)
 
