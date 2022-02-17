@@ -269,7 +269,7 @@ def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False
 
 def plot_signals(signals, key_restriction=None, title=None, x_values=None,
                  signal_clips={}, colors=None, legend=True,
-                 stage_assignments=None):
+                 stage_assignments=None, stage_assignment_colors=None):
     """For a dictionary of 1D time series signals, plots each vertically
     in a min-max range from 0 to 1.
 
@@ -309,6 +309,11 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         leg.append(key)
 
     if stage_assignments is not None:
+        if stage_assignment_colors is None:
+            sa_colors = ['C{}'.format(i) for i in range(4)]
+        else:
+            sa_colors = stage_assignment_colors
+
         if x_values is not None:
             x = x_values[:len(stage_assignments)]
         else:
@@ -317,7 +322,7 @@ def plot_signals(signals, key_restriction=None, title=None, x_values=None,
         for i in range(4):
             #x_stage = x[stage_assignments == i + 1]
             where_ = stage_assignments == i + 1
-            plt.fill_between(x=x, y1=1, y2=ylim, color='C{}'.format(i),
+            plt.fill_between(x=x, y1=1, y2=ylim, color=sa_colors[i],
                              alpha=0.3, where=where_)
 
     if legend:
@@ -620,10 +625,15 @@ def color_fader(color_1, color_2, mix=0):
 def plot_array_of_signals(signal_dicts, root_name,
                           signal_keys=[], x_values=None, return_fig=False,
                           alpha=1, fig_width=3.4252, fig_length=4,
-                          swap_order=False):
+                          swap_order=False, param_values_=None,
+                          key_order_=None):
 
-    param_values, key_order = get_param_values_from_list_of_config_strings(signal_dicts,
-                                                                           root_name=root_name)
+    if param_values_ is None or key_order_ is None:
+        param_values, key_order = get_param_values_from_list_of_config_strings(signal_dicts,
+                                                                               root_name=root_name)
+    else:
+        param_values = param_values_
+        key_order = key_order_
 
     value_keys = [k for k in key_order if k != 'seed']
     if swap_order:
@@ -633,7 +643,7 @@ def plot_array_of_signals(signal_dicts, root_name,
         raise ValueError('Must be no more than 2 parameter variations')
     if len(value_keys) == 1:
         #Add dummy parameter
-        param_values['dummy'] = [0]
+        param_values['dummy'] = [0, 1]
         value_keys.append('dummy')
 
     n_x = len(param_values[value_keys[0]])
@@ -652,6 +662,9 @@ def plot_array_of_signals(signal_dicts, root_name,
                 if swap_order:
                     file_name += '_{}={}'.format(value_keys[1], str(param_values[value_keys[1]][i_y]).replace('.', ','))
                     file_name += '_{}={}'.format(value_keys[0], str(param_values[value_keys[0]][i_x]).replace('.', ','))
+
+                if 'dummy' in file_name:
+                    file_name = file_name.split('_dummy')[0]
 
                 for i_key, key in enumerate(signal_keys):
 
