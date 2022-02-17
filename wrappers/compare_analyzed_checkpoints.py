@@ -50,9 +50,9 @@ def compare_analyzed_checkpoints(analysis_job_name,
     indices, checkpoints = unpack_analysis_results(analysis_dir)
 
     if VAE_:
-        big_data = task.gen_data(100, 20000)
+        big_data = task.gen_data(1000, 20000)
     if SVCCA or CKA:
-        data = task.gen_data(100, 10000)
+        data = task.gen_data(1000, 10000)
 
     ### --- Initialize dissimilarity matrices --- ###
 

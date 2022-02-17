@@ -51,7 +51,7 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
     ### --- Analyze each checkpoint --- ###
 
     result = {}
-    data = task.gen_data(100, 30000)
+    data = task.gen_data(1000, 30000)
 
     for i_index in range(i_index_start, i_index_end):
 

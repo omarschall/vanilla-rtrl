@@ -64,9 +64,9 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         job_indices += [i_job] * len(indices)
 
     if VAE_:
-        big_data = task.gen_data(100, 20000)
+        big_data = task.gen_data(1000, 20000)
     if SVCCA:
-        data = task.gen_data(100, 10000)
+        data = task.gen_data(1000, 10000)
 
     ### --- Initialize dissimilarity matrices --- ###
 
