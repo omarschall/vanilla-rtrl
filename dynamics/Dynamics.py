@@ -70,10 +70,14 @@ def analyze_checkpoint(checkpoint, data, N_iters=8000,
 
     cluster_idx = np.unique(dbscan.labels_)
     n_clusters = len(cluster_idx) - (-1 in cluster_idx)
-    cluster_means = np.zeros((n_clusters, rnn.n_h))
+    if n_clusters == 0:
+        n_clusters_ = 1
+    else:
+        n_clusters_ = n_clusters
+    cluster_means = np.zeros((n_clusters_, rnn.n_h))
     for i in cluster_idx:
 
-        if i == -1:
+        if i == -1 and n_clusters > 0:
             continue
         else:
             cluster_means[i] = A[dbscan.labels_ == i].mean(0)

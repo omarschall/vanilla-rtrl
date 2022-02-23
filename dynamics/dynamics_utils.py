@@ -137,7 +137,7 @@ def concatenate_simulation_checkpoints(simulations):
     return ret
 
 def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
-                                      n_inputs=6):
+                                      n_inputs=6, output_perm=None):
     """Align a pair of checkpoints, i.e. re-index the arbitrary order of fixed
     points implied by the transition probability matrices.
 
@@ -165,6 +165,9 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
     ref_outputs = np.vstack(ref_outputs)
     outputs = [rnn.output.f(rnn.W_out.dot(node) + rnn.b_out) for node in nodes]
     outputs = np.vstack(outputs)
+
+    if output_perm is not None:
+        outputs = outputs[:, output_perm]
 
     #Collect all pairwise distances between ref and target checkpoint outputs
     #at each pair of fixed points.
