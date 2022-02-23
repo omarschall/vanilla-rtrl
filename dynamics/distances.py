@@ -1,5 +1,6 @@
-from dynamics.dynamics_utils import get_test_sim_data
+from dynamics.dynamics_utils import get_test_sim_data, align_checkpoints_based_on_output
 from dynamics.Dynamics import Vanilla_PCA
+from itertools import permutations
 import numpy as np
 from netcomp.distance import netsimile
 from pyemd import emd
@@ -217,35 +218,80 @@ def PC_distance_3(checkpoint_1, checkpoint_2, N_avg=None, N_test=2000,
 #                     test_checkpoint=checkpoint_2)
 
 def aligned_graph_distance(checkpoint_1, checkpoint_2, node_diff_penalty=1,
-                           n_inputs=6):
+                           n_inputs=6, minimize_over_permutations=False):
     """Returns the custom graph similarity metric for aligned nodes.
 
     We assume checkpoint_2 *follows* checkpoint_1, i.e. checkpoint_1 was used
     to align the nodes of checkpoint_2.
     """
 
-    n_1 = checkpoint_1['nodes'].shape[0]
-    n_2 = checkpoint_2['nodes'].shape[0]
+    if not minimize_over_permutations:
+        align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                          n_inputs=n_inputs)
 
-    if n_1 == n_2:
-        base_key_1 = 'forwardshared_adjmat_input'
-        base_key_2 = 'backshared_adjmat_input'
-    if n_1 > n_2:
-        base_key_1 = 'adjmat_input'
-        base_key_2 = 'backembed_adjmat_input'
-    if n_1 < n_2:
-        base_key_1 = 'forwardembed_adjmat_input'
-        base_key_2 = 'adjmat_input'
+        n_1 = checkpoint_1['nodes'].shape[0]
+        n_2 = checkpoint_2['nodes'].shape[0]
+
+        if n_1 == n_2:
+            base_key_1 = 'forwardshared_adjmat_input'
+            base_key_2 = 'backshared_adjmat_input'
+        if n_1 > n_2:
+            base_key_1 = 'adjmat_input'
+            base_key_2 = 'backembed_adjmat_input'
+        if n_1 < n_2:
+            base_key_1 = 'forwardembed_adjmat_input'
+            base_key_2 = 'adjmat_input'
 
 
-    adjmats_1 = [checkpoint_1[base_key_1 + '_{}'.format(i)] for i in range(n_inputs)]
-    adjmats_2 = [checkpoint_2[base_key_2 + '_{}'.format(i)] for i in range(n_inputs)]
+        adjmats_1 = [checkpoint_1[base_key_1 + '_{}'.format(i)] for i in range(n_inputs)]
+        adjmats_2 = [checkpoint_2[base_key_2 + '_{}'.format(i)] for i in range(n_inputs)]
 
-    ret = 1 - sum([normalized_dot_product(M1, M2) for M1, M2 in zip(adjmats_1, adjmats_2)]) / n_inputs
+        ret = 1 - sum([normalized_dot_product(M1, M2) for M1, M2 in zip(adjmats_1, adjmats_2)]) / n_inputs
 
-    ret = ret + node_diff_penalty * np.abs(n_1 - n_2) / max(n_1, n_2)
+        ret = ret + node_diff_penalty * np.abs(n_1 - n_2) / max(n_1, n_2)
 
-    return ret
+        return ret
+    else:
+        n_out = checkpoint_1['rnn'].n_out
+        distances = []
+        perms = list(permutations(range(n_out)))
+        for perm in perms:
+            align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                              n_inputs=n_inputs,
+                                              output_perm=perm)
+
+            n_1 = checkpoint_1['nodes'].shape[0]
+            n_2 = checkpoint_2['nodes'].shape[0]
+
+            if n_1 == n_2:
+                base_key_1 = 'forwardshared_adjmat_input'
+                base_key_2 = 'backshared_adjmat_input'
+            if n_1 > n_2:
+                base_key_1 = 'adjmat_input'
+                base_key_2 = 'backembed_adjmat_input'
+            if n_1 < n_2:
+                base_key_1 = 'forwardembed_adjmat_input'
+                base_key_2 = 'adjmat_input'
+
+            adjmats_1 = [checkpoint_1[base_key_1 + '_{}'.format(i)] for i in range(n_inputs)]
+            adjmats_2 = [checkpoint_2[base_key_2 + '_{}'.format(i)] for i in range(n_inputs)]
+
+            distance = 1 - sum([normalized_dot_product(M1, M2)
+                                for M1, M2 in zip(adjmats_1, adjmats_2)]) / n_inputs
+
+            distance = distance + node_diff_penalty * np.abs(n_1 - n_2) / max(n_1, n_2)
+            distances.append(distance)
+
+        i_min_perm = np.argmin(distances)
+        min_perm = perms[i_min_perm]
+
+        checkpoint_2['backalign_output_perm'] = min_perm
+        align_checkpoints_based_on_output(checkpoint_2, checkpoint_1,
+                                          n_inputs=n_inputs,
+                                          output_perm=min_perm)
+
+        return distances[i_min_perm]
+
 
 def node_diff_distance(checkpoint_1, checkpoint_2):
     """Returns the node_diff
