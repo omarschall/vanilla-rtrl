@@ -26,7 +26,8 @@ def get_default_args():
                             'weight_change_alignment': False,
                             'n_inputs': 6,
                             'align_checkpoints': True,
-                            'n_comp_window': 'full'}
+                            'n_comp_window': 'full',
+                            'minimize_over_permutations': True}
 
     all_args = {}
 

@@ -172,7 +172,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                                                        checkpoint_2,
                                                                        node_diff_penalty=0,
                                                                        n_inputs=compare_args['n_inputs'],
-                                                                       minimize_over_permutations=True)
+                                                                       minimize_over_permutations=compare_args['minimize_over_permutations'])
             if node_diff:
                 node_diff_distances[i, j] = node_diff_distance(checkpoint_1,
                                                                checkpoint_2)
