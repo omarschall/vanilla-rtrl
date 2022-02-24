@@ -50,7 +50,10 @@ def cross_topological_analysis(saved_run_root_name,
             saved_run = pickle.load(f)
 
         sim = saved_run['sim']
-        indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
+        if type(sim.checkpoint_interval) is int:
+            indices = list(range(0, sim.total_time_steps, sim.checkpoint_interval))
+        elif type(sim.checkpoint_interval) is list:
+            indices = sim.checkpoint_interval
         n_checkpoints = len(indices)
         if n_checkpoints_per_job_ is None:
             n_checkpoints_per_job = ceil(n_checkpoints / 1000)
