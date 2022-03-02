@@ -40,7 +40,15 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     analysis_job_names = ['analyze_' + sr for sr in os.listdir(saved_runs_dir)
                           if saved_run_root_name in sr]
-    analysis_job_names = sorted(analysis_job_names)
+    if compare_args['cross_param_ordering'] is None:
+        analysis_job_names = sorted(analysis_job_names)
+    else:
+        hashes = [''] * len(analysis_job_names)
+        for key in compare_args['cross_param_ordering']:
+            for i_ajn, ajn in enumerate(analysis_job_names):
+                value = ajn.split(key+'=')[-1].split('_')[0]
+                hashes[i_ajn] += value
+        analysis_job_names = [analysis_job_names[i] for i in np.argsort(hashes)]
 
     all_indices = []
     checkpoints_lists = []
