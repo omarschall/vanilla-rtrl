@@ -192,7 +192,10 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
             break
         else:
             corr_node_output_distances.append(d_min)
-            corr_node_distances.append(norm(ref_nodes[x] - nodes[y]))
+            try:
+                corr_node_distances.append(norm(ref_nodes[x] - nodes[y]))
+            except ValueError:
+                corr_node_output_distances.append(None)
 
         #Track original indices of ref and target
         I_x.append(x)
@@ -239,6 +242,7 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
 
         if key == 'nodes':
             checkpoint[key] = checkpoint[key][I]
+
 
     checkpoint['corr_node_distances'] = [corr_node_distances[i_x]
                                          for i_x in np.argsort(I_x)]
