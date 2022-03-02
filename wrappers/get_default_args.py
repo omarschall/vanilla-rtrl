@@ -27,7 +27,8 @@ def get_default_args():
                             'n_inputs': 6,
                             'align_checkpoints': True,
                             'n_comp_window': 'full',
-                            'minimize_over_permutations': True}
+                            'minimize_over_permutations': True,
+                            'cross_param_ordering': None}
 
     all_args = {}
 
