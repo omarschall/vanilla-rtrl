@@ -9,6 +9,7 @@ def topological_analysis(saved_run_name,
                          results_subdir='misc',
                          username='oem214',
                          ppn=16,
+                         compare_only=False,
                          n_checkpoints_per_job_=None,
                          **kwargs):
     """Wrapper script for taking a saved run by its name, analyzing each
@@ -51,18 +52,22 @@ def topological_analysis(saved_run_name,
     with open(args_path, 'wb') as f:
         pickle.dump(all_args_dict, f)
 
-    ### --- Submit analysis job script --- ###
+    if not compare_only:
 
-    analysis_job_name = 'analyze_{}'.format(saved_run_name)
+        ### --- Submit analysis job script --- ###
 
-    write_job_file(analysis_job_name, py_file_name='analyze_main.py',
-                   results_subdir=results_subdir,
-                   py_args='--name {}'.format(saved_run_name), ppn=ppn)
-    get_ipython().system('cp {} {}'.format(analyze_main_path, cluster_main_dir))
-    analysis_job_id = submit_job('../job_scripts/{}.s'.format(analysis_job_name),
-                                 n_array=n_jobs,
-                                 results_subdir=results_subdir,
-                                 py_file_name='analyze_main.py')
+        analysis_job_name = 'analyze_{}'.format(saved_run_name)
+
+        write_job_file(analysis_job_name, py_file_name='analyze_main.py',
+                       results_subdir=results_subdir,
+                       py_args='--name {}'.format(saved_run_name), ppn=ppn)
+        get_ipython().system('cp {} {}'.format(analyze_main_path, cluster_main_dir))
+        analysis_job_id = submit_job('../job_scripts/{}.s'.format(analysis_job_name),
+                                     n_array=n_jobs,
+                                     results_subdir=results_subdir,
+                                     py_file_name='analyze_main.py')
+    else:
+        analysis_job_id = None
 
     ### -- Submit compare job script when done
 
