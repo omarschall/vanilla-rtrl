@@ -45,7 +45,8 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
                                   i_input=None, plotting_noise=0.05,
                                   return_fig=False, n_inputs=None,
                                   color_scheme='dotted',
-                                  colors=None,):
+                                  colors=None,
+                                  circle_radius=0.18):
 
     if n_inputs is None:
         n_in = 6
@@ -78,7 +79,8 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
     #plot little circles
     theta = np.arange(0, 2 * np.pi, 0.01)
     for node in circle_nodes:
-        plt.plot(node[0] + 0.18 * np.cos(theta), node[1] + 0.18 * np.sin(theta),
+        plt.plot(node[0] + circle_radius * np.cos(theta),
+                 node[1] + circle_radius * np.sin(theta),
                  color=('0.6'))
 
     np.random.seed(0)
