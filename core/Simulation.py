@@ -245,7 +245,7 @@ class Simulation:
             self.i_trial = self.i_t//self.time_steps_per_trial
             try:
                 self.rnn.trial_type = self.trial_type[self.i_t]
-            except AttributeError:
+            except TypeError:
                 pass
             if self.reset_sigma is not None:
                 self.rnn.reset_network(sigma=self.reset_sigma)

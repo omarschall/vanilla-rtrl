@@ -195,7 +195,7 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
             try:
                 corr_node_distances.append(norm(ref_nodes[x] - nodes[y]))
             except ValueError:
-                corr_node_output_distances.append(None)
+                corr_node_distances.append(None)
 
         #Track original indices of ref and target
         I_x.append(x)
