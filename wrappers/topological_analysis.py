@@ -11,6 +11,7 @@ def topological_analysis(saved_run_name,
                          ppn=16,
                          compare_only=False,
                          n_checkpoints_per_job_=None,
+                         n_compare_hours=8,
                          **kwargs):
     """Wrapper script for taking a saved run by its name, analyzing each
     checkpoint in isolation, and comparing checkpoints by distance."""
@@ -75,7 +76,8 @@ def topological_analysis(saved_run_name,
 
     write_job_file(compare_job_name, py_file_name='compare_main.py',
                    results_subdir=results_subdir,
-                   py_args='--name {}'.format(saved_run_name))
+                   py_args='--name {}'.format(saved_run_name),
+                   n_hours=n_compare_hours)
     get_ipython().system('cp {} {}'.format(compare_main_path, cluster_main_dir))
     submit_job('../job_scripts/{}.s'.format(compare_job_name),
                n_array=1,
