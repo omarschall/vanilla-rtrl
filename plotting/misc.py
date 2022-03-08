@@ -687,7 +687,7 @@ def plot_array_of_signals(signal_dicts, root_name,
     if return_fig:
         return fig
 
-def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
+def plot_time_spent_in_stages(ordered_dict_of_stage_assignments, colors=None,
                               fig_width=3.4252, fig_length=4,
                               return_fig=False):
     """Plots histograms of stage assignment time points for different RNN
@@ -698,7 +698,7 @@ def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
 
     fig = plt.figure(figsize=(fig_width, fig_length))
 
-    for i_sa, stage_assignments in enumerate(list_of_stage_assignments):
+    for i_sa, stage_assignments in enumerate(ordered_dict_of_stage_assignments):
         counts, bins = np.histogram(stage_assignments,
                                     bins=[0.5, 1.5, 2.5, 3.5, 4.5])
 
@@ -712,7 +712,7 @@ def plot_time_spent_in_stages(list_of_stage_assignments, colors=None,
     if return_fig:
         return fig
 
-def plot_bar_time_spent_in_stages(list_of_stage_assignments, color='C0',
+def plot_bar_time_spent_in_stages(ordered_dict_of_stage_assignments, color='C0',
                                   fig_width=3.4252, fig_length=4,
                                   return_fig=False):
     """Plots histograms of stage assignment time points for different RNN
@@ -725,7 +725,7 @@ def plot_bar_time_spent_in_stages(list_of_stage_assignments, color='C0',
 
     bins = np.array([0.5, 1.5, 2.5, 3.5, 4.5])
     stage_assignments_hists = [np.histogram(sa, bins=bins)[0]
-                               for sa in list_of_stage_assignments]
+                               for sa in ordered_dict_of_stage_assignments]
     stage_assignments_hists = np.array(stage_assignments_hists)
 
     mu = stage_assignments_hists.mean(0)
