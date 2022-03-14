@@ -59,10 +59,15 @@ def assign_time_points_to_stages(signal_dict, performance_criterion,
     stage_assignments = stage_assignments.astype(np.int)
 
     if post_process:
-        stage_assignments = post_process_stage_assignments(stage_assignments,
-                                                           time_point_trigger=time_point_trigger)
+        sa, tst = post_process_stage_assignments(stage_assignments,
+                                                 time_point_trigger=time_point_trigger)
 
-    return stage_assignments
+        #sa = stage assignments
+        #tst = time of stage transitions
+
+        return sa, tst
+    else:
+        return stage_assignments
 
 def post_process_stage_assignments(stage_assignments, time_point_trigger=4):
     """For a given set of stage assignments, performs post processing by making
@@ -76,6 +81,7 @@ def post_process_stage_assignments(stage_assignments, time_point_trigger=4):
     #Copy original stage assignments
     ret = stage_assignments.copy()
     t_stage_transition_prev = 0
+    t_stage_transitions = []
 
     for i_stage in [2, 3, 4]:
 
@@ -102,7 +108,9 @@ def post_process_stage_assignments(stage_assignments, time_point_trigger=4):
 
         t_stage_transition_prev = t_stage_transition
 
+        t_stage_transitions.append(t_stage_transition)
+
     if t_stage_transition_prev is not None:
         ret[t_stage_transition_prev:] = 4
 
-    return ret
+    return ret, t_stage_transitions

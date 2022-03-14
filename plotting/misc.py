@@ -698,7 +698,7 @@ def plot_time_spent_in_stages(ordered_dict_of_stage_assignments, colors=None,
 
     fig = plt.figure(figsize=(fig_width, fig_length))
 
-    for i_sa, stage_assignments in enumerate(ordered_dict_of_stage_assignments):
+    for i_sa, stage_assignments in enumerate(ordered_dict_of_stage_assignments.values()):
         counts, bins = np.histogram(stage_assignments,
                                     bins=[0.5, 1.5, 2.5, 3.5, 4.5])
 
@@ -725,7 +725,7 @@ def plot_bar_time_spent_in_stages(ordered_dict_of_stage_assignments, color='C0',
 
     bins = np.array([0.5, 1.5, 2.5, 3.5, 4.5])
     stage_assignments_hists = [np.histogram(sa, bins=bins)[0]
-                               for sa in ordered_dict_of_stage_assignments]
+                               for sa in ordered_dict_of_stage_assignments.values()]
     stage_assignments_hists = np.array(stage_assignments_hists)
 
     mu = stage_assignments_hists.mean(0)
