@@ -1,6 +1,8 @@
 import os, pickle
 from cluster import unpack_analysis_results
 from dynamics import *
+from scipy import sparse
+from math import ceil
 
 def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                        compare_args,
@@ -115,6 +117,22 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     else:
         n_comp_window = compare_args['n_comp_window']
 
+    #Job distribution arithmetic
+    comp_overflow = n_comp_window * (n_comp_window + 1) / 2
+    total_comps = n_comp_window * n_checkpoints - comp_overflow
+    comps_per_job = ceil(total_comps / compare_args['n_comp_jobs'])
+    leftover_comps = total_comps % comps_per_job
+
+    i_comp_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
+    comp_start = comps_per_job * i_comp_job
+    if i_comp_job == compare_args['n_comp_jobs'] - 1 and leftover_comps > 0:
+        comp_end = comp_start + leftover_comps
+    else:
+        comp_end = comps_per_job * (i_comp_job + 1)
+    comp_range = list(range(comp_start, comp_end))
+
+    idx_flat = 0
+
     for i in range(len(all_indices)):
 
         if i % 10 == 0:
@@ -128,6 +146,12 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                 j_index = all_indices[j]
             except IndexError:
                 continue
+
+            if idx_flat not in comp_range:
+                idx_flat += 1
+                continue
+
+            idx_flat += 1
 
             checkpoints_1 = checkpoints_lists[job_indices[i]]
             checkpoints_2 = checkpoints_lists[job_indices[j]]
@@ -230,10 +254,14 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         result['weight_change_alignment_distances'] = weight_change_alignment_distances
 
     result['calculation_check'] = calculation_check
+
+    if compare_args['n_comp_jobs'] > 1:
+        for key in result.keys():
+            result[key] = sparse.csr_matrix(result[key])
+
     result['all_indices'] = all_indices
     result['job_indices'] = job_indices
 
-    i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
     result['i_job'] = i_job
     save_dir = os.environ['SAVEDIR']
     if not os.path.exists(save_dir):

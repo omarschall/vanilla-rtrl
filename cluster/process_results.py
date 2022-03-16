@@ -157,3 +157,41 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
         signal_dicts[analysis_job_name] = signals_
 
     return signal_dicts
+
+def unpack_sparse_cross_compare_results(saved_run_root_name,
+                                        project_name='learning-dynamics',
+                                        results_subdir='misc',
+                                        username='oem214'):
+    """Unpacks the results of a cross comparison where discrete chunks are
+    computed separately."""
+
+    ### --- Get paths, extract and unpack compare data --- ###
+
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
+    saved_runs_dir = 'saved_runs'
+
+    compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
+    compare_result_path = os.path.join(results_subdir_abs, compare_job_name)
+
+    args_path = os.path.join(project_dir, 'args', saved_run_root_name)
+
+    with open(args_path, 'rb') as f:
+        all_args = pickle.load(f)
+
+    for i_comp_job in range(all_args['compare_n_comp_jobs']):
+        job_path = os.path.join(compare_result_path, 'result_{}'.format(i_comp_job))
+        with open(job_path, 'rb') as f:
+            subresult = pickle.load(f)
+
+        result = {}
+        if i_comp_job == 0:
+            for key in subresult.keys():
+                if 'distances' or 'check' in key:
+                    result[key] = np.array(subresult[key].todense())
+        else:
+            for key in result.keys():
+                if 'distances' or 'check' in key:
+                    result[key] += np.array(subresult[key].todense())
+
+    return result
