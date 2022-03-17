@@ -82,6 +82,7 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
 
 def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
                                 relative_weight_change=True,
+                                multi_job_comp=False,
                                 project_name='learning-dynamics',
                                 results_subdir='misc',
                                 username='oem214'):
@@ -102,8 +103,14 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
     compare_result_path = os.path.join(results_subdir_abs, compare_job_name)
-    with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
-        result = pickle.load(f)
+    if multi_job_comp:
+        result = unpack_sparse_cross_compare_results(saved_run_root_name,
+                                                     project_name=project_name,
+                                                     results_subdir=results_subdir,
+                                                     username=username)
+    else:
+        with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
+            result = pickle.load(f)
     result['job_indices'] = np.array(result['job_indices'])
 
     ### --- Loop through each individual analysis job --- ###
@@ -156,7 +163,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
         signal_dicts[analysis_job_name] = signals_
 
-    return signal_dicts
+    return signal_dicts, result
 
 def unpack_sparse_cross_compare_results(saved_run_root_name,
                                         project_name='learning-dynamics',
@@ -179,19 +186,22 @@ def unpack_sparse_cross_compare_results(saved_run_root_name,
     with open(args_path, 'rb') as f:
         all_args = pickle.load(f)
 
+    result = {}
+
     for i_comp_job in range(all_args['compare_n_comp_jobs']):
         job_path = os.path.join(compare_result_path, 'result_{}'.format(i_comp_job))
         with open(job_path, 'rb') as f:
             subresult = pickle.load(f)
 
-        result = {}
         if i_comp_job == 0:
             for key in subresult.keys():
-                if 'distances' or 'check' in key:
+                if 'distances' in key or 'check' in key:
                     result[key] = np.array(subresult[key].todense())
+                else:
+                    result[key] = subresult[key]
         else:
             for key in result.keys():
-                if 'distances' or 'check' in key:
+                if 'distances' in key or 'check' in key:
                     result[key] += np.array(subresult[key].todense())
 
     return result

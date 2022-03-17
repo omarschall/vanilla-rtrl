@@ -127,6 +127,8 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     comp_start = comps_per_job * i_comp_job
     if i_comp_job == compare_args['n_comp_jobs'] - 1 and leftover_comps > 0:
         comp_end = comp_start + leftover_comps
+        print(comp_end)
+        comp_end = int(comp_end)
     else:
         comp_end = comps_per_job * (i_comp_job + 1)
     comp_range = list(range(comp_start, comp_end))
@@ -262,11 +264,11 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     result['all_indices'] = all_indices
     result['job_indices'] = job_indices
 
-    result['i_job'] = i_job
+    result['i_comp_job'] = i_comp_job
     save_dir = os.environ['SAVEDIR']
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    save_path = os.path.join(save_dir, 'result_{}'.format(i_job))
+    save_path = os.path.join(save_dir, 'result_{}'.format(i_comp_job))
 
     with open(save_path, 'wb') as f:
         pickle.dump(result, f)
