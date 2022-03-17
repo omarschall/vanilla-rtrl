@@ -113,18 +113,12 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
             result = pickle.load(f)
     result['job_indices'] = np.array(result['job_indices'])
 
-    ### --- Loop through each individual analysis job --- ###
-
-    analysis_job_names = ['analyze_' + sr for sr in os.listdir(saved_runs_dir)
-                          if saved_run_root_name in sr]
-    analysis_job_names = sorted(analysis_job_names)
-
     all_indices = []
     checkpoints_lists = []
     job_indices = []
 
     signal_dicts = {}
-    for i_job, analysis_job_name in enumerate(analysis_job_names):
+    for i_job, analysis_job_name in enumerate(result['analysis_job_names']):
         analysis_dir = os.path.join(results_subdir_abs, analysis_job_name)
 
         # Unpack data

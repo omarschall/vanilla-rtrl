@@ -263,6 +263,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     result['all_indices'] = all_indices
     result['job_indices'] = job_indices
+    result['analysis_job_names'] = analysis_job_names
 
     result['i_comp_job'] = i_comp_job
     save_dir = os.environ['SAVEDIR']
