@@ -83,7 +83,7 @@ def cross_topological_analysis(saved_run_root_name,
     else:
         analysis_id_dependency = None
 
-    ### -- Submit compare job script when done
+    ### -- Submit compare job script when done --- ###
 
     compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
     compare_main_path = os.path.join(module_dir, 'cross_compare_main.py')
@@ -98,3 +98,7 @@ def cross_topological_analysis(saved_run_root_name,
                results_subdir=results_subdir,
                py_file_name='cross_compare_main.py',
                id_dependency=analysis_id_dependency)
+
+    ### --- Combine parallelized compare results when done --- ###
+
+    

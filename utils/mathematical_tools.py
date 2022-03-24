@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import unitary_group
+from math import floor, ceil
 
 def norm(z):
     """Computes the L2 norm of a numpy array."""
@@ -103,3 +104,16 @@ def weighted_median(hist, bin_centers):
     hist_cdf = np.cumsum(hist)/hist.sum()
     return bin_centers[np.where(hist_cdf >= 0.5)[0][0]]
 
+def triangular_integer_decomposition(idx):
+    """For a given integer idx, finds the maximal triangular number less
+    than idx and also returns remainder."""
+
+    low_n = floor(np.maximum(0, np.sqrt(idx * 2) - 2))
+    high_n = ceil(np.sqrt(idx * 2) + 2)
+
+    n_range = list(range(low_n, high_n + 1))
+    triangular_numbers = np.array([n*(n+1)/2 for n in n_range])
+
+    n = n_range[np.where(triangular_numbers > idx)[0][0] - 1]
+
+    return n, idx - n * (n + 1) / 2

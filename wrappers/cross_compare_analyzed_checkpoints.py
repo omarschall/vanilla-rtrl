@@ -113,7 +113,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     #Compare window
     if compare_args['n_comp_window'] == 'full':
-        n_comp_window = len(all_indices)
+        n_comp_window = len(all_indices) - 1
     else:
         n_comp_window = compare_args['n_comp_window']
 
@@ -127,21 +127,47 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
     comp_start = comps_per_job * i_comp_job
     if i_comp_job == compare_args['n_comp_jobs'] - 1 and leftover_comps > 0:
         comp_end = comp_start + leftover_comps
-        print(comp_end)
         comp_end = int(comp_end)
     else:
         comp_end = comps_per_job * (i_comp_job + 1)
     comp_range = list(range(comp_start, comp_end))
 
-    idx_flat = 0
+    # #Determine splitting point
+    N = len(all_indices)
+    i_split = N - n_comp_window
+    i_range = []
+    for i_ep, idx_endpoint in enumerate([comp_start, comp_end - 1]):
+        if idx_endpoint <= (i_split * n_comp_window):
+            i_endpoint = idx_endpoint // n_comp_window
+            if i_ep == 0:
+                j_start = int(idx_endpoint % n_comp_window)
+        else:
+            spillover = idx_endpoint - i_split * n_comp_window
+            n_triangle = N - i_split - 1
+            triangular_indices = n_triangle * (n_triangle + 1) / 2
+            k = triangular_indices - spillover
+            n, r = triangular_integer_decomposition(k)
+            i_spillover = n_triangle - n - int(r > 0)
+            i_endpoint = i_split + i_spillover
+            if i_ep == 0:
+                j_start = int(n_comp_window - 1 - i_spillover - r) * int(r > 0)
+        i_range.append(i_endpoint)
 
-    for i in range(len(all_indices)):
+    idx_flat = comp_start
+    hit_range_yet = False
+
+    for i in range(i_range[0], i_range[1] + 1):
 
         if i % 10 == 0:
             with open(log_path, 'a') as f:
                 f.write('Calculating distance row {}\n'.format(i))
 
-        for j in range(i + 1, i + 1 + n_comp_window):
+        if not hit_range_yet:
+            j_start_ = j_start
+        else:
+            j_start_ = 0
+
+        for j in range(i + 1 + j_start_, i + 1 + n_comp_window):
 
             try:
                 i_index = all_indices[i]
@@ -150,8 +176,9 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
                 continue
 
             if idx_flat not in comp_range:
-                idx_flat += 1
                 continue
+
+            hit_range_yet = True
 
             idx_flat += 1
 
