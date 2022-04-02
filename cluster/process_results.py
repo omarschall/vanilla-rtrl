@@ -1,5 +1,6 @@
 import os, pickle
 import numpy as np
+from copy import deepcopy
 
 def unpack_analysis_results(data_path):
     """For a path to results, unpacks the data into a dict of checkpoints
@@ -82,6 +83,7 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
 
 def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
                                 relative_weight_change=True,
+                                multi_job_comp=False,
                                 project_name='learning-dynamics',
                                 results_subdir='misc',
                                 username='oem214'):
@@ -102,22 +104,22 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
     compare_result_path = os.path.join(results_subdir_abs, compare_job_name)
-    with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
-        result = pickle.load(f)
+    if multi_job_comp:
+        result = unpack_sparse_cross_compare_results(saved_run_root_name,
+                                                     project_name=project_name,
+                                                     results_subdir=results_subdir,
+                                                     username=username)
+    else:
+        with open(os.path.join(compare_result_path, 'result_0'), 'rb') as f:
+            result = pickle.load(f)
     result['job_indices'] = np.array(result['job_indices'])
-
-    ### --- Loop through each individual analysis job --- ###
-
-    analysis_job_names = ['analyze_' + sr for sr in os.listdir(saved_runs_dir)
-                          if saved_run_root_name in sr]
-    analysis_job_names = sorted(analysis_job_names)
 
     all_indices = []
     checkpoints_lists = []
     job_indices = []
 
     signal_dicts = {}
-    for i_job, analysis_job_name in enumerate(analysis_job_names):
+    for i_job, analysis_job_name in enumerate(result['analysis_job_names']):
         analysis_dir = os.path.join(results_subdir_abs, analysis_job_name)
 
         # Unpack data
@@ -156,4 +158,55 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
         signal_dicts[analysis_job_name] = signals_
 
-    return signal_dicts
+    return signal_dicts, result
+
+def unpack_sparse_cross_compare_results(saved_run_root_name,
+                                        project_name='learning-dynamics',
+                                        results_subdir='misc',
+                                        username='oem214'):
+    """Unpacks the results of a cross comparison where discrete chunks are
+    computed separately."""
+
+    ### --- Get paths, extract and unpack compare data --- ###
+
+    project_dir = os.path.join('/scratch/', username, project_name)
+    results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
+    saved_runs_dir = 'saved_runs'
+
+    compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
+    compare_result_path = os.path.join(results_subdir_abs, compare_job_name)
+
+    args_path = os.path.join(project_dir, 'args', saved_run_root_name)
+
+    combined_result_path = os.path.join(compare_result_path, 'result_combined')
+    if os.path.exists(combined_result_path):
+        with open(combined_result_path, 'rb') as f:
+            result = pickle.load(f)
+        return result
+    else:
+        with open(args_path, 'rb') as f:
+            all_args = pickle.load(f)
+
+        result = {}
+
+        for i_comp_job in range(all_args['compare_n_comp_jobs']):
+            job_path = os.path.join(compare_result_path, 'result_{}'.format(i_comp_job))
+            with open(job_path, 'rb') as f:
+                subresult = pickle.load(f)
+
+            if i_comp_job == 0:
+                for key in subresult.keys():
+                    result[key] = deepcopy(subresult[key])
+            else:
+                for key in result.keys():
+                    if 'distances' in key or 'check' in key:
+                        result[key] += subresult[key]
+
+        for key in result.keys():
+            if 'distances' in key or 'check' in key:
+                result[key] = np.array(result[key].todense())
+
+        with open(combined_result_path, 'wb') as f:
+            pickle.dump(result, f)
+
+        return result

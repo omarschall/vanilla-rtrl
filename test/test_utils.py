@@ -52,5 +52,24 @@ class Test_Utils(unittest.TestCase):
 
         self.assertEqual(rgetattr(bar, 'x.y'), 2)
 
+    def test_triangular_integer_decomposition(self):
+
+        idx = 0
+        n, r = triangular_integer_decomposition(idx)
+        self.assertEqual(n, 0)
+        self.assertEqual(r, 0)
+
+        idx = 11522401
+        n, r = triangular_integer_decomposition(idx)
+        self.assertEqual(n, 4800)
+        self.assertEqual(r, 1)
+        self.assertEqual(n*(n+1)/2 + r, idx)
+
+        idx = 11527199
+        n, r = triangular_integer_decomposition(idx)
+        self.assertEqual(n, 4800)
+        self.assertEqual(r, 4799)
+        self.assertEqual(n * (n + 1) / 2 + r, idx)
+
 if __name__ == '__main__':
     unittest.main()

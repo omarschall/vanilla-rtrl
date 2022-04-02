@@ -83,7 +83,7 @@ def cross_topological_analysis(saved_run_root_name,
     else:
         analysis_id_dependency = None
 
-    ### -- Submit compare job script when done
+    ### -- Submit compare job script when done --- ###
 
     compare_job_name = 'cross_compare_{}'.format(saved_run_root_name)
     compare_main_path = os.path.join(module_dir, 'cross_compare_main.py')
@@ -94,7 +94,11 @@ def cross_topological_analysis(saved_run_root_name,
                    n_hours=n_compare_hours)
     get_ipython().system('cp {} {}'.format(compare_main_path, cluster_main_dir))
     submit_job('../job_scripts/{}.s'.format(compare_job_name),
-               n_array=1,
+               n_array=all_args_dict['compare_n_comp_jobs'],
                results_subdir=results_subdir,
                py_file_name='cross_compare_main.py',
                id_dependency=analysis_id_dependency)
+
+    ### --- Combine parallelized compare results when done --- ###
+
+

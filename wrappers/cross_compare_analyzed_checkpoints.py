@@ -1,6 +1,8 @@
 import os, pickle
 from cluster import unpack_analysis_results
 from dynamics import *
+from scipy import sparse
+from math import ceil
 
 def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                        compare_args,
@@ -111,23 +113,74 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     #Compare window
     if compare_args['n_comp_window'] == 'full':
-        n_comp_window = len(all_indices)
+        n_comp_window = len(all_indices) - 1
     else:
         n_comp_window = compare_args['n_comp_window']
 
-    for i in range(len(all_indices)):
+    #Job distribution arithmetic
+    comp_overflow = n_comp_window * (n_comp_window + 1) / 2
+    total_comps = n_comp_window * n_checkpoints - comp_overflow
+    comps_per_job = ceil(total_comps / compare_args['n_comp_jobs'])
+    leftover_comps = total_comps % comps_per_job
+
+    i_comp_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
+    comp_start = comps_per_job * i_comp_job
+    if i_comp_job == compare_args['n_comp_jobs'] - 1 and leftover_comps > 0:
+        comp_end = comp_start + leftover_comps
+        comp_end = int(comp_end)
+    else:
+        comp_end = comps_per_job * (i_comp_job + 1)
+    comp_range = list(range(comp_start, comp_end))
+
+    # #Determine splitting point
+    N = len(all_indices)
+    i_split = N - n_comp_window
+    i_range = []
+    for i_ep, idx_endpoint in enumerate([comp_start, comp_end - 1]):
+        if idx_endpoint <= (i_split * n_comp_window):
+            i_endpoint = idx_endpoint // n_comp_window
+            if i_ep == 0:
+                j_start = int(idx_endpoint % n_comp_window)
+        else:
+            spillover = idx_endpoint - i_split * n_comp_window
+            n_triangle = N - i_split - 1
+            triangular_indices = n_triangle * (n_triangle + 1) / 2
+            k = triangular_indices - spillover
+            n, r = triangular_integer_decomposition(k)
+            i_spillover = n_triangle - n - int(r > 0)
+            i_endpoint = i_split + i_spillover
+            if i_ep == 0:
+                j_start = int(n_comp_window - 1 - i_spillover - r) * int(r > 0)
+        i_range.append(i_endpoint)
+
+    idx_flat = comp_start
+    hit_range_yet = False
+
+    for i in range(i_range[0], i_range[1] + 1):
 
         if i % 10 == 0:
             with open(log_path, 'a') as f:
                 f.write('Calculating distance row {}\n'.format(i))
 
-        for j in range(i + 1, i + 1 + n_comp_window):
+        if not hit_range_yet:
+            j_start_ = j_start
+        else:
+            j_start_ = 0
+
+        for j in range(i + 1 + j_start_, i + 1 + n_comp_window):
 
             try:
                 i_index = all_indices[i]
                 j_index = all_indices[j]
             except IndexError:
                 continue
+
+            if idx_flat not in comp_range:
+                continue
+
+            hit_range_yet = True
+
+            idx_flat += 1
 
             checkpoints_1 = checkpoints_lists[job_indices[i]]
             checkpoints_2 = checkpoints_lists[job_indices[j]]
@@ -230,15 +283,20 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
         result['weight_change_alignment_distances'] = weight_change_alignment_distances
 
     result['calculation_check'] = calculation_check
+
+    if compare_args['n_comp_jobs'] > 1:
+        for key in result.keys():
+            result[key] = sparse.csr_matrix(result[key])
+
     result['all_indices'] = all_indices
     result['job_indices'] = job_indices
+    result['analysis_job_names'] = analysis_job_names
 
-    i_job = int(os.environ['SLURM_ARRAY_TASK_ID']) - 1
-    result['i_job'] = i_job
+    result['i_comp_job'] = i_comp_job
     save_dir = os.environ['SAVEDIR']
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    save_path = os.path.join(save_dir, 'result_{}'.format(i_job))
+    save_path = os.path.join(save_dir, 'result_{}'.format(i_comp_job))
 
     with open(save_path, 'wb') as f:
         pickle.dump(result, f)
