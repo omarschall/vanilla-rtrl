@@ -146,6 +146,144 @@ def plot_input_dependent_topology(checkpoint, reference_checkpoint=None,
     if return_fig:
         return fig
 
+def plot_input_dependent_topolog2(checkpoint, data,
+                                  reference_checkpoint=None,
+                                  graph_key='adjmat',
+                                  i_input=None, plotting_noise=0.05,
+                                  return_fig=False, n_inputs=None,
+                                  color_scheme='dotted',
+                                  plot_thresh=0.05,
+                                  colors_=None,
+                                  space_range=1,
+                                  circle_color=('0.8'),
+                                  circle_radius=0.18,
+                                  output_ylim=[-9, 3]):
+
+    if n_inputs is None:
+        n_in = 6
+    else:
+        n_in = n_inputs
+
+    n_half = n_in // 2
+
+    if i_input is not None:
+        keys = ['{}_input_{}'.format(graph_key, i_input)]
+    else:
+        keys = ['{}_input_{}'.format(graph_key, i) for i in range(n_in)]
+
+    n_nodes = checkpoint[keys[0]].shape[0]
+
+    if reference_checkpoint is not None:
+        total_nodes = max(reference_checkpoint['nodes'].shape[0], n_nodes)
+    else:
+        total_nodes = n_nodes
+
+    fig, ax = plt.subplots(1, 2, figsize=(8, 4))
+    fig.suptitle('Checkpoint {}'.format(checkpoint['i_t']))
+
+    t_range = np.arange(np.pi, -np.pi, -2 * np.pi / total_nodes)
+    circle_nodes = np.array([[np.cos(t), np.sin(t)] for t in t_range[:n_nodes]])
+
+    #plot little circles
+    # theta = np.arange(0, 2 * np.pi, 0.01)
+    # for i_cn, node in enumerate(circle_nodes):
+    #     plt.plot(node[0] + circle_radius * np.cos(theta),
+    #              node[1] + circle_radius * np.sin(theta),
+    #              color=('0.8'))
+    #     plt.fill_between(node[0] + circle_radius * np.cos(theta)[2:-2],
+    #                      node[1] + circle_radius * np.sin(theta)[2:-2],
+    #                      color=('0.8'))
+    for node in circle_nodes:
+        circ = plt.Circle(node, radius=circle_radius, color=circle_color)
+        ax[0].add_artist(circ)
+
+    #Create multigraph tensor
+    graph = np.stack([checkpoint[key] for key in keys], axis=-1)
+    leg = []
+    colors = []
+    linestyles = []
+    for key in keys:
+        i_input_ = int(key.split('_')[-1])
+        if color_scheme == 'dotted':
+            i_color = i_input_ % 3
+            linestyle = ['-', '--'][i_input_ // n_half]
+        if color_scheme == 'different':
+            i_color = i_input_
+            linestyle = '-'
+        linestyles.append(linestyle)
+        if colors_ is None:
+            colors.append('C{}'.format(i_color))
+        else:
+            colors.append(colors_[i_color])
+
+        leg_ = 'Input {}'.format(i_color)
+        if linestyle == '-':
+            leg_ += ', +'
+        else:
+            leg_ += ', -'
+        leg.append(leg_)
+
+    for i in range(graph.shape[0]):
+        for j in range(i + 1, graph.shape[1]):
+
+            ij_connects = np.where(graph[i, j] > plot_thresh)[0]
+            ji_connects = np.where(graph[j, i] > plot_thresh)[0]
+            n_connects = len(ij_connects) + len(ji_connects)
+
+            node_i = circle_nodes[i]
+            node_j = circle_nodes[j]
+            diff = node_j - node_i
+            u_diff = diff / norm(diff)
+            np.random.seed(0)
+            w = np.random.normal(0, 1, 2)
+            diff_perp = w - u_diff.dot(w) * u_diff
+            diff_perp = circle_radius * diff_perp / norm(diff_perp)
+
+            spacings = np.linspace(-space_range, space_range, n_connects)
+            start_points = [node_i + s * diff_perp for s in spacings]
+            end_points = [node_j + s * diff_perp for s in spacings]
+
+            for i_flip, connects in enumerate([ij_connects, ji_connects]):
+                for i_connect, i_input in enumerate(connects):
+
+                    i_shift = i_flip * len(ij_connects)
+                    to_circle = np.sqrt(1 - spacings[i_connect + i_shift] ** 2) * circle_radius * u_diff
+                    if i_flip == 0:
+                        start = start_points[i_connect + i_shift] + to_circle
+                        end = end_points[i_connect + i_shift] - to_circle
+                    else:
+                        start = end_points[i_connect + i_shift] - to_circle
+                        end = start_points[i_connect + i_shift] + to_circle
+
+                    col = colors[i_input]
+                    linestyle = linestyles[i_input]
+
+                    ax[0].plot([start[0], end[0]],
+                            [start[1], end[1]], color=col, linestyle=linestyle)
+
+                    ax[0].plot([start[0]], [start[1]], 'x', color=col)
+
+                    ax[0].plot([end[0]], [end[1]], '.', color=col)
+
+    ax[0].set_xlim([-1.4, 1.4])
+    ax[0].set_ylim([-1.4, 1.4])
+    ax[0].axis('off')
+
+    #Add output plots
+    rnn = checkpoint['rnn']
+    test_sim = Simulation(rnn)
+    test_sim.run(data, mode='test', monitors=['rnn.y_hat'], verbose=False)
+
+    for i in range(3):
+        ax[1].plot(data['test']['X'][40:, i] - i * 2.5, color=('0.7'), linestyle='--')
+        ax[1].plot(data['test']['Y'][40:, i] - i * 2.5, color=('0.2'))
+        ax[1].plot(test_sim.mons['rnn.y_hat'][40:, i] - i * 2.5, color=colors[i])
+
+    ax[1].axis('off')
+    ax[1].set_ylim(output_ylim)
+    if return_fig:
+        return fig
+
 def plot_input_dependent_task_topology(task, reference_checkpoint=None,
                                        i_input=None, plotting_noise=0.05,
                                        return_fig=False, color_scheme='dotted'):
