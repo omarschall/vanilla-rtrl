@@ -173,13 +173,18 @@ def plot_2d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
     if return_fig:
         return fig
 
-def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
-                                     alpha=1, markersize=10, colors=None):
+def plot_3d_MDS_from_distance_matrix(distances, point_classes,
+                                     return_fig=False, mds_=None,
+                                     alpha=1, markersize=10, colors=None,
+                                     plot_only_avg=False):
     """For a given set of pariwise distances, plots the elements in a 3-D space
     that maximally preserves specified distances."""
 
-    mds = MDS(n_components=3, dissimilarity='precomputed')
-    proj = mds.fit_transform(distances)
+    if mds_ is None:
+        mds = MDS(n_components=3, dissimilarity='precomputed')
+        proj = mds.fit_transform(distances)
+    else:
+        proj = mds_.embedding_
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -198,15 +203,16 @@ def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
         class_idx = np.where(point_classes == i_class)[0]
         start_idx = np.amin(class_idx)
         stop_idx = np.amax(class_idx)
-        ax.plot(proj[class_idx, 0],
-                proj[class_idx, 1],
-                proj[class_idx, 2], color=col, alpha=alpha)
-        ax.plot([proj[start_idx, 0]],
-                [proj[start_idx, 1]],
-                [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
-        ax.plot([proj[stop_idx, 0]],
-                [proj[stop_idx, 1]],
-                [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
+        if not plot_only_avg:
+            ax.plot(proj[class_idx, 0],
+                    proj[class_idx, 1],
+                    proj[class_idx, 2], color=col, alpha=alpha)
+            ax.plot([proj[start_idx, 0]],
+                    [proj[start_idx, 1]],
+                    [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
+            ax.plot([proj[stop_idx, 0]],
+                    [proj[stop_idx, 1]],
+                    [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
 
         color_avgs[col].append(proj[class_idx])
 
@@ -219,14 +225,19 @@ def plot_3d_MDS_from_distance_matrix(distances, point_classes, return_fig=False,
     if return_fig:
         return fig
 
-def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False,
+def plot_3d_tSNE_from_distance_matrix(distances, point_classes,
+                                      return_fig=False, tsne_=None,
                                       alpha=1, markersize=10, colors=None,
+                                      plot_only_avg=False,
                                       **tsne_args):
     """For a given set of pariwise distances, plots the elements in a 3-D space
     that maximally preserves specified distances."""
 
-    tsne = TSNE(n_components=3, metric='precomputed', **tsne_args)
-    proj = tsne.fit_transform(distances)
+    if tsne_ is None:
+        tsne = TSNE(n_components=3, metric='precomputed', **tsne_args)
+        proj = tsne.fit_transform(distances)
+    else:
+        proj = tsne_.embedding_
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -245,15 +256,16 @@ def plot_3d_tSNE_from_distance_matrix(distances, point_classes, return_fig=False
         class_idx = np.where(point_classes == i_class)[0]
         start_idx = np.amin(class_idx)
         stop_idx = np.amax(class_idx)
-        ax.plot(proj[class_idx, 0],
-                proj[class_idx, 1],
-                proj[class_idx, 2], color=col, alpha=alpha)
-        ax.plot([proj[start_idx, 0]],
-                [proj[start_idx, 1]],
-                [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
-        ax.plot([proj[stop_idx, 0]],
-                [proj[stop_idx, 1]],
-                [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
+        if not plot_only_avg:
+            ax.plot(proj[class_idx, 0],
+                    proj[class_idx, 1],
+                    proj[class_idx, 2], color=col, alpha=alpha)
+            ax.plot([proj[start_idx, 0]],
+                    [proj[start_idx, 1]],
+                    [proj[start_idx, 2]], 'x', color=col, markersize=markersize)
+            ax.plot([proj[stop_idx, 0]],
+                    [proj[stop_idx, 1]],
+                    [proj[stop_idx, 2]], '.', color=col, markersize=markersize)
 
         color_avgs[col].append(proj[class_idx])
 

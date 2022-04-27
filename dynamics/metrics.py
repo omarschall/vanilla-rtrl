@@ -1,7 +1,8 @@
 import numpy as np
 
 def assign_time_points_to_stages(signal_dict, performance_criterion,
-                                 topological_criterion, window_duration=10,
+                                 topological_criterion, loss_window=10,
+                                 topological_window=10,
                                  post_process=True, time_point_trigger=4):
     """Takes a dictionary of signals, which must include 'test_loss' and
     'aligned_graph_distances', and returns an array of stage assignments.
@@ -28,18 +29,19 @@ def assign_time_points_to_stages(signal_dict, performance_criterion,
 
     ### --- Reflect test loss over 0 time point for causal convolution --- ###
 
-    kernel = np.ones(window_duration) / window_duration
+    topological_kernel = np.ones(topological_window) / topological_window
     loss = signal_dict['test_loss']
-    reflected_loss = np.concatenate([loss[window_duration-1:0:-1], loss])
-    convolved_loss = np.convolve(reflected_loss, kernel, mode='valid')
+    reflected_loss = np.concatenate([loss[topological_window-1:0:-1], loss])
+    convolved_loss = np.convolve(reflected_loss, topological_kernel, mode='valid')
 
     good_performance = (convolved_loss < performance_criterion)[:-1]
 
     ### --- Zero-pad top. metric for causal convolution --- ###
 
+    loss_kernel = np.ones(loss_window) / loss_window
     top_metric = signal_dict['aligned_graph_distances']
-    padded_metric = np.concatenate([np.zeros(window_duration - 1), top_metric])
-    convolved_metric = np.convolve(padded_metric, kernel, mode='valid')
+    padded_metric = np.concatenate([np.zeros(loss_window - 1), top_metric])
+    convolved_metric = np.convolve(padded_metric, loss_kernel, mode='valid')
 
     constant_topology = convolved_metric < topological_criterion
 
