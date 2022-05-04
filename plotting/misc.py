@@ -636,9 +636,9 @@ def color_fader(color_1, color_2, mix=0):
 
 def plot_array_of_signals(signal_dicts, root_name,
                           signal_keys=[], x_values=None, return_fig=False,
-                          alpha=1, fig_width=3.4252, fig_length=4,
+                          colors=None, alpha=1, fig_width=3.4252, fig_length=4,
                           swap_order=False, param_values_=None,
-                          key_order_=None):
+                          key_order_=None, common_ylim=None):
 
     if param_values_ is None or key_order_ is None:
         param_values, key_order = get_param_values_from_list_of_config_strings(signal_dicts,
@@ -660,6 +660,9 @@ def plot_array_of_signals(signal_dicts, root_name,
 
     n_x = len(param_values[value_keys[0]])
     n_y = len(param_values[value_keys[1]])
+
+    if colors is None:
+        colors = ['C{}'.format(i_key) for i_key in range(len(signal_keys))]
 
     fig, ax = plt.subplots(n_x, n_y, figsize=(fig_width, fig_length))
 
@@ -687,7 +690,10 @@ def plot_array_of_signals(signal_dicts, root_name,
                     else:
                         x = list(range(len(y)))
 
-                    ax[i_x, i_y].plot(x, y, color='C{}'.format(i_key), alpha=alpha)
+                    ax[i_x, i_y].plot(x, y, color=colors[i_key], alpha=alpha)
+
+                if common_ylim is not None:
+                    ax[i_x, i_y].set_ylim(common_ylim)
 
             if i_x == 0:
                 ax[i_x, i_y].set_title('{} = {}'.format(value_keys[1],

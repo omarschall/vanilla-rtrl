@@ -11,6 +11,7 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                                 time_steps_per_trial=None,
                                 trial_mask=None,
                                 reset_sigma=None,
+                                y_spacing=2,
                                 **kwargs):
     """For a given checkpoint in a simulation and data dict, runs a fresh
     test simulation and plots the results in output spcae."""
@@ -26,9 +27,9 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
     fig = plt.figure(figsize=figsize)
     for i in range(rnn.n_out):
 
-        plt.plot(data['test']['X'][:, i] - i * 2, (str(0.6)))
-        plt.plot(data['test']['Y'][:, i] - i * 2, 'C0')
-        plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * 2, 'C3')
+        plt.plot(data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
+        plt.plot(data['test']['Y'][:, i] - i * y_spacing, 'C0')
+        plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * y_spacing, 'C3')
     if time_steps_per_trial is not None:
         for i in range(0, data['test']['X'].shape[0], time_steps_per_trial):
             plt.axvline(x=i, color='k', linestyle='--')
