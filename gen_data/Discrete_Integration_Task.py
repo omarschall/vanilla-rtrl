@@ -7,6 +7,7 @@ class Discrete_Integration_Task(Task):
 
     def __init__(self, p_bit=0.05, p_reset=0.005, tau_task=1,
                  reset_mode='random', report_count=False,
+                 report_both=False,
                  uniform_count_stats=False, max_count=5,
                  max_total_inputs=12, delay=5):
         """Later
@@ -25,6 +26,7 @@ class Discrete_Integration_Task(Task):
         self.tau_task = tau_task
         self.reset_mode = reset_mode
         self.report_count = report_count
+        self.report_both = report_both
         self.probe_inputs = [np.array([1, 0]),
                              np.array([-1, 0]),
                              np.array([0, 1])]
@@ -106,9 +108,10 @@ class Discrete_Integration_Task(Task):
 
             y_trial = np.zeros((period + self.delay, 2))
             y_trial[:, 0] = np.cumsum(x_trial[:, 0])
-            if not self.report_count:
+            if not self.report_count and not self.report_both:
                 y_trial[:, 0] = np.sign(y_trial[:, 0])
-
+            elif self.report_both:
+                y_trial[:, 1] = np.sign(y_trial[:, 0])
 
             Y.append(y_trial)
 
