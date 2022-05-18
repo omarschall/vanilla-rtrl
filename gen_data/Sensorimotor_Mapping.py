@@ -51,6 +51,8 @@ class Sensorimotor_Mapping(Task):
         X = []
         Y = []
         trial_type = []
+        trial_switch = []
+        loss_mask = []
 
         #Trial type 1
         x_1 = np.zeros((self.time_steps_per_trial, 2))
@@ -70,6 +72,8 @@ class Sensorimotor_Mapping(Task):
 
         x_trials = [x_1, x_2]
         y_trials = [y_1, y_2]
+        trial_switch_array = np.zeros(x_1.shape[0])
+        trial_switch_array[-1] = 1
 
         N_trials = N // self.time_steps_per_trial
         for i in range(N_trials):
@@ -78,6 +82,8 @@ class Sensorimotor_Mapping(Task):
             trial_type.append(trial_type_)
             X.append(x_trials[trial_type_])
             Y.append(y_trials[trial_type_])
+            trial_switch.append(trial_switch_array)
+
 
         if N_trials > 0:
             X = np.concatenate(X, axis=0)

@@ -9,7 +9,9 @@ class Discrete_Integration_Task(Task):
                  reset_mode='random', report_count=False,
                  report_both=False,
                  uniform_count_stats=False, max_count=5,
-                 max_total_inputs=12, delay=5):
+                 max_total_inputs=12, delay=5,
+                 BPR_integrate_mask=1, BPR_delay_mask=0,
+                 BPT_integrate_mask=0, BPT_delay_mask=1):
         """Later
 
         Args:
@@ -34,6 +36,10 @@ class Discrete_Integration_Task(Task):
         self.max_count = max_count
         self.max_total_inputs = max_total_inputs
         self.delay = delay
+        self.BPR_integrate_mask = BPR_integrate_mask
+        self.BPR_delay_mask = BPR_delay_mask
+        self.BPT_integrate_mask = BPT_integrate_mask
+        self.BPT_delay_mask = BPT_delay_mask
 
     def gen_dataset_1(self, N):
 
@@ -76,6 +82,8 @@ class Discrete_Integration_Task(Task):
 
         X = []
         Y = []
+        trial_switch = []
+        loss_mask = []
 
         for i_trial in range(N_trials):
             final_net_count = np.random.randint(low=-self.max_count,
@@ -115,14 +123,27 @@ class Discrete_Integration_Task(Task):
 
             Y.append(y_trial)
 
+            trial_switch_array = np.zeros(x_trial.shape[0])
+            trial_switch_array[-1] = 1
+            trial_switch.append(trial_switch_array)
+
+            BPR_mask_array = np.array([self.BPR_integrate_mask] * period
+                                        + [self.BPR_delay_mask] * self.delay)
+            BPT_mask_array = np.array([self.BPT_integrate_mask] * period
+                                        + [self.BPT_delay_mask] * self.delay)
+            loss_mask_array = np.vstack([BPR_mask_array, BPT_mask_array]).T
+            loss_mask.append(loss_mask_array)
+
         try:
             X = np.concatenate(X, axis=0)
             Y = np.concatenate(Y, axis=0)
+            trial_switch = np.concatenate(trial_switch, axis=0)
+            loss_mask = np.concatenate(loss_mask, axis=0)
         except ValueError:
             X = None
             Y = None
 
-        return X, Y, None
+        return X, Y, None, trial_switch, loss_mask
 
     def gen_dataset(self, N):
 

@@ -40,8 +40,9 @@ class Multi_Task:
             Ns = N_train
 
         #Initialize total_data and task_marker with the first task.
-        X, Y, trial_type = self.tasks[Ns[0]['task_id']].gen_dataset(Ns[0]['N'])
-        total_data = {'X': X, 'Y': Y, 'trial_type': trial_type}
+        X, Y, trial_type, trial_switch, loss_mask = self.tasks[Ns[0]['task_id']].gen_dataset(Ns[0]['N'])
+        total_data = {'X': X, 'Y': Y, 'trial_type': trial_type,
+                      'trial_switch': trial_switch, 'loss_mask': loss_mask}
         task_marker = [np.ones(Ns[0]['N']) * Ns[0]['task_id']]
 
         #Loop through the rest of the tasks and concatenate
@@ -50,7 +51,7 @@ class Multi_Task:
             i_task = Ns[i_block]['task_id']
             task = self.tasks[i_task]
             N = Ns[i_block]['N']
-            X, Y, trial_type = task.gen_dataset(N)
+            X, Y, trial_type, trial_switch, loss_mask = task.gen_dataset(N)
 
             #Zero-pad lower-dimensional tasks in inputs and outputs
             if task.n_in < self.max_n_in:
@@ -65,6 +66,10 @@ class Multi_Task:
             total_data['Y'] = np.concatenate([total_data['Y'], Y], axis=0)
             if trial_type is not None:
                 total_data['trial_type'] = np.concatenate([total_data['trial_type'], trial_type], axis=0)
+            if trial_switch is not None:
+                total_data['trial_switch'] = np.concatenate([total_data['trial_switch'], trial_switch], axis=0)
+            if loss_mask is not None:
+                total_data['loss_mask'] = np.concatenate([total_data['loss_mask'], loss_mask], axis=0)
 
             task_marker.append(np.ones(N) * i_task)
 
@@ -85,9 +90,10 @@ class Multi_Task:
         data['train'] = self.gen_train_dataset(N_train)
         for i_task, task in zip(self.tasks.keys(), self.tasks.values()):
 
-            X, Y, trial_type = task.gen_dataset(N_test)
+            X, Y, trial_type, trial_switch, loss_mask = task.gen_dataset(N_test)
             key = 'test_{}'.format(i_task)
-            data[key] = {'X': X, 'Y': Y, 'trial_type': trial_type}
+            data[key] = {'X': X, 'Y': Y, 'trial_type': trial_type,
+                         'trial_switch': trial_switch, 'loss_mask': loss_mask}
 
             if self.context_input:
                 task_id = (np.ones(N_test) * i_task).astype(np.int)

@@ -133,6 +133,10 @@ class Simulation:
             self.trial_type = data[mode]['trial_type']
         if 'task_marker' in data[mode].keys():
             self.task_marker = data[mode]['task_marker']
+        if 'trial_switch' in data[mode].keys():
+            self.trial_switch = data[mode]['trial_switch']
+        if 'loss_mask' in data[mode].keys():
+            self.loss_mask = data[mode]['loss_mask']
         self.total_time_steps = self.x_inputs.shape[0]
 
         #Set defaults
@@ -143,6 +147,7 @@ class Simulation:
         self.report_interval = max(self.total_time_steps//10, 1)
         self.update_interval = 1
         self.i_start = 0
+        self.i_trial = 0
         self.i_end = self.total_time_steps
         self.sigma = 0
         self.checkpoint_learn_alg = False
@@ -166,7 +171,7 @@ class Simulation:
 
             ### --- Reset model if there is a trial structure --- ###
 
-            if self.time_steps_per_trial is not None:
+            if self.trial_switch is not None:
                 self.trial_structure()
 
             ### --- Run network forwards and get error --- ###
@@ -240,9 +245,8 @@ class Simulation:
     def trial_structure(self):
         """Resets learning algorithm and/or network state between trials."""
 
-        self.i_t_trial = self.i_t%self.time_steps_per_trial
-        if self.i_t_trial == 0:
-            self.i_trial = self.i_t//self.time_steps_per_trial
+        if self.trial_switch[self.i_t] == 1:
+            self.i_trial += 1
             try:
                 self.rnn.trial_type = self.trial_type[self.i_t]
             except TypeError:
@@ -274,9 +278,12 @@ class Simulation:
         rnn.error = rnn.loss.f_prime(rnn.z, rnn.y)
 
         #Re-scale losses and errors if trial structure is provided
-        if self.trial_mask is not None:
-            rnn.loss_ *= self.trial_mask[self.i_t_trial]
-            rnn.error *= self.trial_mask[self.i_t_trial]
+        if self.loss_mask is not None:
+            #Is this clunky numpy code or the slickeset use of numpy broadcasting
+            #rules maybe ever? You be the judge. Effortless translation into
+            #dimension-wise loss if that's a thing you care about.
+            rnn.loss_ *= self.loss_mask[self.i_t]
+            rnn.error *= self.loss_mask[self.i_t]
 
     def train_step(self):
         """Uses self.learn_alg to calculate gradients and self.optimizer to

@@ -32,10 +32,12 @@ class Task:
         data = {'train': {}, 'test': {}}
 
         for mode, N in zip(['train', 'test'], [N_train, N_test]):
-            X, Y, trial_type = self.gen_dataset(N)
+            X, Y, trial_type, trial_switch, loss_mask = self.gen_dataset(N)
             data[mode]['X'] = X
             data[mode]['Y'] = Y
             data[mode]['trial_type'] = trial_type
+            data[mode]['trial_switch'] = trial_switch
+            data[mode]['loss_mask'] = loss_mask
 
         return data
 

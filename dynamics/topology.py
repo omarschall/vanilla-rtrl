@@ -168,7 +168,10 @@ def run_autonomous_sim(a_initial, rnn, N, monitors=[],
 
     #Create empty data array
     data = {'test': {'X': np.zeros((N, rnn.n_in)) + background_input,
-                     'Y': np.zeros((N, rnn.n_out))}}
+                     'Y': np.zeros((N, rnn.n_out)),
+                     'trial_type': None,
+                     'trial_switch': None,
+                     'loss_mask': None}}
 
     rnn.reset_network(a=a_initial)
 
