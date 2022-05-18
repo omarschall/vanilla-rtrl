@@ -52,4 +52,4 @@ class Mimic_RNN(Task):
             self.rnn.z_out()
             Y.append(self.rnn.output.f(self.rnn.z))
 
-        return X, np.array(Y), None
+        return X, np.array(Y), None, None, None

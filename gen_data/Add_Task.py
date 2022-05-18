@@ -58,4 +58,4 @@ class Add_Task(Task):
         X = np.tile(X, self.tau_task).reshape((self.tau_task*N, 2))
         Y = np.tile(Y, self.tau_task).reshape((self.tau_task*N, 2))
 
-        return X, Y, None
+        return X, Y, None, None, None

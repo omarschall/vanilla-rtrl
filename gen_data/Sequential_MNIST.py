@@ -48,4 +48,4 @@ class Sequential_MNIST(Task):
         X = mnist_images
         Y = np.tile(one_hot_labels, self.inputs_per_image).reshape((-1, 10))
 
-        return X, Y, np.array(mnist_labels)
+        return X, Y, np.array(mnist_labels), None, None

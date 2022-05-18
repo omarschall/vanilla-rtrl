@@ -13,7 +13,8 @@ class Efficient_BPTT(Learning_Algorithm):
     update the memory of relevant network variables, while get_rec_grads only
     returns non-zero elements every T_truncation time steps."""
 
-    def __init__(self, rnn, T_truncation, **kwargs):
+    def __init__(self, rnn, T_truncation, trial_based_truncation=False,
+                 **kwargs):
         """Inits an instance of Efficient_BPTT by specifying the network to
         train and the truncation horizon. No default allowable kwargs."""
 
@@ -22,6 +23,10 @@ class Efficient_BPTT(Learning_Algorithm):
         super().__init__(rnn, allowed_kwargs_, **kwargs)
 
         self.T_truncation = T_truncation
+        self.trial_based_truncation = trial_based_truncation
+        if self.trial_based_truncation:
+            self.T_truncation = 0
+            self.compute_gradient = False
 
         # Initialize lists for storing network data
         self.a_hat_history = []
@@ -50,7 +55,12 @@ class Efficient_BPTT(Learning_Algorithm):
                 otherwise an array of 0s of the same shape."""
 
         # Once a 'triangle' is formed (see Fig. 3 in paper), compute gradient.
-        if len(self.a_hat_history) >= self.T_truncation:
+        if self.trial_based_truncation:
+            compute_condition = self.compute_gradient
+        else:
+            compute_condition = (len(self.a_hat_history) >= self.T_truncation)
+
+        if compute_condition:
 
             # Initialize recurrent grads at 0
             rec_grads = np.zeros((self.n_h, self.m))
@@ -80,8 +90,19 @@ class Efficient_BPTT(Learning_Algorithm):
                 J = self.rnn.get_a_jacobian(h=h, update=False)
                 c = q + c.dot(J)
 
+            if self.trial_based_truncation:
+                self.compute_gradient = False
+                self.T_truncation = 0
+
             return rec_grads
 
         else:
 
+            if self.trial_based_truncation:
+                self.T_truncation += 1
+
             return np.zeros((self.n_h, self.m))
+
+    def reset_learning(self):
+
+        self.compute_gradient = True
