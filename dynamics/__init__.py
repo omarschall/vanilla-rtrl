@@ -5,4 +5,5 @@ from .distances import *
 from .feature_space import *
 from .metrics import *
 from .topology import *
+from .track_fixed_points import *
 from .VAE import *
