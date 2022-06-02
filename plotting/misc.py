@@ -504,7 +504,7 @@ def plot_3d_or_4d_array_of_config_results(configs_array, results_array, key_orde
 def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                                            key_order, sim_dict, data,
                                            task_dict=None, N_task_data=None,
-                                           xlim=500, trace_spacing=2):
+                                           xlim=[0, 500], trace_spacing=2):
     """Given an array of configs (must be 2D) and corresponding results as
     floats, plots the result in a 2D grid averaging over random seeds."""
 
@@ -554,7 +554,7 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                 if sim.time_steps_per_trial is not None:
                     for i in range(0, data['test']['X'].shape[0], sim.time_steps_per_trial):
                         ax.axvline(x=i, color='k', linestyle='--')
-                ax.set_xlim([0, xlim])
+                ax.set_xlim(xlim)
                 ax.set_yticks([])
                 ax.set_xlabel('time steps')
 

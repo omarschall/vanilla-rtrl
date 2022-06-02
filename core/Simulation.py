@@ -112,7 +112,8 @@ class Simulation:
                 calculating Duncker projections during a task switch."""
 
         allowed_kwargs = {'learn_alg', 'optimizer', 'a_initial', 'sigma',
-                          'update_interval', 'comp_algs', 'verbose',
+                          'update_interval', 'comp_algs', 'verbose', 'print',
+                          'test_current_task',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
                           'overwrite_checkpoints', 'i_start', 'i_end',
@@ -141,6 +142,8 @@ class Simulation:
 
         #Set defaults
         self.verbose = True
+        self.print = False
+        self.test_current_task = True
         self.report_accuracy = False
         self.report_loss = False
         self.comp_algs = []
@@ -362,7 +365,7 @@ class Simulation:
         summary = '\rProgress: {}% complete \nTime Elapsed: {}s \n'
         mode = 'test'
 
-        if 'task_marker' in data['train'].keys():
+        if 'task_marker' in data['train'].keys() and self.test_current_task:
             mode += '_{}'.format(data['train']['task_marker'][self.i_t])
 
         if 'rnn.loss_' in self.mons.keys():
@@ -385,8 +388,10 @@ class Simulation:
                 test_loss = np.mean(test_sim.mons['rnn.loss_'])
                 loss_summary = 'Test loss: {} \n'.format(test_loss)
                 summary += loss_summary
+                self.test_loss = test_loss
 
-        print(summary.format(progress, time_elapsed))
+        if self.print:
+            print(summary.format(progress, time_elapsed))
 
     def update_monitors(self):
         """Loops through the monitor keys and appends current value of any
