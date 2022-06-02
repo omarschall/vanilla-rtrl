@@ -11,14 +11,15 @@ class Discrete_Integration_Task(Task):
                  uniform_count_stats=False, max_count=5,
                  max_total_inputs=12, delay=5,
                  BPR_integrate_mask=1, BPR_delay_mask=0,
-                 BPT_integrate_mask=0, BPT_delay_mask=1):
+                 BPT_integrate_mask=0, BPT_delay_mask=1,
+                 delay_hint=1):
         """Later
 
         Args:
             p_bit (float): The probability of integration input being nonzero.
             p_reset (float): The probability of the integration being reset."""
 
-        n_in = 2
+        n_in = 3
         n_out = 2
 
         super().__init__(n_in, n_out)
@@ -29,9 +30,10 @@ class Discrete_Integration_Task(Task):
         self.reset_mode = reset_mode
         self.report_count = report_count
         self.report_both = report_both
-        self.probe_inputs = [np.array([1, 0]),
-                             np.array([-1, 0]),
-                             np.array([0, 1])]
+        self.probe_inputs = [np.array([1, 0, 0]),
+                             np.array([-1, 0, 0]),
+                             np.array([0, 1, 0]),
+                             np.array([0, 0, delay_hint])]
         self.uniform_count_stats = uniform_count_stats
         self.max_count = max_count
         self.max_total_inputs = max_total_inputs
@@ -40,6 +42,7 @@ class Discrete_Integration_Task(Task):
         self.BPR_delay_mask = BPR_delay_mask
         self.BPT_integrate_mask = BPT_integrate_mask
         self.BPT_delay_mask = BPT_delay_mask
+        self.delay_hint = delay_hint
 
     def gen_dataset_1(self, N):
 
@@ -97,7 +100,7 @@ class Discrete_Integration_Task(Task):
             final_negative_count = final_positive_count - final_net_count
 
             #Randomly put these positive and negative counts into boxes
-            x_trial = np.zeros((period + self.delay, 2))
+            x_trial = np.zeros((period + self.delay, 3))
             time_indices = list(range(period))
             positive_input_indices = np.random.choice(time_indices,
                                                       size=final_positive_count,
@@ -110,7 +113,8 @@ class Discrete_Integration_Task(Task):
 
             x_trial[positive_input_indices, 0] = 1
             x_trial[negative_input_indices, 0] = -1
-            x_trial[0, 1] = 1
+            x_trial[0, 1] = 1 #signal to start of new trial
+            x_trial[period, 2] = self.delay_hint #signal to start of delay period
 
             X.append(x_trial)
 
