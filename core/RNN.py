@@ -61,7 +61,7 @@ class RNN:
             J_{ij} = \alpha\phi'(h_i) W_{rec,ij} + (1 - \alpha)\delta_{ij}."""
 
     def __init__(self, W_in, W_rec, W_out, b_rec, b_out,
-                 activation, alpha, output, loss):
+                 activation, alpha, output, loss, reset_sigma=None):
         """Initializes an RNN by specifying its initial parameter values;
         its activation, output, and loss functions; and alpha."""
 
@@ -95,6 +95,9 @@ class RNN:
         self.activation = activation
         self.output = output
         self.loss = loss
+
+        #Reset sigma
+        self.reset_sigma = None
 
         #Number of parameters
         self.n_h_params = (self.W_rec.size +
