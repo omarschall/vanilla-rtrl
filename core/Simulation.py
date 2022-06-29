@@ -51,6 +51,8 @@ class Simulation:
             if not hasattr(self, attr):
                 setattr(self, attr, None)
 
+        self.reset_sigma = self.rnn.reset_sigma
+
     def run(self, data, mode='train', monitors=[], **kwargs):
         """Runs the network forward as many time steps as given by data.
 
