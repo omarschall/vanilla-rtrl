@@ -78,7 +78,7 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
 
         if test_args['save_data']:
             np.random.seed(0)
-            test_data = task.gen_data(10, test_args['N'])
+            test_data = task.gen_data(1000, test_args['N'])
             test_sim = Simulation(checkpoint['rnn'])
             test_sim.run(test_data, mode='test', verbose=False,
                          monitors=['rnn.a'],

@@ -52,6 +52,7 @@ def plot_input_dependent_topology(checkpoint, data,
                                   space_range=1,
                                   circle_color=('0.8'),
                                   circle_radius=0.18,
+                                  plot_output=True,
                                   output_ylim=[-9, 3],
                                   figsize=(8, 4)):
 
@@ -165,18 +166,21 @@ def plot_input_dependent_topology(checkpoint, data,
     ax[0].set_ylim([-1.4, 1.4])
     ax[0].axis('off')
 
-    #Add output plots
-    rnn = checkpoint['rnn']
-    test_sim = Simulation(rnn)
-    test_sim.run(data, mode='test', monitors=['rnn.y_hat'], verbose=False)
+    if plot_output:
+        #Add output plots
+        rnn = checkpoint['rnn']
+        test_sim = Simulation(rnn)
+        test_sim.run(data, mode='test', monitors=['rnn.y_hat'], verbose=False)
 
-    for i in range(rnn.n_in):
-        ax[1].plot(data['test']['X'][40:, i] - i * 2.5, color=('0.7'), linestyle='--')
-        ax[1].plot(data['test']['Y'][40:, i] - i * 2.5, color=('0.2'))
-        ax[1].plot(test_sim.mons['rnn.y_hat'][40:, i] - i * 2.5, color=colors[i])
+        for i in range(rnn.n_in):
+            ax[1].plot(data['test']['X'][40:, i] - i * 2.5, color=('0.7'), linestyle='--')
+        for i in range(rnn.n_out):
+            ax[1].plot(data['test']['Y'][40:, i] - i * 2.5, color=('0.2'))
+            ax[1].plot(test_sim.mons['rnn.y_hat'][40:, i] - i * 2.5, color=colors[i])
 
-    ax[1].axis('off')
-    ax[1].set_ylim(output_ylim)
+        ax[1].axis('off')
+        ax[1].set_ylim(output_ylim)
+
     if return_fig:
         return fig
 
@@ -303,6 +307,7 @@ def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
 
 def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                             plot_fixed_points=False, plot_cluster_means=False,
+                            fp_color=None,
                             plot_uncategorized_points=False,
                             plot_init_points=False, eig_norm_color=False,
                             plot_graph_structure=False,
@@ -378,6 +383,8 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                 continue
         else:
             color = 'C{}'.format(i + 1)
+        if fp_color is not None:
+            color = fp_color
         if plot_fixed_points:
             ssa.plot_in_state_space(fixed_points[labels == i], False, color, '*', alpha=0.5)
 
