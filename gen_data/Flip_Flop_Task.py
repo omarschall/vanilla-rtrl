@@ -47,7 +47,7 @@ class Flip_Flop_Task(Task):
         N = N // self.tau_task
 
         if N == 0:
-            return np.array([]), np.array([]), None
+            return np.array([]), np.array([]), None, None, None
 
         probability = [self.p_flip / 2, 1 - self.p_flip, self.p_flip / 2]
         choices = [-1, 0, 1]

@@ -97,7 +97,7 @@ class RNN:
         self.loss = loss
 
         #Reset sigma
-        self.reset_sigma = None
+        self.reset_sigma = reset_sigma
 
         #Number of parameters
         self.n_h_params = (self.W_rec.size +
