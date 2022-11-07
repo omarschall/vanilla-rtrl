@@ -38,7 +38,7 @@ def assign_time_points_to_stages(loss, d_top, performance_criterion,
 
     ### --- Apply criteria to filtered traces --- ###
 
-    good_performance = convolved_loss < performance_criterion
+    good_performance = convolved_loss[:-1] < performance_criterion
     constant_topology = convolved_metric < topological_criterion
 
     ### --- Assign time points to stages --- ###
@@ -120,7 +120,7 @@ def filter_loss_and_dtop(loss, d_top, loss_window=10, topological_window=10):
 
     loss_kernel = np.ones(loss_window) / loss_window
     reflected_loss = np.concatenate([loss[loss_window - 1:0:-1], loss])
-    convolved_loss = np.convolve(reflected_loss, loss_kernel, mode='valid')[:-1]
+    convolved_loss = np.convolve(reflected_loss, loss_kernel, mode='valid')
 
     ### --- Zero-pad top. metric for causal convolution --- ###
 
