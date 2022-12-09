@@ -2,70 +2,60 @@ import numpy as np
 from gen_data.Task import Task
 
 class Cts_Integration_Task(Task):
-    """Class for the 1-dimensional discrete integration task."""
+    """Class for the 1-dimensional continuous integration task."""
 
-    def __init__(self):
+    def __init__(self, T_trial,  input_var=1, sensitivity=0.4,
+                 c_values=[-0.512, -0.256, -0.128, -0.064, -0.032,
+                           0, 0.032, 0.064, 0.128, 0.256, 0.512]):
         """Later
 
         Args:
-            p_bit (float): The probability of integration input being nonzero.
-            p_reset (float): The probability of the integration being reset."""
+            """
 
-        n_in = 3
+        n_in = 2
         n_out = 2
 
         super().__init__(n_in, n_out)
 
-        self.p_bit = p_bit
-        self.p_reset = p_reset
-        self.tau_task = tau_task
-        self.reset_mode = reset_mode
-        self.report_count = report_count
-        self.report_both = report_both
-        self.probe_inputs = [np.array([1, 0, 0]),
-                             np.array([-1, 0, 0]),
-                             np.array([0, 1, 0]),
-                             np.array([0, 0, delay_hint])]
-        self.uniform_count_stats = uniform_count_stats
-        self.max_count = max_count
-        self.max_total_inputs = max_total_inputs
-        self.delay = delay
-        self.BPR_integrate_mask = BPR_integrate_mask
-        self.BPR_delay_mask = BPR_delay_mask
-        self.BPT_integrate_mask = BPT_integrate_mask
-        self.BPT_delay_mask = BPT_delay_mask
-        self.delay_hint = delay_hint
+        self.T_trial = T_trial
+        self.c_values = c_values
+        self.input_var = input_var
+        self.sensitivity = sensitivity
 
     def gen_dataset(self, N):
 
-        #N = N // self.tau_task
+        N_trials = N // self.T_trial
 
-        probability = [self.p_bit / 2, 1 - self.p_bit, self.p_bit / 2]
-        choices = [-1, 0, 1]
-        x_bits = np.random.choice(choices, size=N, p=probability)
+        X = []
+        Y = []
+        trial_type = []
+        trial_switch = []
 
-        if self.reset_mode == 'random':
-            x_resets = np.random.binomial(1, self.p_reset, size=N)
-        if self.reset_mode == 'regular':
-            x_resets = np.zeros_like(x_bits)
-            period = int(1 / self.p_reset)
-            x_resets[::period] = 1
+        for i_trial in range(N_trials):
 
-        X = np.array([x_bits, x_resets]).T
-        Y = np.zeros_like(X)
+            c = np.random.choice(self.c_values)
+            mu = self.sensitivity * c
+            x_trial = np.random.normal(mu, self.input_var, self.T_trial)
+            y_trial = np.cumsum(x_trial)
+            X.append(np.array([x_trial, x_trial]).T)
+            Y.append(np.array([y_trial, y_trial]).T)
 
-        t_resets = list(np.where(x_resets > 0)[0]) + [None]
-        t_reset_prev = 0
+            trial_type_ = c * np.ones_like(x_trial)
+            trial_type.append(trial_type_)
 
-        for i_t_reset, t_reset in enumerate(t_resets):
+            trial_switch_ = np.zeros_like(x_trial)
+            trial_switch_[-1] = 1
+            trial_switch.append(trial_switch_)
 
-            x_interval = x_bits[t_reset_prev:t_reset]
-            counts = np.cumsum(x_interval)
-            if self.report_count:
-                Y[t_reset_prev:t_reset, 0] = counts
-            else:
-                Y[t_reset_prev:t_reset, 0] = np.sign(counts)
+        try:
+            X = np.concatenate(X, axis=0)
+            Y = np.concatenate(Y, axis=0)
+            trial_type = np.concatenate(trial_type)
+            trial_switch = np.concatenate(trial_switch, axis=0)
+        except ValueError:
+            X = None
+            Y = None
+            trial_type = None
+            trial_switch = None
 
-            t_reset_prev = t_reset
-
-        return X, Y, None
+        return X, Y, trial_type, trial_switch, None
