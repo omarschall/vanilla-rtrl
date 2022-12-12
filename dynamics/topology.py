@@ -137,7 +137,7 @@ def find_KE_minimum(rnn, LR=1e-2, N_iters=1000000,
             i_KE_increase = 0
             i_same_LR += 1
 
-        if i_same_LR >= same_LR_criterion:
+        if i_same_LR >= same_LR_criterion and verbose:
             print('Reached same LR criterion at {} iter'.format(i_iter))
             break
 
