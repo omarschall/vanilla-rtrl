@@ -313,6 +313,7 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                             plot_graph_structure=False,
                             n_vae_samples=None,
                             n_test_samples=None,
+                            test_alpha=0.2,
                             graph_key='adjacency_matrix'):
     """For a fresh or already given State_Space_Analysis object, plots many
     relevant data from an analyzed checkpoint in the 3D State Space."""
@@ -339,7 +340,7 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
     ssa.clear_plot()
     if plot_test_points:
         ssa.plot_in_state_space(test_sim.mons['rnn.a'][1000:], False, 'C0',
-                                '.', alpha=0.009)
+                                '.', alpha=test_alpha)
     if n_test_samples is not None:
         n = int(np.ceil(np.sqrt(n_test_samples)))
         fig, ax = plt.subplots(n, n)

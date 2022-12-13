@@ -21,6 +21,7 @@ class Cts_Integration_Task(Task):
         self.c_values = c_values
         self.input_var = input_var
         self.sensitivity = sensitivity
+        self.probe_inputs = [np.ones(2), -1 * np.ones(2)]
 
     def gen_dataset(self, N):
 

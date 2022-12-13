@@ -1,3 +1,4 @@
+from .analyze_individual_checkpoint import analyze_individual_checkpoint
 from .analyze_training_run import analyze_training_run
 from .compare_analyzed_checkpoints import compare_analyzed_checkpoints
 from .cross_compare_analyzed_checkpoints import cross_compare_analyzed_checkpoints
