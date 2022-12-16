@@ -313,6 +313,7 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                             plot_graph_structure=False,
                             n_vae_samples=None,
                             n_test_samples=None,
+                            T_per_sample=10,
                             test_alpha=0.2,
                             graph_key='adjacency_matrix'):
     """For a fresh or already given State_Space_Analysis object, plots many
@@ -347,12 +348,9 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
         for i_ax in range(n_test_samples):
             n1 = i_ax // n
             n2 = i_ax % n
-            try:
-                T = checkpoint['VAE_T']
-            except KeyError:
-                T = 10
+            T = T_per_sample
             T_total = test_sim.mons['rnn.a'].shape[0]
-            t_start = np.random.randint(0, T_total - T)
+            t_start = np.random.randint(0, (T_total - T)//T) * T
             ssa.plot_in_state_space(test_sim.mons['rnn.a'][t_start:t_start + T],
                                     True, 'C0', alpha=0.7)
             for i_out in range(test_sim.rnn.n_out):
