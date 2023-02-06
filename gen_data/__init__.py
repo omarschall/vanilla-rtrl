@@ -1,4 +1,5 @@
 from .Add_Task import Add_Task
+from .Binary_Addition_Task import import Binary_Addition_Task
 from .Cts_Integration_Task import Cts_Integration_Task
 from .Delay_Nonmatch_Task import Delay_Nonmatch_Task
 from .Discrete_Integration_Task import Discrete_Integration_Task
