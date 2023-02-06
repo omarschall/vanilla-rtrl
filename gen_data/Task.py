@@ -39,6 +39,9 @@ class Task:
             data[mode]['trial_switch'] = trial_switch
             data[mode]['loss_mask'] = loss_mask
 
+        if hasattr(self, 'probe_dataset'):
+            data['probe'] = self.probe_dataset
+
         return data
 
     def gen_dataset(self, N):
