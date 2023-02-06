@@ -315,6 +315,9 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                             n_test_samples=None,
                             T_per_sample=10,
                             test_alpha=0.2,
+                            plot_probe=False,
+                            probe_colors=None,
+                            n_probes=None,
                             graph_key='adjacency_matrix'):
     """For a fresh or already given State_Space_Analysis object, plots many
     relevant data from an analyzed checkpoint in the 3D State Space."""
@@ -325,6 +328,15 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                  mode='test',
                  monitors=['rnn.loss_', 'rnn.y_hat', 'rnn.a'],
                  verbose=False)
+
+    try:
+        probe_sim = Simulation(rnn)
+        probe_sim.run(data,
+                      mode='probe',
+                      monitors=['rnn.loss_', 'rnn.y_hat', 'rnn.a'],
+                      verbose=False)
+    except KeyError:
+        pass
 
     A_init = checkpoint['A_init']
     fixed_points = checkpoint['fixed_points']
@@ -358,19 +370,20 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                                 (str(0.6)), linestyle='--')
                 ax[n1, n2].plot(data['test']['Y'][t_start:t_start + T, i_out] + 2.5 * i_out, 'C0')
                 ax[n1, n2].plot(test_sim.mons['rnn.y_hat'][t_start:t_start + T, i_out] + 2.5 * i_out, 'C2')
-                # ax[n1, n2].plot(data['test']['X'][t_start:t_start + T, i_out],
-                #                 (str(0.6)), linestyle='--')
-                # ax[n1, n2].plot(data['test']['Y'][t_start:t_start + T, 1], 'C0')
-                # ax[n1, n2].plot(test_sim.mons['rnn.y_hat'][t_start:t_start + T, 1], 'C2')
-                # ax[n1, n2].plot(data['test']['X'][t_start:t_start + T, 2] - 2.5,
-                #                 (str(0.6)), linestyle='--')
-                # ax[n1, n2].plot(data['test']['Y'][t_start:t_start + T, 2] - 2.5, 'C0')
-                # ax[n1, n2].plot(test_sim.mons['rnn.y_hat'][t_start:t_start + T, 2] - 2.5, 'C2')
-
             ax[n1, n2].set_yticks([])
 
     if plot_init_points:
         ssa.plot_in_state_space(A_init, False, 'C9', 'x', alpha=1)
+
+    if plot_probe:
+        for i_probe in range(n_probes):
+            #col = ('{}'.format(0.4 + 0.4 * i_probe / n_probes))
+            col = probe_colors[i_probe]
+            #A = np.roll(probe_sim.mons['rnn.a'], -1, axis=0)
+            A = probe_sim.mons['rnn.a']
+            rnn_activity = A[i_probe*T_per_sample:(i_probe+1)*T_per_sample - 1]
+            ssa.plot_in_state_space(rnn_activity, True, col,
+                                    alpha=test_alpha)
 
     cluster_idx = np.unique(labels)
     n_clusters = len(cluster_idx) - (-1 in cluster_idx)
