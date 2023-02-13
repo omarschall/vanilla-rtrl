@@ -5,16 +5,21 @@ class Binary_Addition_Task(Task):
     """ATTEMPT AT WILL TONG TASK"""
 
     def __init__(self, max_args=3, max_binary_digits=3, max_noops=5,
-                 T_final_answer=5):
+                 T_final_answer=5, output_style='analog'):
         """Not sure what args should be."""
 
         #Initialize a parent Task object with 4 input and 2 output dimensions.
-        super().__init__(4, 2)
+        if output_style == 'analog':
+            n_out = 2
+        elif output_style == 'one_hot':
+            n_out = max_args * (2 ** max_binary_digits - 1)
+        super().__init__(4, n_out)
 
         self.max_args = max_args
         self.max_binary_digits = max_binary_digits
         self.max_noops = max_noops
         self.T_final_answer = T_final_answer
+        self.output_style = output_style
 
     def gen_dataset(self, N):
 
@@ -27,7 +32,7 @@ class Binary_Addition_Task(Task):
             args, partial_sums = self.generate_random_symbolic_sequence()
             x_trial, y_trial = self.symbolic_to_one_hot(args, partial_sums)
             t_trial = x_trial.shape[0]
-            trial_switch_ = np.zeros(t_trial)
+            trial_switch_ = np.zeros(t_trial).astype(np.int)
             trial_switch_[-1] = 1
             n += t_trial
 
@@ -37,7 +42,7 @@ class Binary_Addition_Task(Task):
 
         X = np.concatenate(X, axis=0)
         Y = np.concatenate(Y, axis=0)
-        trial_switch = np.concatenate(trial_switch_, axis=0)
+        trial_switch = np.concatenate(trial_switch, axis=0)
 
         return X, Y, None, trial_switch, None
 
@@ -72,13 +77,15 @@ class Binary_Addition_Task(Task):
 
             brep = [I[int(d)] for d in np.binary_repr(arg)]
             one_hot_seq += brep
-            expanded_partial_sums += zero_pad_ps[i_arg] * len(brep)
+            #from pdb import set_trace
+            #set_trace()
+            expanded_partial_sums += ([zero_pad_ps[i_arg]] * len(brep))
             if i_arg < n_args - 1:
 
                 n_noops = np.random.randint(0, self.max_noops - 1)
                 n_repeats = n_noops + 1
                 one_hot_seq += ([I[2]] * n_noops)
-                one_hot_seq += I[3]
+                one_hot_seq += [I[3]]
             else:
                 n_repeats = self.T_final_answer
                 one_hot_seq += ([I[2]] * self.T_final_answer)
@@ -86,8 +93,12 @@ class Binary_Addition_Task(Task):
             expanded_partial_sums += ([zero_pad_ps[i_arg + 1]] * n_repeats)
 
         x_trial = np.array(one_hot_seq)
-        y_trial = np.array([expanded_partial_sums,
-                            expanded_partial_sums]).reshape(2, -1)
+        if self.output_style == 'analog':
+            y_trial = np.vstack([expanded_partial_sums,
+                                 expanded_partial_sums]).T
+        elif self.output_style == 'one_hot':
+            I = np.eye(self.n_out)
+            y_trial = np.array([I[s] for s in expanded_partial_sums])
 
         return x_trial, y_trial
 
