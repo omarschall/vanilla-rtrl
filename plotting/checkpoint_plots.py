@@ -25,9 +25,9 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                  verbose=False, **kwargs)
 
     fig = plt.figure(figsize=figsize)
-    for i in range(rnn.n_out):
-
+    for i in range(rnn.n_in):
         plt.plot(data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
+    for i in range(rnn.n_out):
         plt.plot(data['test']['Y'][:, i] - i * y_spacing, 'C0')
         plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * y_spacing, 'C3')
     if time_steps_per_trial is not None:

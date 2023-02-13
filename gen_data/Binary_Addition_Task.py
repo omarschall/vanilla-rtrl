@@ -12,7 +12,7 @@ class Binary_Addition_Task(Task):
         if output_style == 'analog':
             n_out = 2
         elif output_style == 'one_hot':
-            n_out = max_args * (2 ** max_binary_digits - 1)
+            n_out = max_args * (2 ** max_binary_digits - 1) + 1
         super().__init__(4, n_out)
 
         self.max_args = max_args
