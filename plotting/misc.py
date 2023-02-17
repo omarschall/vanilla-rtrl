@@ -552,8 +552,9 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                 test_sim.run(data, mode='test', monitors=['rnn.loss_', 'rnn.y_hat'],
                              verbose=False)
 
-                for i in range(rnn.n_out):
+                for i in range(rnn.n_in):
                     ax.plot(data['test']['X'][:, i] - i * trace_spacing, (str(0.6)))
+                for i in range(rnn.n_out):
                     ax.plot(output_scale * data['test']['Y'][:, i] - i * trace_spacing, 'C0')
                     ax.plot(output_scale * test_sim.mons['rnn.y_hat'][:, i] - i * trace_spacing, 'C3', alpha=0.7)
                 if sim.time_steps_per_trial is not None:
