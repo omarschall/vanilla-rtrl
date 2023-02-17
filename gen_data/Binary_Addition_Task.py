@@ -1,11 +1,12 @@
 import numpy as np
 from gen_data.Task import Task
+from copy import copy
 
 class Binary_Addition_Task(Task):
     """ATTEMPT AT WILL TONG TASK"""
 
     def __init__(self, max_args=3, max_binary_digits=3, max_noops=5,
-                 T_final_answer=5, output_style='analog'):
+                 T_final_answer=5, output_style='analog', T_probe=50):
         """Not sure what args should be."""
 
         #Initialize a parent Task object with 4 input and 2 output dimensions.
@@ -20,6 +21,33 @@ class Binary_Addition_Task(Task):
         self.max_noops = max_noops
         self.T_final_answer = T_final_answer
         self.output_style = output_style
+        self.probe_inputs = [np.eye(4)[i] for i in range(4)]
+        self.probe_dataset = self.gen_probe_dataset(T_probe)
+
+    def gen_probe_dataset(self, T_probe):
+
+        #Temporarily change instance parameters
+        original_max_noops = copy(self.max_noops)
+        original_T_final_answer = copy(self.T_final_answer)
+        self.max_noops = 0
+        self.T_final_answer = 0
+
+        args = [1] * (T_probe // 2)
+        x_trial, y_trial = self.symbolic_to_one_hot(args, np.cumsum(args))
+        trial_switch = np.zeros(x_trial.shape[0])
+        trial_switch[-1] = 1
+
+        probe_dataset = {'X': x_trial,
+                         'Y': y_trial,
+                         'trial_type': None,
+                         'trial_switch': trial_switch,
+                         'loss_mask': None}
+
+        #Reset original parameters
+        self.max_noops = original_max_noops
+        self.T_final_answer = original_T_final_answer
+
+        return probe_dataset
 
     def gen_dataset(self, N):
 
@@ -40,9 +68,12 @@ class Binary_Addition_Task(Task):
             Y.append(y_trial)
             trial_switch.append(trial_switch_)
 
-        X = np.concatenate(X, axis=0)
-        Y = np.concatenate(Y, axis=0)
-        trial_switch = np.concatenate(trial_switch, axis=0)
+        try:
+            X = np.concatenate(X, axis=0)
+            Y = np.concatenate(Y, axis=0)
+            trial_switch = np.concatenate(trial_switch, axis=0)
+        except ValueError:
+            return None, None, None, None, None
 
         return X, Y, None, trial_switch, None
 
@@ -82,7 +113,7 @@ class Binary_Addition_Task(Task):
             expanded_partial_sums += ([zero_pad_ps[i_arg]] * len(brep))
             if i_arg < n_args - 1:
 
-                n_noops = np.random.randint(0, self.max_noops - 1)
+                n_noops = np.random.randint(0, self.max_noops + 1)
                 n_repeats = n_noops + 1
                 one_hot_seq += ([I[2]] * n_noops)
                 one_hot_seq += [I[3]]
