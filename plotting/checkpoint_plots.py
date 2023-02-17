@@ -9,6 +9,8 @@ from plotting.State_Space_Analysis import State_Space_Analysis
 def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                                 figsize=(3, 2), xlim=500,
                                 time_steps_per_trial=None,
+                                plot_inputs=True,
+                                n_out_dims=None,
                                 trial_mask=None,
                                 reset_sigma=None,
                                 y_spacing=2,
@@ -25,9 +27,14 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                  verbose=False, **kwargs)
 
     fig = plt.figure(figsize=figsize)
-    for i in range(rnn.n_in):
-        plt.plot(data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
-    for i in range(rnn.n_out):
+    if plot_inputs:
+        for i in range(rnn.n_in):
+            plt.plot(data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
+    if n_out_dims is not None:
+        n_out = n_out_dims
+    else:
+        n_out = rnn.n_out
+    for i in range(n_out):
         plt.plot(data['test']['Y'][:, i] - i * y_spacing, 'C0')
         plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * y_spacing, 'C3')
     if time_steps_per_trial is not None:
@@ -54,7 +61,8 @@ def plot_input_dependent_topology(checkpoint, data,
                                   circle_radius=0.18,
                                   plot_output=True,
                                   output_ylim=[-9, 3],
-                                  figsize=(8, 4)):
+                                  figsize=(8, 4),
+                                  title=None):
 
     if n_inputs is None:
         n_in = 6
@@ -75,8 +83,12 @@ def plot_input_dependent_topology(checkpoint, data,
     else:
         total_nodes = n_nodes
 
-    fig, ax = plt.subplots(1, 2, figsize=figsize)
-    fig.suptitle('Checkpoint {}'.format(checkpoint['i_t']))
+    n_plots = 1 + int(plot_output)
+    fig, ax = plt.subplots(1, n_plots, figsize=figsize, squeeze=False)
+    if title is None:
+        fig.suptitle('Checkpoint {}'.format(checkpoint['i_t']))
+    else:
+        fig.suptitle(title)
 
     t_range = np.arange(np.pi, -np.pi, -2 * np.pi / total_nodes)
     circle_nodes = np.array([[np.cos(t), np.sin(t)] for t in t_range[:n_nodes]])
@@ -92,7 +104,7 @@ def plot_input_dependent_topology(checkpoint, data,
     #                      color=('0.8'))
     for node in circle_nodes:
         circ = plt.Circle(node, radius=circle_radius, color=circle_color)
-        ax[0].add_artist(circ)
+        ax[0, 0].add_artist(circ)
 
     #Create multigraph tensor
     graph = np.stack([checkpoint[key] for key in keys], axis=-1)
@@ -155,16 +167,16 @@ def plot_input_dependent_topology(checkpoint, data,
                     col = colors[i_input]
                     linestyle = linestyles[i_input]
 
-                    ax[0].plot([start[0], end[0]],
+                    ax[0, 0].plot([start[0], end[0]],
                             [start[1], end[1]], color=col, linestyle=linestyle)
 
-                    ax[0].plot([start[0]], [start[1]], 'x', color=col)
+                    ax[0, 0].plot([start[0]], [start[1]], 'x', color=col)
 
-                    ax[0].plot([end[0]], [end[1]], '.', color=col)
+                    ax[0, 0].plot([end[0]], [end[1]], '.', color=col)
 
-    ax[0].set_xlim([-1.4, 1.4])
-    ax[0].set_ylim([-1.4, 1.4])
-    ax[0].axis('off')
+    ax[0, 0].set_xlim([-1.4, 1.4])
+    ax[0, 0].set_ylim([-1.4, 1.4])
+    ax[0, 0].axis('off')
 
     if plot_output:
         #Add output plots
@@ -173,13 +185,13 @@ def plot_input_dependent_topology(checkpoint, data,
         test_sim.run(data, mode='test', monitors=['rnn.y_hat'], verbose=False)
 
         for i in range(rnn.n_in):
-            ax[1].plot(data['test']['X'][40:, i] - i * 2.5, color=('0.7'), linestyle='--')
+            ax[1, 0].plot(data['test']['X'][40:, i] - i * 2.5, color=('0.7'), linestyle='--')
         for i in range(rnn.n_out):
-            ax[1].plot(data['test']['Y'][40:, i] - i * 2.5, color=('0.2'))
-            ax[1].plot(test_sim.mons['rnn.y_hat'][40:, i] - i * 2.5, color=colors[i])
+            ax[1, 0].plot(data['test']['Y'][40:, i] - i * 2.5, color=('0.2'))
+            ax[1, 0].plot(test_sim.mons['rnn.y_hat'][40:, i] - i * 2.5, color=colors[i])
 
-        ax[1].axis('off')
-        ax[1].set_ylim(output_ylim)
+        ax[1, 0].axis('off')
+        ax[1, 0].set_ylim(output_ylim)
 
     if return_fig:
         return fig
