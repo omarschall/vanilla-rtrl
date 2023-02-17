@@ -3,6 +3,7 @@ from .Binary_Addition_Task import Binary_Addition_Task
 from .Cts_Integration_Task import Cts_Integration_Task
 from .Delay_Nonmatch_Task import Delay_Nonmatch_Task
 from .Discrete_Integration_Task import Discrete_Integration_Task
+from .Embedded_Inputs_Task import Embedded_Inputs_Task
 from .Fixed_Point_Transition_Task import Fixed_Point_Transition_Task
 from .Flip_Flop_Task import Flip_Flop_Task
 from .Mimic_RNN import Mimic_RNN
