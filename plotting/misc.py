@@ -509,6 +509,7 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                                            key_order, sim_dict, data,
                                            task_dict=None, N_task_data=None,
                                            xlim=[0, 500], trace_spacing=2,
+                                           plot_inputs=True,
                                            output_scale=1):
     """Given an array of configs (must be 2D) and corresponding results as
     floats, plots the result in a 2D grid averaging over random seeds."""
@@ -552,8 +553,9 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                 test_sim.run(data, mode='test', monitors=['rnn.loss_', 'rnn.y_hat'],
                              verbose=False)
 
-                for i in range(rnn.n_in):
-                    ax.plot(data['test']['X'][:, i] - i * trace_spacing, (str(0.6)))
+                if plot_inputs:
+                    for i in range(rnn.n_in):
+                        ax.plot(data['test']['X'][:, i] - i * trace_spacing, (str(0.6)))
                 for i in range(rnn.n_out):
                     ax.plot(output_scale * data['test']['Y'][:, i] - i * trace_spacing, 'C0')
                     ax.plot(output_scale * test_sim.mons['rnn.y_hat'][:, i] - i * trace_spacing, 'C3', alpha=0.7)

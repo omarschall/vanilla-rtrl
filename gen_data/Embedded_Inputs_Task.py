@@ -5,8 +5,8 @@ class Embedded_Inputs_Task:
         self.task = task
         self.W_embedding = W_embedding
         self.f_embedding = f_embedding
-        self.__dict__ = task.__dict__
-        self.n_in = self.W_embedding.shape[1]
+        self.__dict__.update(task.__dict__)
+        self.n_in = self.W_embedding.shape[0]
         self.probe_inputs = [self.embed_input(pi) for pi in task.probe_inputs]
 
     def gen_data(self, N_train, N_test):
@@ -14,8 +14,8 @@ class Embedded_Inputs_Task:
         data = self.task.gen_data(N_train, N_test)
 
         for key in data:
-            data[key]['X'] = self.embed_input(data[key]['X'])
-
+            if data[key]['X'] is not None:
+                data[key]['X'] = self.embed_input(data[key]['X'])
         return data
 
     def embed_input(self, X):

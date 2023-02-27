@@ -14,6 +14,8 @@ class Binary_Addition_Task(Task):
             n_out = 2
         elif output_style == 'one_hot':
             n_out = max_args * (2 ** max_binary_digits - 1) + 1
+            if (T_probe // 2) > n_out:
+                T_probe = n_out * 2
         super().__init__(4, n_out)
 
         self.max_args = max_args
