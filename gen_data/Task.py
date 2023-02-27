@@ -1,3 +1,5 @@
+from copy import copy
+
 class Task:
     """Parent class for all tasks. A Task is a class whose instances generate
     datasets to be used for training RNNs.
@@ -40,7 +42,7 @@ class Task:
             data[mode]['loss_mask'] = loss_mask
 
         if hasattr(self, 'probe_dataset'):
-            data['probe'] = self.probe_dataset
+            data['probe'] = copy(self.probe_dataset)
 
         return data
 
