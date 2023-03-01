@@ -115,7 +115,7 @@ class Simulation:
                 calculating Duncker projections during a task switch."""
 
         allowed_kwargs = {'learn_alg', 'optimizer', 'a_initial', 'sigma',
-                          'update_interval', 'comp_algs', 'verbose', 'print',
+                          'update_interval', 'comp_algs', 'verbose', 'print_',
                           'test_current_task',
                           'report_interval', 'report_accuracy', 'report_loss',
                           'best_model_interval', 'checkpoint_interval',
@@ -145,7 +145,7 @@ class Simulation:
 
         #Set defaults
         self.verbose = True
-        self.print = False
+        self.print_ = False
         self.test_current_task = True
         self.report_accuracy = False
         self.report_loss = False
@@ -396,7 +396,7 @@ class Simulation:
                 summary += loss_summary
                 self.test_loss = test_loss
 
-        if self.print:
+        if self.print_:
             print(summary.format(progress, time_elapsed))
 
     def update_monitors(self):
