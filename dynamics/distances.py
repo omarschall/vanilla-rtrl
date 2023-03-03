@@ -2,8 +2,8 @@ from dynamics.dynamics_utils import get_test_sim_data, align_checkpoints_based_o
 from dynamics.Dynamics import Vanilla_PCA
 from itertools import permutations
 import numpy as np
-from netcomp.distance import netsimile
-from pyemd import emd
+#from netcomp.distance import netsimile
+#from pyemd import emd
 from sklearn.cross_decomposition import CCA
 from utils import norm, normalized_dot_product
 #from dynamics.VAE import test_vae

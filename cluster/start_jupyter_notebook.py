@@ -1,5 +1,5 @@
 import subprocess, os
-from cluster.sync_cluster import sync_cluster
+from cluster.sync_cluster import sync_cluster, sync_columbia_cluster
 try:
     import webbrowser
     import appscript
@@ -75,4 +75,29 @@ def start_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtrl/',
 
     ### --- Open jupyter notebook in browser --- ###
 
+    webbrowser.open(url)
+
+def start_axon_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtrl/',
+                                module_name='vanilla-rtrl/',
+                                project_name='learning-dynamics'):
+    """Similar deal as above but simpler, using Axon's sjupyter command,
+    which handles the timing of waiting for the job internally. No
+    customizable options for memory / time demands of the notebook, though."""
+
+
+    sync_columbia_cluster()
+    remote = 'om2382@axon.rc.zi.columbia.edu'
+    sp = subprocess.run(['ssh', remote,
+                         'ml load anaconda3-2019.03',
+                         '&&'
+                         'conda activate v-rtrl',
+                         '&&',
+                         'sjupyter'], capture_output=True)
+    address = str(sp.stdout).split('http://')[1].split('/?token=')
+    ip, port = address[0].split(':')
+    token = address[1].split('\\n[I')[0]
+    terminal_command = 'ssh -N -L 8080:{}:{} -p 55 om2382@axon-remote.rc.zi.columbia.edu'.format(ip, port)
+    appscript.app('Terminal').do_script(terminal_command)
+    time.sleep(5)
+    url = 'http://localhost:8080/?token={}'.format(token)
     webbrowser.open(url)

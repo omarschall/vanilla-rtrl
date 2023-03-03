@@ -7,15 +7,19 @@ def submit_job(job_file_path, n_array,
                id_dependency=None,
                project_name='learning-dynamics',
                results_subdir='misc',
-               module_name='vanilla-rtrl',
-               username='oem214'):
+               module_name='vanilla-rtrl'):
     """Submit an array job in reference to a particular job file, with a
     specified number of sub-jobs. Creates directories for storing results."""
 
     ### --- Make results directory -- ###
 
+    username = get_ipython().getoutput('whoami')[0] #WHOOOO AMMMMM I?
+    if username == 'oem214':
+        project_base = '/scratch/'
+    if username == 'om2382':
+        project_base = '/home/'
     job_name = job_file_path.split('/')[-1].split('.')[0]
-    project_dir = os.path.join('/scratch/', username, project_name)
+    project_dir = os.path.join(project_base, username, project_name)
     results_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
     code_dir = os.path.join(results_dir, 'code')
     main_dir = os.path.join(project_dir, 'cluster_main_scripts')
@@ -35,7 +39,7 @@ def submit_job(job_file_path, n_array,
 
     ### --- Copy state of module to code dir --- ###
 
-    module_dir = os.path.join('/scratch/', username, module_name)
+    module_dir = os.path.join(project_base, username, module_name)
     get_ipython().system('rsync -aav --exclude __pycache__ {} {}'.format(module_dir, code_dir))
     get_ipython().system('scp {} {}'.format(main_path, code_dir))
 
@@ -58,7 +62,6 @@ def write_job_file(job_name, py_file_name='main.py',
                    py_args='',
                    project_name='learning-dynamics',
                    results_subdir='misc',
-                   username='oem214',
                    nodes=1, ppn=1, mem=16, n_hours=8):
     """Create a job file for running a standard single-main-script job.
 
@@ -75,7 +78,13 @@ def write_job_file(job_name, py_file_name='main.py',
 
     ### --- Define key paths --- ###
 
-    project_dir = os.path.join('/scratch/', username, project_name)
+    username = get_ipython().getoutput('whoami')[0] #WHOOOO AMMMMM I?
+    if username == 'oem214':
+        project_base = '/scratch/'
+    if username == 'om2382':
+        project_base = '/home/'
+
+    project_dir = os.path.join(project_base, username, project_name)
     sbatch_dir = os.path.join(project_dir, 'job_scripts')
     main_dir = os.path.join(project_dir, 'cluster_main_scripts')
     save_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
@@ -90,11 +99,19 @@ def write_job_file(job_name, py_file_name='main.py',
               + 'which python >> {}.log; '.format(log_path)
               + 'python {} {}\n'.format(py_file_name, py_args))
 
-    overlay = '/home/{}/pytorch1.7.0-cuda11.0.ext3:ro'.format(username)
-    singularity_dir = '/scratch/work/public/singularity/'
-    singularity_name = 'cuda11.0-cudnn8-devel-ubuntu18.04.sif'
-    singularity_path = os.path.join(singularity_dir, singularity_name)
-    singularity_exe_path = '/share/apps/singularity/bin/singularity'
+    if username == 'oem214':
+        overlay = '/home/{}/pytorch1.7.0-cuda11.0.ext3:ro'.format(username)
+        singularity_dir = '/scratch/work/public/singularity/'
+        singularity_name = 'cuda11.0-cudnn8-devel-ubuntu18.04.sif'
+        singularity_path = os.path.join(singularity_dir, singularity_name)
+        singularity_exe_path = '/share/apps/singularity/bin/singularity'
+        execute_command = ('{} exec '.format(singularity_exe_path)
+                           + '--overlay {} {} '.format(overlay, singularity_path)
+                           + 'bash -c "source /ext3/env.sh; {}"'.format(command))
+    if username == 'om2382':
+        execute_command = ('ml load anaconda3-2019.03; '
+                           + 'conda activate v-rtrl; '
+                           + command)
 
     ### --- Write job file -- ###
 
@@ -113,11 +130,8 @@ def write_job_file(job_name, py_file_name='main.py',
             + 'module purge\n'
             + 'SAVEDIR={}\n'.format(save_dir)
             + 'export SAVEDIR\n'
-            #+ 'export OMP_NUM_THREADS=1\n'
             + 'cd {}\n'.format(main_dir)
-            + '{} exec '.format(singularity_exe_path)
-            + '--overlay {} {} '.format(overlay, singularity_path)
-            + 'bash -c "source /ext3/env.sh; {}"'.format(command))
+            + execute_command)
 
     return job_path
 
@@ -146,8 +160,14 @@ def unpack_processed_data(job_file_path,
                           username='oem214'):
     """Unpack processed data from an array job."""
 
+    username = get_ipython().getoutput('whoami')[0] #WHOOOO AMMMMM I?
+    if username == 'oem214':
+        project_base = '/scratch/'
+    if username == 'om2382':
+        project_base = '/home/'
+
     job_name = job_file_path.split('/')[-1].split('.')[0]
-    project_dir = os.path.join('/scratch/', username, project_name)
+    project_dir = os.path.join(project_base, username, project_name)
     data_dir = os.path.join(project_dir, 'results', results_subdir, job_name)
     dir_list = sorted([s for s in os.listdir(data_dir) if 'result' in s])
 
