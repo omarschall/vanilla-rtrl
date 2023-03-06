@@ -144,6 +144,7 @@ class Simulation:
         self.total_time_steps = self.x_inputs.shape[0]
 
         #Set defaults
+        self.a_initial = np.zeros(self.rnn.n_h)
         self.verbose = True
         self.print_ = False
         self.test_current_task = True
