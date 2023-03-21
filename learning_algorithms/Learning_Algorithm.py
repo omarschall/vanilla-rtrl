@@ -185,6 +185,11 @@ class Learning_Algorithm:
                                                [self.n_h, 1])
         grads_list = rec_grads_list + outer_grads_list
 
+        return grads_list
+
+    def regularize_grads(self, grads_list):
+        """Perform all relevant regularizations on the gradients"""
+
         if self.L1_reg is not None:
             grads_list = self.L1_regularization(grads_list)
 
@@ -207,3 +212,16 @@ class Learning_Algorithm:
         simulation includes a trial structure). Default is to do nothing."""
 
         pass
+
+class Learning_Algorithm_For_Embedding(Learning_Algorithm):
+
+    def __init__(self, rnn, allowed_kwargs_=set(), **kwargs):
+
+        super().__init__(rnn, allowed_kwargs_=allowed_kwargs_, **kwargs)
+
+    def __call__(self):
+
+        grads_list = super().__call__()
+        grads_list += self.get_embedding_grad()
+
+        return grads_list

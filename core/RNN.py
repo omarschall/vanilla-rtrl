@@ -271,4 +271,40 @@ class RNN:
 
         return (self.alpha**2) * (np.outer(D, a_hat).T * delta_a).T
 
+class RNN_with_embedding(RNN):
+    """Class for an RNN that has a trainable embedding. The input is internally
+    transformed into 'x'."""
 
+    def __init__(self, W_embed, W_in, W_rec, W_out, b_rec, b_out,
+                 activation, activation_embed, alpha, output, loss,
+                 reset_sigma=None):
+
+        super().__init__(W_in, W_rec, W_out, b_rec, b_out,
+                         activation, alpha, output, loss, reset_sigma)
+
+        assert W_embed.shape[0] != W_in.shape[1]
+
+        self.n_in = W_embed.shape[1]
+        self.W_embed = W_embed
+        self.activation_embed = activation_embed
+        self.params += self.W_embed
+        self.shapes += self.W_embed.shape
+        self.L2_indices += 4
+        self.n_h_params += W_embed.size
+        self.n_h_params += W_embed.size
+
+    def get_x(self, task_x):
+
+        self.task_x = task_x
+        self.x = self.activation_embed.f(self.W_embed.dot(task_x))
+
+    def next_state(self, x, a=None, update=True, sigma=0):
+
+        #Transform original input x from the task ('x') into the embedded
+        #'x' value internal to the RNN that is used by learning rules
+        self.x = self.get_x(x)
+
+        ret = super().next_state(self.x, a=a, update=update, sigma=sigma)
+
+        if ret is not None:
+            return ret
