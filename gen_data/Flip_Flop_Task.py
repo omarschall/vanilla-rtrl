@@ -40,8 +40,21 @@ class Flip_Flop_Task(Task):
         self.y_dim_mask = np.array(y_dim_mask)
         self.probe_inputs = ([np.eye(n_bit)[i] for i in range(n_bit)] +
                              [-np.eye(n_bit)[i] for i in range(n_bit)])
+        self.probe_dataset = self.gen_probe_dataset()
 
-    def gen_dataset(self, N):
+    def gen_probe_dataset(self):
+
+        X, Y, _, _, _ = self.gen_dataset(N=26, probe=True)
+
+        probe_dataset = {'X': X,
+                         'Y': Y,
+                         'trial_type': None,
+                         'trial_switch': None,
+                         'loss_mask': None}
+
+        return probe_dataset
+
+    def gen_dataset(self, N, probe=False):
         """Generates a dataset for the flip-flop task."""
 
         N = N // self.tau_task
@@ -51,7 +64,35 @@ class Flip_Flop_Task(Task):
 
         probability = [self.p_flip / 2, 1 - self.p_flip, self.p_flip / 2]
         choices = [-1, 0, 1]
-        X = np.random.choice(choices, size=(N, self.n_bit), p=probability)
+        if probe:
+            X = np.array([[1, 0, 0],
+                          [0, 1, 0],
+                          [0, 0, 1],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [-1, 0, 0],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [0, -1, 0],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [0, 0, -1],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [0, 1, 0],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [0, 0, 1],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [0, -1, 0],
+                          [0, 0, 0],
+                          [0, 0, 0],
+                          [-1, 0, 0],
+                          [0, 0, 0],
+                          [0, 0, 0]])
+        if not probe:
+            X = np.random.choice(choices, size=(N, self.n_bit), p=probability)
         X = np.tile(X, self.tau_task).reshape((self.tau_task*N, self.n_bit))
         Y = X.copy()
         for k in range(int(np.ceil(np.log2(N)))):
