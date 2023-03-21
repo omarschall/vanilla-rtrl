@@ -89,7 +89,7 @@ def start_axon_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtr
     remote = 'om2382@axon.rc.zi.columbia.edu'
     sp = subprocess.run(['ssh', remote,
                          'ml load anaconda3-2019.03',
-                         '&&'
+                         '&&',
                          'conda activate v-rtrl',
                          '&&',
                          'sjupyter'], capture_output=True)
