@@ -320,6 +320,7 @@ def plot_projection_of_rec_weights(checkpoint_lists, return_fig=False):
 def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
                             plot_fixed_points=False, plot_cluster_means=False,
                             fp_color=None,
+                            plot_nodes=False,
                             plot_uncategorized_points=False,
                             plot_init_points=False, eig_norm_color=False,
                             plot_graph_structure=False,
@@ -411,6 +412,9 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
             color = fp_color
         if plot_fixed_points:
             ssa.plot_in_state_space(fixed_points[labels == i], False, color, '*', alpha=0.5)
+
+    if plot_nodes:
+        ssa.plot_in_state_space(checkpoint['nodes'], False, 'k', 'o')
 
     if plot_cluster_means:
         if eig_norm_color:
