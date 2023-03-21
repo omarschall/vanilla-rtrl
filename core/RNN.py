@@ -284,7 +284,8 @@ class RNN_with_embedding(RNN):
 
         assert W_embed.shape[0] != W_in.shape[1]
 
-        self.n_in = W_embed.shape[1]
+        self.task_in = W_embed.shape[1]
+        self.n_in = W_embed.shape[0]
         self.W_embed = W_embed
         self.activation_embed = activation_embed
         self.params += self.W_embed
@@ -293,10 +294,11 @@ class RNN_with_embedding(RNN):
         self.n_h_params += W_embed.size
         self.n_h_params += W_embed.size
 
-    def get_x(self, task_x):
+    def get_x(self, x_task):
 
-        self.task_x = task_x
-        self.x = self.activation_embed.f(self.W_embed.dot(task_x))
+        self.x_task = x_task
+        self.p = self.W_embed.dot(x_task)
+        self.x = self.activation_embed.f(self.p)
 
     def next_state(self, x, a=None, update=True, sigma=0):
 

@@ -314,8 +314,8 @@ class Simulation:
 
         #Update learn_alg variables and get gradients
         self.learn_alg.update_learning_vars()
-        self.grads_list = self.learn_alg()
-        self.grads_list = self.learn_alg.regularize_grads()
+        grads_list = self.learn_alg()
+        self.grads_list = self.learn_alg.regularize_grads(grads_list)
 
         ### --- Calculate gradients for comparison algorithms --- ###
 

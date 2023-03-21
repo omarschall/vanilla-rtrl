@@ -1,4 +1,4 @@
-from learning_algorithms.Learning_Algorithm import Learning_Algorithm
+from learning_algorithms.Learning_Algorithm import Learning_Algorithm, Learning_Algorithm_For_Embedding
 import numpy as np
 from utils import norm
 
@@ -45,6 +45,10 @@ class Efficient_BPTT(Learning_Algorithm):
         self.propagate_feedback_to_hidden()
         self.q_history.insert(0, self.q)
 
+        if hasattr(self, 'compute_embedding_grad'):
+            self.p_history.insert(0, self.rnn.p)
+            self.x_task_history.insert(0, self.rnn.x_task)
+
     def get_rec_grads(self):
         """Using the accumulated history of q, h and a_hat values over the
         truncation interval, computes the recurrent gradient.
@@ -67,6 +71,9 @@ class Efficient_BPTT(Learning_Algorithm):
             # Start with most recent credit assignment value
             c = self.q_history.pop(0)
 
+            if hasattr(self, 'compute_embedding_grad'):
+                embedding_grad = np.zeros((self.n_in, self.task_in))
+
             for i_BPTT in range(self.T_truncation):
 
                 # Truncate credit assignment norm
@@ -80,7 +87,15 @@ class Efficient_BPTT(Learning_Algorithm):
 
                 # Use to get gradients w.r.t. weights from credit assignment
                 D = self.rnn.alpha * self.rnn.activation.f_prime(h)
-                rec_grads += np.multiply.outer(c * D, a_hat)
+                dLdh = c * D
+                rec_grads += np.multiply.outer(dLdh, a_hat)
+
+                if hasattr(self, 'compute_embedding_grad'):
+
+                    p = self.p_history.pop(0)
+                    x_task = self.x_task_history.pop(0)
+                    dLdp = dLdh.dot(self.rnn.W_in) * self.rnn.activation_embed.f_prime(p)
+                    embedding_grad += np.multiply.outer(dLdp, x_task)
 
                 if i_BPTT == self.T_truncation - 1:  # Skip if at end
                     continue
@@ -106,3 +121,19 @@ class Efficient_BPTT(Learning_Algorithm):
     def reset_learning(self):
 
         self.compute_gradient = True
+
+class Efficient_BPTT_For_Embedding(Learning_Algorithm_For_Embedding, Efficient_BPTT):
+
+    def __init__(self, T_truncation, trial_based_truncation=False,
+                 **kwargs):
+
+        super().__init__(T_truncation, trial_based_truncation, **kwargs)
+        self.compute_embedding_grad = True
+        self.task_in = self.rnn.n_in
+        self.p_history = []
+        self.x_task_history = []
+
+    def get_embedding_grad(self):
+
+        pass
+

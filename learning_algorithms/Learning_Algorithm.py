@@ -218,6 +218,7 @@ class Learning_Algorithm_For_Embedding(Learning_Algorithm):
     def __init__(self, rnn, allowed_kwargs_=set(), **kwargs):
 
         super().__init__(rnn, allowed_kwargs_=allowed_kwargs_, **kwargs)
+        self.task_in = rnn.task_in
 
     def __call__(self):
 
