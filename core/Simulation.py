@@ -179,10 +179,20 @@ class Simulation:
 
             self.i_t = i_t
 
-            ### --- Reset model if there is a trial structure --- ###
+            ### --- Reset learning algorithm if there is a trial structure --- ###
 
             if self.trial_switch is not None:
-                self.trial_structure()
+                if self.trial_switch[self.i_t] == 1:
+                    self.i_trial += 1
+                    try:
+                        self.rnn.trial_type = self.trial_type[self.i_t]
+                    except TypeError:
+                        pass
+                    if self.reset_sigma is not None:
+                        try:
+                            self.learn_alg.reset_learning()
+                        except AttributeError:
+                            pass
 
             ### --- Run network forwards and get error --- ###
 
@@ -197,6 +207,11 @@ class Simulation:
             ### --- Clean up --- ###
 
             self.end_time_step(data)
+
+            if self.trial_switch is not None:
+                if self.trial_switch[self.i_t] == 1:
+                    if self.reset_sigma is not None:
+                        self.rnn.reset_network(sigma=self.reset_sigma)
 
         #At end of run, convert monitor lists into numpy arrays
         self.monitors_to_arrays()
@@ -244,6 +259,9 @@ class Simulation:
         if self.a_initial is not None:
             self.rnn.reset_network(a=self.a_initial)
 
+        #Set trial reset flag to False
+        self.trial_reset = False
+
         #To avoid errors, initialize "previous"
         #inputs/labels as the first inputs/labels
         self.rnn.x_prev = self.x_inputs[0]
@@ -268,7 +286,7 @@ class Simulation:
                 except AttributeError:
                     pass
 
-    def forward_pass(self, x, y):
+    def forward_pass(self, x, y, trial_reset=False):
         """Runs network forward, computes immediate losses and errors."""
 
         #Pointer for convenience
@@ -279,7 +297,10 @@ class Simulation:
         rnn.y = y
 
         #Run network forwards and get predictions
-        rnn.next_state(rnn.x, sigma=self.sigma)
+        if not trial_reset:
+            rnn.next_state(rnn.x, sigma=self.sigma)
+        elif trial_reset:
+            rnn.reset_network(sigma=self.reset_sigma)
         rnn.z_out()
 
         #Compare outputs with labels, get immediate loss and errors
