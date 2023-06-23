@@ -209,6 +209,12 @@ class Simulation:
         del(self.y_labels)
         if 'task_marker' in data[mode].keys():
             del(self.task_marker)
+        if 'trial_type' in data[mode].keys():
+            del(self.trial_type)
+        if 'trial_switch' in data[mode].keys():
+            del(self.trial_switch)
+        if 'loss_mask' in data[mode].keys():
+            del(self.loss_mask)
 
     def initialize_run(self):
         """Initializes a few variables before the time loop."""
@@ -255,7 +261,7 @@ class Simulation:
     def trial_structure(self):
         """Resets learning algorithm and/or network state between trials."""
 
-        if self.trial_switch[self.i_t] == 1:
+        if self.trial_switch[self.i_t] == 1 and self.i_t > 0:
             self.i_trial += 1
             try:
                 self.rnn.trial_type = self.trial_type[self.i_t]

@@ -25,7 +25,7 @@ class Efficient_BPTT(Learning_Algorithm):
         self.T_truncation = T_truncation
         self.trial_based_truncation = trial_based_truncation
         if self.trial_based_truncation:
-            self.T_truncation = 0
+            self.T_truncation = -1
             self.compute_gradient = False
 
         # Initialize lists for storing network data
@@ -44,6 +44,9 @@ class Efficient_BPTT(Learning_Algorithm):
         self.h_history.insert(0, self.rnn.h)
         self.propagate_feedback_to_hidden()
         self.q_history.insert(0, self.q)
+        self.a_hat_length = len(self.a_hat_history)
+        self.h_length = len(self.h_history)
+        self.q_length = len(self.q_history)
 
     def get_rec_grads(self):
         """Using the accumulated history of q, h and a_hat values over the
@@ -57,6 +60,7 @@ class Efficient_BPTT(Learning_Algorithm):
         # Once a 'triangle' is formed (see Fig. 3 in paper), compute gradient.
         if self.trial_based_truncation:
             compute_condition = self.compute_gradient
+            self.T_truncation += 1
         else:
             compute_condition = (len(self.a_hat_history) >= self.T_truncation)
 
@@ -65,7 +69,7 @@ class Efficient_BPTT(Learning_Algorithm):
             # Initialize recurrent grads at 0
             rec_grads = np.zeros((self.n_h, self.m))
             # Start with most recent credit assignment value
-            c = self.q_history.pop(0)
+            c = self.q_history.pop(1)
 
             for i_BPTT in range(self.T_truncation):
 
@@ -75,8 +79,8 @@ class Efficient_BPTT(Learning_Algorithm):
                         c = c * (self.c_clip_norm / norm(c))
 
                 # Access present values of h and a_hat
-                h = self.h_history.pop(0)
-                a_hat = self.a_hat_history.pop(0)
+                h = self.h_history.pop(1)
+                a_hat = self.a_hat_history.pop(1)
 
                 # Use to get gradients w.r.t. weights from credit assignment
                 D = self.rnn.alpha * self.rnn.activation.f_prime(h)
@@ -86,7 +90,7 @@ class Efficient_BPTT(Learning_Algorithm):
                     continue
 
                 # Use future-facing relation to backpropagate by one time step.
-                q = self.q_history.pop(0)
+                q = self.q_history.pop(1)
                 J = self.rnn.get_a_jacobian(h=h, update=False)
                 c = q + c.dot(J)
 
@@ -95,12 +99,7 @@ class Efficient_BPTT(Learning_Algorithm):
                 self.T_truncation = 0
 
             return rec_grads
-
         else:
-
-            if self.trial_based_truncation:
-                self.T_truncation += 1
-
             return np.zeros((self.n_h, self.m))
 
     def reset_learning(self):

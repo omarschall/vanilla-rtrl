@@ -1,4 +1,5 @@
 from copy import copy
+import numpy as np
 
 class Task:
     """Parent class for all tasks. A Task is a class whose instances generate
@@ -20,7 +21,7 @@ class Task:
         self.n_in = n_in
         self.n_out = n_out
 
-    def gen_data(self, N_train, N_test):
+    def gen_data(self, N_train, N_test, add_dummy_end_point=False):
         """Generates a data dict with a given number of train and test examples.
 
         Args:
@@ -40,6 +41,11 @@ class Task:
             data[mode]['trial_type'] = trial_type
             data[mode]['trial_switch'] = trial_switch
             data[mode]['loss_mask'] = loss_mask
+            if mode == 'train' and add_dummy_end_point:
+                for key in data[mode].keys():
+                    A = data[mode][key]
+                    if A is not None:
+                        data[mode][key] = np.concatenate([A, np.ones_like(A[0])[np.newaxis]])
 
         if hasattr(self, 'probe_dataset'):
             data['probe'] = copy(self.probe_dataset)
