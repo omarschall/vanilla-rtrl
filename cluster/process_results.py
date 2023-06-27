@@ -35,7 +35,7 @@ def unpack_analysis_results(data_path):
 def unpack_compare_result(saved_run_name, checkpoint_stats={},
                           project_name='learning-dynamics',
                           results_subdir='misc',
-                          username='oem214'):
+                          username='om2382'):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -47,7 +47,7 @@ def unpack_compare_result(saved_run_name, checkpoint_stats={},
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
     compare_job_name = 'compare_{}'.format(saved_run_name)
 
-    project_dir = os.path.join('/scratch/', username, project_name)
+    project_dir = os.path.join('/home/', username, project_name)
     results_dir = os.path.join(project_dir, 'results', results_subdir)
     analysis_result_path = os.path.join(results_dir, analysis_job_name)
     compare_result_path = os.path.join(results_dir, compare_job_name)
@@ -86,7 +86,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
                                 multi_job_comp=False,
                                 project_name='learning-dynamics',
                                 results_subdir='misc',
-                                username='oem214'):
+                                username='om2382'):
     """Unpack the results of a full analysis -> compare run. Returns
     a dict of 'signals', i.e. numpy arrays with shape (n_checkpoints).
 
@@ -98,7 +98,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
     ### --- Get paths, extract and unpack compare data --- ###
 
-    project_dir = os.path.join('/scratch/', username, project_name)
+    project_dir = os.path.join('/home/', username, project_name)
     results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
     saved_runs_dir = 'saved_runs'
 
@@ -163,13 +163,13 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 def unpack_sparse_cross_compare_results(saved_run_root_name,
                                         project_name='learning-dynamics',
                                         results_subdir='misc',
-                                        username='oem214'):
+                                        username='om2382'):
     """Unpacks the results of a cross comparison where discrete chunks are
     computed separately."""
 
     ### --- Get paths, extract and unpack compare data --- ###
 
-    project_dir = os.path.join('/scratch/', username, project_name)
+    project_dir = os.path.join('/home/', username, project_name)
     results_subdir_abs = os.path.join(project_dir, 'results', results_subdir)
     saved_runs_dir = 'saved_runs'
 

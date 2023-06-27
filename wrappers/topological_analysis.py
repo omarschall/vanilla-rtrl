@@ -7,7 +7,7 @@ def topological_analysis(saved_run_name,
                          project_name='learning-dynamics',
                          module_name='vanilla-rtrl',
                          results_subdir='misc',
-                         username='oem214',
+                         username='om2382',
                          ppn=16,
                          compare_only=False,
                          n_checkpoints_per_job_=None,
@@ -35,8 +35,8 @@ def topological_analysis(saved_run_name,
 
     ### --- Define relevant paths --- ###
 
-    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
-    module_dir = os.path.join('/scratch/{}/'.format(username), module_name)
+    project_dir = os.path.join('/home/{}/'.format(username), project_name)
+    module_dir = os.path.join('/home/{}/'.format(username), module_name)
     cluster_main_dir = os.path.join(project_dir, 'cluster_main_scripts/')
     args_dir = os.path.join(project_dir, 'args')
 

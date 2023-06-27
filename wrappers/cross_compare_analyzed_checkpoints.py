@@ -6,7 +6,7 @@ from math import ceil
 
 def cross_compare_analyzed_checkpoints(saved_run_root_name,
                                        compare_args,
-                                       username='oem214',
+                                       username='om2382',
                                        notebook_dir=None,
                                        project_name='learning-dynamics'):
     """For a set of analysis results by root name, takes the analyzed
@@ -30,7 +30,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
     ### --- Get paths, extract and unpack data --- ###
 
-    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
+    project_dir = os.path.join('/home/{}/'.format(username), project_name)
     results_dir = os.path.split(os.environ['SAVEDIR'])[0]
     if notebook_dir is None:
         saved_runs_dir = os.path.join(project_dir, 'notebooks', 'saved_runs')

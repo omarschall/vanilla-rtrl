@@ -4,7 +4,7 @@ from dynamics import *
 
 def compare_analyzed_checkpoints(analysis_job_name,
                                  compare_args,
-                                 username='oem214',
+                                 username='om2382',
                                  notebook_dir=None,
                                  project_name='learning-dynamics'):
     """For a given analysis job name, takes the analyzed checkpoints and
@@ -29,7 +29,7 @@ def compare_analyzed_checkpoints(analysis_job_name,
 
     ### --- Get paths, extract and unpack data --- ###
 
-    project_dir = os.path.join('/scratch/{}/'.format(username), project_name)
+    project_dir = os.path.join('/home/{}/'.format(username), project_name)
     results_dir = os.path.split(os.environ['SAVEDIR'])[0]
     analysis_dir = os.path.join(results_dir, analysis_job_name)
 

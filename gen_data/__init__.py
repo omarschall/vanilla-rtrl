@@ -1,5 +1,6 @@
 from .Add_Task import Add_Task
 from .Binary_Addition_Task import Binary_Addition_Task
+from .Context_Dependent_Integration_Task import Context_Dependent_Integration_Task, Context_Dependent_Decision_Task
 from .Cts_Integration_Task import Cts_Integration_Task
 from .Delay_Nonmatch_Task import Delay_Nonmatch_Task
 from .Discrete_Integration_Task import Discrete_Integration_Task

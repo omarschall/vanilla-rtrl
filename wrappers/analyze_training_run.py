@@ -5,7 +5,7 @@ from math import ceil
 
 def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
                          n_checkpoints_per_job_=None,
-                         username='oem214',
+                         username='om2382',
                          notebook_dir=None,
                          project_name='learning-dynamics'):
     """For a given simulation (containing checkpoints), analyzes some subset
@@ -16,7 +16,7 @@ def analyze_training_run(saved_run_name, FP_args, test_args, graph_args,
 
     ### --- Define relevant paths --- ###
 
-    project_dir = os.path.join('/scratch', username, project_name)
+    project_dir = os.path.join('/home', username, project_name)
     analysis_job_name = 'analyze_{}'.format(saved_run_name)
     log_path = os.path.join(project_dir, 'logs/' + analysis_job_name) + '.o.log'
 

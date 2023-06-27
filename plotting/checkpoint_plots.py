@@ -13,6 +13,8 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
                                 n_out_dims=None,
                                 trial_mask=None,
                                 reset_sigma=None,
+                                x_scaling=1,
+                                y_scaling=1,
                                 y_spacing=2,
                                 **kwargs):
     """For a given checkpoint in a simulation and data dict, runs a fresh
@@ -29,14 +31,14 @@ def plot_output_from_checkpoint(checkpoint, data, plot_title=None,
     fig = plt.figure(figsize=figsize)
     if plot_inputs:
         for i in range(rnn.n_in):
-            plt.plot(data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
+            plt.plot(x_scaling * data['test']['X'][:, i] - i * y_spacing, (str(0.6)))
     if n_out_dims is not None:
         n_out = n_out_dims
     else:
         n_out = rnn.n_out
     for i in range(n_out):
-        plt.plot(data['test']['Y'][:, i] - i * y_spacing, 'C0')
-        plt.plot(test_sim.mons['rnn.y_hat'][:, i] - i * y_spacing, 'C3')
+        plt.plot(y_scaling * data['test']['Y'][:, i] - i * y_spacing, 'C0')
+        plt.plot(y_scaling * test_sim.mons['rnn.y_hat'][:, i] - i * y_spacing, 'C3')
     if time_steps_per_trial is not None:
         for i in range(0, data['test']['X'].shape[0], time_steps_per_trial):
             plt.axvline(x=i, color='k', linestyle='--')
@@ -394,7 +396,7 @@ def plot_checkpoint_results(checkpoint, data, ssa=None, plot_test_points=False,
             col = probe_colors[i_probe]
             #A = np.roll(probe_sim.mons['rnn.a'], -1, axis=0)
             A = probe_sim.mons['rnn.a']
-            rnn_activity = A[i_probe*T_per_sample:(i_probe+1)*T_per_sample - 1]
+            rnn_activity = A[i_probe*T_per_sample:(i_probe+1)*T_per_sample]
             ssa.plot_in_state_space(rnn_activity, True, col,
                                     alpha=test_alpha)
 

@@ -1,5 +1,5 @@
 import argparse, os, pickle, sys
-sys.path.append('/scratch/oem214/vanilla-rtrl/')
+sys.path.append('/home/om2382/vanilla-rtrl/')
 from wrappers import cross_compare_analyzed_checkpoints
 
 parser = argparse.ArgumentParser()
@@ -7,7 +7,7 @@ parser.add_argument('--name', dest='name')
 
 args = parser.parse_args()
 
-args_path = os.path.join('/scratch/oem214/learning-dynamics/args/', args.name)
+args_path = os.path.join('/home/om2382/learning-dynamics/args/', args.name)
 
 with open(args_path, 'rb') as f:
     all_args = pickle.load(f)

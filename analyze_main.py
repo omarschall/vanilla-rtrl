@@ -1,5 +1,5 @@
 import argparse, os, pickle, sys
-sys.path.append('/scratch/oem214/vanilla-rtrl/')
+sys.path.append('/home/om2382/vanilla-rtrl/')
 from wrappers import analyze_training_run
 
 parser = argparse.ArgumentParser()
@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 saved_run_name = args.name
 root_name = args.name.split('_seed')[0]
-args_path = os.path.join('/scratch/oem214/learning-dynamics/args/', root_name)
+args_path = os.path.join('/home/om2382/learning-dynamics/args/', root_name)
 
 with open(args_path, 'rb') as f:
     all_args = pickle.load(f)
