@@ -252,11 +252,11 @@ class Context_Dependent_Decision_Task(Task):
             #Set output and context inputs depending on context outcome
             y_trial = np.zeros(self.T_trial)
             if context == 0:
-                y_trial[-self.report_steps:] = np.sign(c_motion)
+                y_trial[-self.report_steps:] = self.output_scale * np.sign(c_motion)
                 c0 = np.ones(self.T_trial)
                 c1 = np.zeros(self.T_trial)
             if context == 1:
-                y_trial[-self.report_steps:] = np.sign(c_color)
+                y_trial[-self.report_steps:] = self.output_scale * np.sign(c_color)
                 c0 = np.zeros(self.T_trial)
                 c1 = np.ones(self.T_trial)
 
@@ -285,6 +285,6 @@ class Context_Dependent_Decision_Task(Task):
             Y = None
             trial_type = None
             trial_switch = None
-            loss_mask
+            loss_mask = None
 
         return X, Y, trial_type, trial_switch, loss_mask
