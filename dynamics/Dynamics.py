@@ -1,9 +1,5 @@
 from sklearn.cluster import DBSCAN
 from dynamics.topology import *
-try:
-    import umap
-except ModuleNotFoundError:
-    pass
 
 def analyze_all_checkpoints(checkpoints, func, test_data, **kwargs):
     """For a given analysis function and a list of checkpoints, applies

@@ -2,7 +2,8 @@ import torch
 from .numpy_utils import torch_rnn_to_numpy_rnn
 
 def train_torch_RNN(rnn, optimizer, batched_data, batch_size, n_epochs,
-                    L2_reg=0.0001, verbose=True, checkpoint_interval=None):
+                    L2_reg=0.0001, verbose=True, checkpoint_interval=None,
+                    scheduler=None):
     n_batches = batched_data['train']['X'].shape[1] // batch_size
     T_trial = batched_data['train']['X'].shape[0]
     B = batch_size
@@ -32,8 +33,12 @@ def train_torch_RNN(rnn, optimizer, batched_data, batch_size, n_epochs,
 
             if checkpoint_interval is not None:
                 if i_b % checkpoint_interval == 0:
-                    i_t = i_b * T_trial + i_epoch * B * T_trial
+                    i_t = i_b + i_epoch * n_batches
                     checkpoints[i_t] = {'rnn': torch_rnn_to_numpy_rnn(rnn),
                                         'i_t': i_t}
+        if scheduler is not None:
+            scheduler.step()
+    checkpoints['final'] = {'rnn': torch_rnn_to_numpy_rnn(rnn),
+                            'i_t': n_epochs * n_batches}
 
     return checkpoints

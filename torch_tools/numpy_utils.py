@@ -1,18 +1,18 @@
 from functions import tanh, relu, identity, mean_squared_error
 from core import RNN
 
-def torch_rnn_to_numpy_rnn(torch_rnn, output=identity, loss=mean_squared_error, reset_sigma=None):
+def torch_rnn_to_numpy_rnn(torch_rnn, output=identity, loss=mean_squared_error, reset_sigma=0):
     """Translate RNN object for training in torch to instance of core.RNN class."""
 
     if torch_rnn.activation_name == 'tanh':
         activation = tanh
     elif torch_rnn.activation_name == 'relu':
         activation = relu
-    rnn = RNN(torch_rnn.W_in.detach().numpy(),
-              torch_rnn.W_rec.detach().numpy(),
-              torch_rnn.W_out.detach().numpy(),
-              torch_rnn.b_rec.detach().numpy(),
-              torch_rnn.b_out.detach().numpy(),
+    rnn = RNN(torch_rnn.W_in.detach().numpy().copy(),
+              torch_rnn.W_rec.detach().numpy().copy(),
+              torch_rnn.W_out.detach().numpy().copy(),
+              torch_rnn.b_rec.detach().numpy().copy(),
+              torch_rnn.b_out.detach().numpy().copy(),
               activation=activation, alpha=torch_rnn.alpha, output=output,
               loss=loss, reset_sigma=reset_sigma)
 

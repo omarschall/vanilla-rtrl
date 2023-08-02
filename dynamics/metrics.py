@@ -54,7 +54,7 @@ def assign_time_points_to_stages(loss, d_top, performance_criterion,
     stage_assignments[np.where(np.logical_and(constant_topology,
                                               good_performance))] = 4
 
-    stage_assignments = stage_assignments.astype(np.int)
+    stage_assignments = stage_assignments.astype(int)
 
     if post_process:
         sa, tst = post_process_stage_assignments(stage_assignments,
