@@ -149,7 +149,7 @@ class Context_Dependent_Decision_Task(Task):
                  c_values=[-0.512, -0.256, -0.128, -0.064, -0.032,
                            0.032, 0.064, 0.128, 0.256, 0.512],
                  fixation_steps=5, report_steps=5, output_scale=1,
-                 report_cue=False, T_context=None):
+                 report_cue=False, T_context=None, fixed_context=None):
         """Later
 
         Args:
@@ -169,6 +169,7 @@ class Context_Dependent_Decision_Task(Task):
         self.report_cue = report_cue
         self.output_scale = output_scale
         self.T_context = T_context
+        self.fixed_context = fixed_context
         self.probe_inputs = [np.eye(n_in)[0], np.eye(n_in)[1], -np.eye(n_in)[0], -np.eye(n_in)[1],
                              np.eye(n_in)[2], np.eye(n_in)[3]]
         if report_cue:
@@ -278,7 +279,10 @@ class Context_Dependent_Decision_Task(Task):
             x_color = np.random.normal(mu_color, self.input_var, self.T_trial)
 
             #Pick context
-            context = np.random.choice([0, 1])
+            if self.fixed_context is None:
+                context = np.random.choice([0, 1])
+            else:
+                context = self.fixed_context
 
             # Report cue time
             t_low = self.T_trial // 2
