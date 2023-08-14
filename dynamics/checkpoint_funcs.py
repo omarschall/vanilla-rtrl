@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial import distance
 
 def get_checkpoint_loss(checkpoint):
     """Gets checkpoint loss"""
@@ -92,3 +93,34 @@ def get_checkpoint_participation_coefficient(checkpoint):
 def get_checkpoint_performance_based_dimensionality(checkpoint):
 
     pass
+
+def get_checkpoint_cubic_discriminant(checkpoint, context=None):
+    """Calculates the bifurcation parameter alpha for the Colin model,
+    based on a 1D approximation of the network dynamics."""
+
+    B = checkpoint['rnn'].b_rec
+    V = checkpoint['V'][:,0]
+    if context is not None:
+        B += checkpoint['rnn'].W_in.dot(context)
+    P = checkpoint['rnn'].W_rec.dot(V)
+
+    a = -V.dot(P**3/3)
+    b = -V.dot(B*P**2)
+    c = V.dot((1 - B**2)*P - V)
+    d = -V.dot(B**3/3)
+
+    return 18*a*b*c*d - 4*b**3*d + b**2*c**2 - 4*a*c**3 - 27*a**2*d**2
+
+def get_checkpoint_maximum_cluster_distances(checkpoint):
+    """Gets the maximum distance between any two points in each cluster."""
+
+    max_distances = []
+    for i in range(len(set(checkpoint['cluster_labels']))):
+        distances = distance.pdist(checkpoint['fixed_points'][np.where(checkpoint['cluster_labels'] == i)], 'euclidean')
+        try:
+            max_distance = np.max(distances)
+            max_distances.append(max_distance)
+        except ValueError:
+            pass
+
+    return np.log10(np.amax(max_distances))
