@@ -22,8 +22,10 @@ class Torch_RNN(nn.Module):
         self.b_out = torch.nn.Parameter(torch.tensor(b_out, requires_grad=True, dtype=torch.float32))
         if activation == 'tanh':
             self.activation = torch.tanh
+            self.activation_derivative = lambda x: 1 - torch.square(torch.tanh(x))
         elif activation == 'relu':
             self.activation = torch.relu
+            self.activation_derivative = lambda x: torch.where(x > 0, torch.tensor(1.), torch.tensor(0.))
         self.activation_name = activation
         self.alpha = alpha
 
@@ -31,9 +33,9 @@ class Torch_RNN(nn.Module):
         """Network propagates one time step forward using *left-handed* matrix multiplication,
         so batch dimension is first dimension. Same formula as in core.RNN."""
 
-        state = ((1 - self.alpha) * state
-                 + self.alpha * self.activation(state.matmul(self.W_rec.T)
-                                                + X.matmul(self.W_in.T) + self.b_rec))
+        self.state_prev = state.clone().detach()
+        self.h = state.matmul(self.W_rec.T) + X.matmul(self.W_in.T) + self.b_rec
+        state = (1 - self.alpha) * state + self.alpha * self.activation(self.h)
         output = state.matmul(self.W_out.T) + self.b_out
         return state, output
 
