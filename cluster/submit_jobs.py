@@ -62,7 +62,7 @@ def write_job_file(job_name, py_file_name='main.py',
                    py_args='',
                    project_name='learning-dynamics',
                    results_subdir='misc',
-                   nodes=1, ppn=1, mem=16, n_hours=8):
+                   nodes=1, ppn=1, mem=16, n_hours=12):
     """Create a job file for running a standard single-main-script job.
 
     Args:
