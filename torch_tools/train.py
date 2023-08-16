@@ -59,6 +59,7 @@ def train_torch_RNN_by_RFLO(rnn, optimizer, batched_data, batch_size, n_epochs,
 
             state = torch.zeros((B, rnn.n_h))
             loss = 0
+            optimizer.zero_grad()
             for p in rnn.parameters():
                 p.grad = torch.zeros_like(p)
             for i_t_trial in range(T_trial):
@@ -67,14 +68,20 @@ def train_torch_RNN_by_RFLO(rnn, optimizer, batched_data, batch_size, n_epochs,
                 a_hat = torch.cat([rnn.state_prev, X[i_t_trial], torch.ones((B, 1))], dim=1)
                 E_immediate = torch.einsum('bi,bj->bij', rnn.activation_derivative(rnn.h), a_hat)
                 E_trace = (1 - rnn.alpha) * E_trace + rnn.alpha * E_immediate
-                for p in rnn.parameters():
-                    p.grad += torch.einsum('bij,bj->bi', E_trace, rnn.dL_dh)
-            loss += L2_reg * (torch.mean(torch.square(rnn.W_rec))
-                              + torch.mean(torch.square(rnn.W_in))
-                              + torch.mean(torch.square(rnn.W_out)))
+                error = output - Y[i_t_trial]
+                outer_grad = torch.einsum('bi, bj->bij',
+                                          error, torch.cat([state, torch.ones((B, 1))], dim=1))
+                dL_da = torch.einsum('bi,ij->bj', error, rnn.W_out)
+                rec_grads = torch.einsum('bi,bij->bij', dL_da, E_trace)
+                grads = [rec_grads[:,:,:rnn.n_h].mean(0), rec_grads[:,:,rnn.n_h:-1].mean(0), rec_grads[:,:,-1].mean(0)]
+                grads += [outer_grad[:,:,:rnn.n_h].mean(0), outer_grad[:,:,-1].mean(0)]
+                for i_p, p in enumerate(rnn.parameters()):
+                    p.grad += grads[i_p]
+            #loss += L2_reg * (torch.mean(torch.square(rnn.W_rec))
+            #                  + torch.mean(torch.square(rnn.W_in))
+            #                  + torch.mean(torch.square(rnn.W_out)))
 
-            optimizer.zero_grad()
-            loss.backward()
+
             optimizer.step()
             if i_b % (n_batches // 10) == 0 and verbose:
                 print(f'Epoch {i_epoch}, Batch {i_b}')

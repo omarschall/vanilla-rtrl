@@ -15,11 +15,12 @@ class Torch_RNN(nn.Module):
         self.n_h = W_rec.shape[0]
         self.n_out = W_out.shape[0]
 
-        self.W_in = torch.nn.Parameter(torch.tensor(W_in, requires_grad=True, dtype=torch.float32))
         self.W_rec = torch.nn.Parameter(torch.tensor(W_rec, requires_grad=True, dtype=torch.float32))
-        self.W_out = torch.nn.Parameter(torch.tensor(W_out, requires_grad=True, dtype=torch.float32))
+        self.W_in = torch.nn.Parameter(torch.tensor(W_in, requires_grad=True, dtype=torch.float32))
         self.b_rec = torch.nn.Parameter(torch.tensor(b_rec, requires_grad=True, dtype=torch.float32))
+        self.W_out = torch.nn.Parameter(torch.tensor(W_out, requires_grad=True, dtype=torch.float32))
         self.b_out = torch.nn.Parameter(torch.tensor(b_out, requires_grad=True, dtype=torch.float32))
+
         if activation == 'tanh':
             self.activation = torch.tanh
             self.activation_derivative = lambda x: 1 - torch.square(torch.tanh(x))
