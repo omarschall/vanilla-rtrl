@@ -1,6 +1,7 @@
 import os, pickle
 import numpy as np
 from copy import deepcopy
+from utils import upper_off_diagonal
 
 def unpack_analysis_results(data_path):
     """For a path to results, unpacks the data into a dict of checkpoints
@@ -152,8 +153,11 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 
             if 'distance' in key:
                 idx = np.where(result['job_indices'] == i_job)[0]
-                sub_distance_mat = result[key][idx, :][:, idx]
-                x = np.diag(sub_distance_mat[:-1, 1:])
+                if len(result[key].shape) > 1:
+                    sub_distance_mat = result[key][idx,:][:, idx]
+                    x = np.diag(sub_distance_mat[:-1, 1:])
+                elif len(result[key].shape) == 1:
+                    x = result[key][idx[:-1]]
                 signals_[key] = x.copy()
 
         signal_dicts[analysis_job_name] = signals_
@@ -163,6 +167,7 @@ def unpack_cross_compare_result(saved_run_root_name, checkpoint_stats={},
 def unpack_sparse_cross_compare_results(saved_run_root_name,
                                         project_name='learning-dynamics',
                                         results_subdir='misc',
+                                        n_compare_window=1,
                                         username='om2382'):
     """Unpacks the results of a cross comparison where discrete chunks are
     computed separately."""
@@ -202,9 +207,14 @@ def unpack_sparse_cross_compare_results(saved_run_root_name,
                     if 'distances' in key or 'check' in key:
                         result[key] += subresult[key]
 
-        for key in result.keys():
-            if 'distances' in key or 'check' in key:
-                result[key] = np.array(result[key].todense())
+        if all_args['compare_n_comp_window'] == 1:
+            for key in result.keys():
+                if 'distances' in key or 'check' in key:
+                    result[key] = np.array(upper_off_diagonal(result[key]))
+        else:
+            for key in result.keys():
+                if 'distances' in key or 'check' in key:
+                    result[key] = np.array(result[key].todense())
 
         with open(combined_result_path, 'wb') as f:
             pickle.dump(result, f)

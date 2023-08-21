@@ -202,11 +202,14 @@ def unpack_processed_data(job_file_path,
 
     ### --- Determine shape of processed data --- ###
 
-    array_dims = [len(configs_array[key]) for key in key_order]
-    processed_data_example = result['processed_data']
-    if type(processed_data_example) != np.float64:
-        array_dims += [len(processed_data_example)]
-    results_array = np.zeros(array_dims)
+    try:
+        array_dims = [len(configs_array[key]) for key in key_order]
+        processed_data_example = result['processed_data']
+        if type(processed_data_example) != np.float64:
+            array_dims += [len(processed_data_example)]
+        results_array = np.zeros(array_dims)
+    except KeyError:
+        results_array = np.array([])
 
     ### --- Put data in array with shape matched to config arrays --- ###
 
@@ -227,7 +230,10 @@ def unpack_processed_data(job_file_path,
                 sim_dict_key += (str(result['i_seed']))
         index = tuple(index)
 
-        results_array[index] = result['processed_data']
+        try:
+            results_array[index] = result['processed_data']
+        except:
+            pass
         try:
             sim_dict[sim_dict_key] = result['sim']
         except AttributeError:

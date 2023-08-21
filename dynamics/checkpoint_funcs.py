@@ -111,7 +111,7 @@ def get_checkpoint_cubic_discriminant(checkpoint, context=None):
 
     return 18*a*b*c*d - 4*b**3*d + b**2*c**2 - 4*a*c**3 - 27*a**2*d**2
 
-def get_checkpoint_maximum_cluster_distances(checkpoint):
+def get_checkpoint_maximum_cluster_distances(checkpoint, min_ret=-15):
     """Gets the maximum distance between any two points in each cluster."""
 
     max_distances = []
@@ -123,4 +123,9 @@ def get_checkpoint_maximum_cluster_distances(checkpoint):
         except ValueError:
             pass
 
-    return np.log10(np.amax(max_distances))
+    try:
+        ret = np.log10(np.amax(max_distances))
+    except ValueError:
+        ret = min_ret
+
+    return ret
