@@ -81,7 +81,7 @@ def start_axon_jupyter_notebook(local_module_path='/Users/omarschall/vanilla-rtr
                                 module_name='vanilla-rtrl/',
                                 project_name='learning-dynamics',
                                 time_in_hours=3,
-                                mem_in_gb=16):
+                                mem_in_gb=32):
     """Similar deal as above but simpler, using Axon's sjupyter command,
     which handles the timing of waiting for the job internally. No
     customizable options for memory / time demands of the notebook, though."""

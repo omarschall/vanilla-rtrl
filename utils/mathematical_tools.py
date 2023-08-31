@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import unitary_group
 from math import floor, ceil
+from scipy.sparse import csc_matrix
 
 def norm(z):
     """Computes the L2 norm of a numpy array."""
@@ -117,3 +118,23 @@ def triangular_integer_decomposition(idx):
     n = n_range[np.where(triangular_numbers > idx)[0][0] - 1]
 
     return n, idx - n * (n + 1) / 2
+
+### FROM CHAT GPT
+
+def upper_off_diagonal(sparse_matrix):
+    # Ensure the matrix is in CSC format
+    csc = sparse_matrix.tocsc()
+
+    # Find the columns that have non-zero entries
+    cols = np.repeat(np.arange(csc.shape[1]), np.diff(csc.indptr))
+
+    # Determine the rows for the upper off-diagonal
+    rows = cols - 1
+
+    # Use fancy indexing to extract the elements
+    off_diag_elems = csc[rows, cols].A1
+
+    # Filter out elements that are not part of the upper off-diagonal
+    mask = (rows >= 0) & (rows < csc.shape[0] - 1)
+
+    return off_diag_elems[mask]

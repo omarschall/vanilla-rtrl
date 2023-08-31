@@ -69,7 +69,7 @@ def cross_compare_analyzed_checkpoints(saved_run_root_name,
 
         # Unpack data
         indices, checkpoints = unpack_analysis_results(analysis_dir)
-        all_indices = np.concatenate([all_indices, indices]).astype(np.int)
+        all_indices = np.concatenate([all_indices, indices]).astype(int)
         checkpoints_lists.append(checkpoints)
         job_indices += [i_job] * len(indices)
 

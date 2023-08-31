@@ -1,5 +1,6 @@
 from math import ceil
 import matplotlib as mpl
+from core import Simulation
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import decimate
@@ -543,13 +544,22 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                                     + '_{}'.format(i_seed))
 
                 if task_dict is not None:
-                    task = task_dict[sim_dict_key]
+                    try:
+                        task = task_dict[sim_dict_key]
+                    except KeyError:
+                        continue
                     np.random.seed(0)
                     data = task.gen_data(0, N_task_data)
 
                 sim = sim_dict[sim_dict_key]
-                rnn = sim.rnn
-                test_sim = sim.get_test_sim()
+                try:
+                    rnn = sim.rnn
+                except AttributeError:
+                    rnn = sim.checkpoints['final']['rnn']
+                try:
+                    test_sim = sim.get_test_sim()
+                except AttributeError:
+                    test_sim = Simulation(rnn)
                 test_sim.run(data, mode='test', monitors=['rnn.loss_', 'rnn.y_hat'],
                              verbose=False)
 
@@ -559,7 +569,7 @@ def plot_1d_or_2d_array_of_config_examples(configs_array, results_array,
                 for i in range(rnn.n_out):
                     ax.plot(output_scale * data['test']['Y'][:, i] - i * trace_spacing, 'C0')
                     ax.plot(output_scale * test_sim.mons['rnn.y_hat'][:, i] - i * trace_spacing, 'C3', alpha=0.7)
-                if sim.time_steps_per_trial is not None:
+                if test_sim.time_steps_per_trial is not None:
                     for i in range(0, data['test']['X'].shape[0], sim.time_steps_per_trial):
                         ax.axvline(x=i, color='k', linestyle='--')
                 ax.set_xlim(xlim)
