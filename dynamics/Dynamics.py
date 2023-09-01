@@ -112,7 +112,10 @@ def Vanilla_PCA(checkpoint, test_data, n_PCs=3, sigma=0):
     test_a = get_test_sim_data(checkpoint, test_data, sigma=sigma)
     U, S, VT = np.linalg.svd(test_a)
 
-    checkpoint['participation_coef'] = np.square(S.sum()) / np.square(S).sum()
+    #checkpoint['participation_coef'] = np.square(S.sum()) / np.square(S).sum()
+    N = VT.shape[0]
+    C_lambda = np.square(S) / (N - 1)
+    checkpoint['participation_coef'] = np.square(C_lambda.sum()) / np.square(C_lambda).sum() / N
 
     transform = partial(np.dot, b=VT.T[:,:n_PCs])
 
