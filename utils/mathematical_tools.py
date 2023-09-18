@@ -138,3 +138,29 @@ def upper_off_diagonal(sparse_matrix):
     mask = (rows >= 0) & (rows < csc.shape[0] - 1)
 
     return off_diag_elems[mask]
+
+def moving_average_filter(trace, window_size):
+    """
+    Apply a causal moving average filter to a trace using numpy.
+    WRITTEN BY CHAT GPT
+    Args:
+    - trace (list or numpy array): Input trace to filter.
+    - window_size (int): Size of the moving average window.
+
+    Returns:
+    - numpy array: Filtered trace.
+    """
+    # Ensure the window size is odd for symmetry
+    if window_size % 2 == 0:
+        window_size += 1
+
+    # Create a window of ones for convolution
+    window = np.ones(window_size) / window_size
+
+    # Use 'full' mode for convolution to make it causal
+    filtered_trace = np.convolve(trace, window, mode='full')
+
+    # Trim the result to match the original trace length
+    filtered_trace = filtered_trace[:len(trace)]
+
+    return filtered_trace
