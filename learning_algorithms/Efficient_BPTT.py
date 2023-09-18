@@ -27,6 +27,9 @@ class Efficient_BPTT(Learning_Algorithm):
         if self.trial_based_truncation:
             self.T_truncation = -1
             self.compute_gradient = False
+            self.pop_index = 1
+        else:
+            self.pop_index = 0
 
         # Initialize lists for storing network data
         self.a_hat_history = []
@@ -69,7 +72,7 @@ class Efficient_BPTT(Learning_Algorithm):
             # Initialize recurrent grads at 0
             rec_grads = np.zeros((self.n_h, self.m))
             # Start with most recent credit assignment value
-            c = self.q_history.pop(1)
+            c = self.q_history.pop(self.pop_index)
 
             for i_BPTT in range(self.T_truncation):
 
@@ -79,8 +82,8 @@ class Efficient_BPTT(Learning_Algorithm):
                         c = c * (self.c_clip_norm / norm(c))
 
                 # Access present values of h and a_hat
-                h = self.h_history.pop(1)
-                a_hat = self.a_hat_history.pop(1)
+                h = self.h_history.pop(self.pop_index)
+                a_hat = self.a_hat_history.pop(self.pop_index)
 
                 # Use to get gradients w.r.t. weights from credit assignment
                 D = self.rnn.alpha * self.rnn.activation.f_prime(h)
@@ -90,7 +93,7 @@ class Efficient_BPTT(Learning_Algorithm):
                     continue
 
                 # Use future-facing relation to backpropagate by one time step.
-                q = self.q_history.pop(1)
+                q = self.q_history.pop(self.pop_index)
                 J = self.rnn.get_a_jacobian(h=h, update=False)
                 c = q + c.dot(J)
 
