@@ -248,3 +248,35 @@ def align_checkpoints_based_on_output(checkpoint, reference_checkpoint,
                                          for i_x in np.argsort(I_x)]
     checkpoint['corr_node_output_distances'] = [corr_node_output_distances[i_x]
                                                 for i_x in np.argsort(I_x)]
+
+
+def detect_events(signal_dicts, test_loss_threshold, length_threshold,
+                  node_threshold=2, ignore_first=10, time_points=200):
+    """Detect events in a set of CDI/CDDM results based on thresholds for the
+    test loss and length time series."""
+
+    loss_events = []
+    line_attractor_events = []
+    node_events = []
+    for i_key, key in enumerate(signal_dicts):
+        append_loss = True
+        append_line = True
+        append_node = True
+        for t in range(ignore_first, time_points):
+            if np.log10(signal_dicts[key]['test_loss'][t]) < test_loss_threshold and append_loss:
+                loss_events.append(t)
+                append_loss = False
+            if signal_dicts[key]['lengths'][t] > length_threshold and append_line:
+                line_attractor_events.append(t)
+                append_line = False
+            if signal_dicts[key]['n_nodes'][t] >= node_threshold and append_node:
+                node_events.append(t)
+                append_node = False
+        if append_line:
+            line_attractor_events.append(time_points)
+        if append_loss:
+            loss_events.append(time_points)
+        if append_node:
+            node_events.append(time_points)
+
+    return loss_events, line_attractor_events, node_events
