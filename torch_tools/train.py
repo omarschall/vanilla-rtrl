@@ -63,19 +63,19 @@ def train_torch_RNN_by_RFLO(rnn, optimizer, batched_data, batch_size, n_epochs,
             for p in rnn.parameters():
                 p.grad = torch.zeros_like(p)
             for i_t_trial in range(T_trial):
-                #with torch.no_grad():
-                state, output = rnn(state, X[i_t_trial])
-                loss += rnn.compute_loss(output, Y[i_t_trial])
-                a_hat = torch.cat([rnn.state_prev, X[i_t_trial], torch.ones((B, 1))], dim=1)
-                E_immediate = torch.einsum('bi,bj->bij', rnn.activation_derivative(rnn.h), a_hat)
-                E_trace = (1 - rnn.alpha) * E_trace + rnn.alpha * E_immediate
-                error = output - Y[i_t_trial]
-                outer_grad = torch.einsum('bi, bj->bij',
-                                          error, torch.cat([state, torch.ones((B, 1))], dim=1))
-                dL_da = torch.einsum('bi,ij->bj', error, rnn.W_out)
-                rec_grads = torch.einsum('bi,bij->bij', dL_da, E_trace)
-                grads = [rec_grads[:,:,:rnn.n_h].mean(0), rec_grads[:,:,rnn.n_h:-1].mean(0), rec_grads[:,:,-1].mean(0)]
-                grads += [outer_grad[:,:,:rnn.n_h].mean(0), outer_grad[:,:,-1].mean(0)]
+                with torch.no_grad():
+                    state, output = rnn(state, X[i_t_trial])
+                    loss += rnn.compute_loss(output, Y[i_t_trial])
+                    a_hat = torch.cat([rnn.state_prev, X[i_t_trial], torch.ones((B, 1))], dim=1)
+                    E_immediate = torch.einsum('bi,bj->bij', rnn.activation_derivative(rnn.h), a_hat)
+                    E_trace = (1 - rnn.alpha) * E_trace + rnn.alpha * E_immediate
+                    error = output - Y[i_t_trial]
+                    outer_grad = torch.einsum('bi, bj->bij',
+                                              error, torch.cat([state, torch.ones((B, 1))], dim=1))
+                    dL_da = torch.einsum('bi,ij->bj', error, rnn.W_out)
+                    rec_grads = torch.einsum('bi,bij->bij', dL_da, E_trace)
+                    grads = [rec_grads[:,:,:rnn.n_h].mean(0), rec_grads[:,:,rnn.n_h:-1].mean(0), rec_grads[:,:,-1].mean(0)]
+                    grads += [outer_grad[:,:,:rnn.n_h].mean(0), outer_grad[:,:,-1].mean(0)]
                 for i_p, p in enumerate(rnn.parameters()):
                     p.grad += grads[i_p]
                     if i_p in [0, 1, 3]:
