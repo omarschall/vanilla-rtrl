@@ -35,17 +35,17 @@ class Context_Dependent_Integration_Task(Task):
         trial_type = []
         trial_switch = []
 
-        c_values_ds = self.c_values[::2]
+        #c_values_ds = self.c_values[::2]
         for context in [0, 1]:
-            for c_motion, c_color in zip(c_values_ds, c_values_ds):
+            for c_motion, c_color in zip(self.c_values, self.c_values):
 
                 #Motion information
                 mu_motion = self.sensitivity * c_motion
-                x_motion = np.random.normal(mu_motion, self.input_var, self.T_trial)
+                x_motion = np.random.normal(mu_motion, 0, self.T_trial)
 
                 #Color information
                 mu_color= self.sensitivity * c_color
-                x_color = np.random.normal(mu_color, self.input_var, self.T_trial)
+                x_color = np.random.normal(mu_color, 0, self.T_trial)
 
                 if context == 0:
                     y_trial = self.a * np.cumsum(x_motion)
@@ -149,7 +149,8 @@ class Context_Dependent_Decision_Task(Task):
                  c_values=[-0.512, -0.256, -0.128, -0.064, -0.032,
                            0.032, 0.064, 0.128, 0.256, 0.512],
                  fixation_steps=5, report_steps=5, output_scale=1,
-                 report_cue=False, T_context=None, fixed_context=None):
+                 report_cue=False, T_context=None, fixed_context=None,
+                 tonic_report=False):
         """Later
 
         Args:
@@ -172,6 +173,7 @@ class Context_Dependent_Decision_Task(Task):
         self.fixed_context = fixed_context
         self.probe_inputs = [np.eye(n_in)[0], np.eye(n_in)[1], -np.eye(n_in)[0], -np.eye(n_in)[1],
                              np.eye(n_in)[2], np.eye(n_in)[3]]
+        self.tonic_report = tonic_report
         if report_cue:
             self.probe_inputs += [np.eye(n_in)[4]]
         self.probe_dataset = self.gen_probe_dataset()
@@ -212,7 +214,10 @@ class Context_Dependent_Decision_Task(Task):
                 y_trial = np.zeros(self.T_trial)
                 if context == 0:
                     if self.report_cue:
-                        y_trial[t_report_cue+1:t_report_cue+self.report_steps] = self.output_scale * np.sign(c_motion)
+                        if self.tonic_report:
+                            y_trial[t_report_cue+1:] = self.output_scale * np.sign(c_motion)
+                        else:
+                            y_trial[t_report_cue+1:t_report_cue+self.report_steps] = self.output_scale * np.sign(c_motion)
                     else:
                         y_trial[-self.report_steps:] = self.output_scale * np.sign(c_motion)
                     c0 = np.ones(self.T_trial)
@@ -221,7 +226,10 @@ class Context_Dependent_Decision_Task(Task):
                     c1 = np.zeros(self.T_trial)
                 if context == 1:
                     if self.report_cue:
-                        y_trial[t_report_cue+1:t_report_cue+self.report_steps] = self.output_scale * np.sign(c_color)
+                        if self.tonic_report:
+                            y_trial[t_report_cue + 1:] = self.output_scale * np.sign(c_color)
+                        else:
+                            y_trial[t_report_cue + 1:t_report_cue + self.report_steps] = self.output_scale * np.sign(c_color)
                     else:
                         y_trial[-self.report_steps:] = self.output_scale * np.sign(c_color)
                     c0 = np.zeros(self.T_trial)
@@ -296,7 +304,10 @@ class Context_Dependent_Decision_Task(Task):
             y_trial = np.zeros(self.T_trial)
             if context == 0:
                 if self.report_cue:
-                    y_trial[t_report_cue + 1:t_report_cue + self.report_steps] = self.output_scale * np.sign(c_motion)
+                    if self.tonic_report:
+                        y_trial[t_report_cue + 1:] = self.output_scale * np.sign(c_motion)
+                    else:
+                        y_trial[t_report_cue + 1:t_report_cue + self.report_steps] = self.output_scale * np.sign(c_motion)
                 else:
                     y_trial[-self.report_steps:] = self.output_scale * np.sign(c_motion)
                 c0 = np.ones(self.T_trial)
@@ -305,7 +316,10 @@ class Context_Dependent_Decision_Task(Task):
                 c1 = np.zeros(self.T_trial)
             if context == 1:
                 if self.report_cue:
-                    y_trial[t_report_cue + 1:t_report_cue + self.report_steps] = self.output_scale * np.sign(c_color)
+                    if self.tonic_report:
+                        y_trial[t_report_cue + 1:] = self.output_scale * np.sign(c_color)
+                    else:
+                        y_trial[t_report_cue + 1:t_report_cue + self.report_steps] = self.output_scale * np.sign(c_color)
                 else:
                     y_trial[-self.report_steps:] = self.output_scale * np.sign(c_color)
                 c0 = np.zeros(self.T_trial)
